@@ -1,0 +1,38 @@
+db/
+history
+history.sqlite
+log/
+pid/
+security/
+*.pyc
+*.pyo
+*~
+mViewer.log
+
+# eclipse IDE
+.project
+.pydevproject
+.settings
+
+# APS IT
+.loglogin
+
+# SPEC data files (default naming convention)
+20*.dat
+
+# HDF and NeXus files
+*.h5
+*.hdf
+*.hdf5
+*.nxs
+
+# logging
+.ipython_*.log*
+.logs/
+
+# Microsoft Visual Studio Code editor
+.vscode/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
