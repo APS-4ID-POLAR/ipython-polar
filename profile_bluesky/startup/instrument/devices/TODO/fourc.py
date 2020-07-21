@@ -52,9 +52,9 @@ logger.info(f"selected mode: {fourc.calc.engine.mode}")
 # this is an example:
 # # reflections = [(h-2,k-2,l-2) for h in range(5) for k in range(5) for l in range(5)]
 # reflections = (
-#     (1,0,0), 
-#     (1,1,0), 
-#     (1,0,1), 
+#     (1,0,0),
+#     (1,1,0),
+#     (1,0,1),
 #     (1,1,1),
 # )
 # logger.info(fourc.forwardSolutionsTable(reflections, full=True))
