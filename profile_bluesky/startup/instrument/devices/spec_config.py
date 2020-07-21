@@ -3,26 +3,26 @@ mon_y = EpicsMotor('4idb:m2', name='mon_y', labels=('motor',))  # Kohzu Y2
 # 2: MOT002 =    NONE:0/3   2000  1  2000  200   50  125    0 0x003    mon_z  Kohzu Z2  # Kohzu Z2
 mon_thf = EpicsMotor('4idb:m4', name='mon_thf', labels=('motor',))  # Kohzu Th2f
 mon_chi = EpicsMotor('4idb:m5', name='mon_chi', labels=('motor',))  # Kohzu Chi
-th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # Theta # slop=2
-tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # Two Theta
-th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # 4C Theta
-tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # 4C Two Theta
-eta = EpicsMotor('4iddx:m65', name='eta', labels=('motor',))  # PSIC-ETA
-del = EpicsMotor('4iddx:m66', name='del', labels=('motor',))  # PSIC-Delta
-phi = EpicsMotor('4iddx:m68', name='phi', labels=('motor',))  # Phi
-chi = EpicsMotor('4iddx:m67', name='chi', labels=('motor',))  # Chi
-bth = EpicsMotor('4iddx:m69', name='bth', labels=('motor',))  # Base Th
-btth = EpicsMotor('4iddx:m70', name='btth', labels=('motor',))  # Base tth
-mu = EpicsMotor('4iddx:m69', name='mu', labels=('motor',))  # PSIC-MU
-nu = EpicsMotor('4iddx:m70', name='nu', labels=('motor',))  # PSIC-NU
-hcirc = EpicsMotor('4iddx:m18', name='hcirc', labels=('motor',))  # 8C horiz
-vcirc = EpicsMotor('4iddx:m17', name='vcirc', labels=('motor',))  # 8C verical
-ath = EpicsMotor('4iddx:m77', name='ath', labels=('motor',))  # Ana Theta
-achi = EpicsMotor('4iddx:m79', name='achi', labels=('motor',))  # Ana Chi
-atth = EpicsMotor('4iddx:m78', name='atth', labels=('motor',))  # Ana 2Theta
-cryox = EpicsMotor('4iddx:m14', name='cryox', labels=('motor',))  # Cryo X
-cryoy = EpicsMotor('4iddx:m15', name='cryoy', labels=('motor',))  # Cryo Y
-cryoz = EpicsMotor('4iddx:m16', name='cryoz', labels=('motor',))  # Cryo Z
+# th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # Theta # slop=2
+# tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # Two Theta
+# th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # 4C Theta
+# tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # 4C Two Theta
+# eta = EpicsMotor('4iddx:m65', name='eta', labels=('motor',))  # PSIC-ETA
+# del = EpicsMotor('4iddx:m66', name='del', labels=('motor',))  # PSIC-Delta
+# phi = EpicsMotor('4iddx:m68', name='phi', labels=('motor',))  # Phi
+# chi = EpicsMotor('4iddx:m67', name='chi', labels=('motor',))  # Chi
+# bth = EpicsMotor('4iddx:m69', name='bth', labels=('motor',))  # Base Th
+# btth = EpicsMotor('4iddx:m70', name='btth', labels=('motor',))  # Base tth
+# mu = EpicsMotor('4iddx:m69', name='mu', labels=('motor',))  # PSIC-MU
+# nu = EpicsMotor('4iddx:m70', name='nu', labels=('motor',))  # PSIC-NU
+# hcirc = EpicsMotor('4iddx:m18', name='hcirc', labels=('motor',))  # 8C horiz
+# vcirc = EpicsMotor('4iddx:m17', name='vcirc', labels=('motor',))  # 8C verical
+# ath = EpicsMotor('4iddx:m77', name='ath', labels=('motor',))  # Ana Theta
+# achi = EpicsMotor('4iddx:m79', name='achi', labels=('motor',))  # Ana Chi
+# atth = EpicsMotor('4iddx:m78', name='atth', labels=('motor',))  # Ana 2Theta
+# cryox = EpicsMotor('4iddx:m14', name='cryox', labels=('motor',))  # Cryo X
+# cryoy = EpicsMotor('4iddx:m15', name='cryoy', labels=('motor',))  # Cryo Y
+# cryoz = EpicsMotor('4iddx:m16', name='cryoz', labels=('motor',))  # Cryo Z
 pr1x = EpicsMotor('4idb:m10', name='pr1x', labels=('motor',))  # PhaseR1 X
 pr1y = EpicsMotor('4idb:m11', name='pr1y', labels=('motor',))  # PhaseR1 Y
 pr1th = EpicsMotor('4idb:m13', name='pr1th', labels=('motor',))  # PhaseR1 Th
