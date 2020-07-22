@@ -13,8 +13,8 @@ logger.info("bluesky framework")
 from .sim_framework import *
 #from .framework import *
 
-#from .sim_devices import *
-from .devices import *
+from .sim_devices import *
+#from .devices import *
 # TODO: add a condition to import either
 
 from .callbacks import *
