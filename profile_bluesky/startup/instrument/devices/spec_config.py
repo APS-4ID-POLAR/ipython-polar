@@ -1,8 +1,8 @@
-mono = EpicsMotor('4idb:m1', name='mono', labels=('motor',))  # Kohzu Theta # home_slew_rate=0
-mon_y = EpicsMotor('4idb:m2', name='mon_y', labels=('motor',))  # Kohzu Y2
-# 2: MOT002 =    NONE:0/3   2000  1  2000  200   50  125    0 0x003    mon_z  Kohzu Z2  # Kohzu Z2
-mon_thf = EpicsMotor('4idb:m4', name='mon_thf', labels=('motor',))  # Kohzu Th2f
-mon_chi = EpicsMotor('4idb:m5', name='mon_chi', labels=('motor',))  # Kohzu Chi
+# mono = EpicsMotor('4idb:m1', name='mono', labels=('motor',))  # Kohzu Theta # home_slew_rate=0
+# mon_y = EpicsMotor('4idb:m2', name='mon_y', labels=('motor',))  # Kohzu Y2
+# # 2: MOT002 =    NONE:0/3   2000  1  2000  200   50  125    0 0x003    mon_z  Kohzu Z2  # Kohzu Z2
+# mon_thf = EpicsMotor('4idb:m4', name='mon_thf', labels=('motor',))  # Kohzu Th2f
+# mon_chi = EpicsMotor('4idb:m5', name='mon_chi', labels=('motor',))  # Kohzu Chi
 # th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # Theta # slop=2
 # tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # Two Theta
 # th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # 4C Theta
@@ -35,10 +35,10 @@ pr3th = EpicsMotor('4idb:m21', name='pr3th', labels=('motor',))  # PhasR3 Th
 uptaby = EpicsMotor('4iddx:m10', name='uptaby', labels=('motor',))  # Uptable Y
 mtop = EpicsMotor('4iddx:m61', name='mtop', labels=('motor',))  # MagGrdTop
 mbot = EpicsMotor('4iddx:m62', name='mbot', labels=('motor',))  # MagGrdBot
-ciatra = EpicsMotor('4iddx:m63', name='ciatra', labels=('motor',))  # CIATRA
+# ciatra = EpicsMotor('4iddx:m63', name='ciatra', labels=('motor',))  # CIATRA
 minb = EpicsMotor('4iddx:m64', name='minb', labels=('motor',))  # MagGrdInb
-magz = EpicsMotor('4iddx:m51', name='magz', labels=('motor',))  # AMIMagnetZ
-magx = EpicsMotor('4iddx:m52', name='magx', labels=('motor',))  # AMIMagenetX
+# magz = EpicsMotor('4iddx:m51', name='magz', labels=('motor',))  # AMIMagnetZ
+# magx = EpicsMotor('4iddx:m52', name='magx', labels=('motor',))  # AMIMagenetX
 osx = EpicsMotor('4iddx:m12', name='osx', labels=('motor',))  # OSA X
 osy = EpicsMotor('4iddx:m13', name='osy', labels=('motor',))  # OSA Y
 hpsmx = EpicsMotor('4iddx:m46', name='hpsmx', labels=('motor',))  # HP Samp X
@@ -47,9 +47,9 @@ hpsmr = EpicsMotor('4iddx:m48', name='hpsmr', labels=('motor',))  # HP Samp Rot
 smagx = EpicsMotor('4iddx:m43', name='smagx', labels=('motor',))  # 2Tmag X
 smagy = EpicsMotor('4iddx:m44', name='smagy', labels=('motor',))  # 2Tmag Y
 smagrot = EpicsMotor('4iddx:m45', name='smagrot', labels=('motor',))  # 2Tmag Rot
-mrot = EpicsMotor('4iddx:m53', name='mrot', labels=('motor',))  # 4T Mag Th
-mtabx = EpicsMotor('4iddx:m49', name='mtabx', labels=('motor',))  # 4T MagTab X
-mtaby = EpicsMotor('4iddx:m50', name='mtaby', labels=('motor',))  # 4T MagTab Y
+# mrot = EpicsMotor('4iddx:m53', name='mrot', labels=('motor',))  # 4T Mag Th
+# mtabx = EpicsMotor('4iddx:m49', name='mtabx', labels=('motor',))  # 4T MagTab X
+# mtaby = EpicsMotor('4iddx:m50', name='mtaby', labels=('motor',))  # 4T MagTab Y
 dvgap = EpicsMotor('4iddx:m21', name='dvgap', labels=('motor',))  # MagVGap
 dvcen = EpicsMotor('4iddx:m22', name='dvcen', labels=('motor',))  # MagVCen
 dhgap = EpicsMotor('4iddx:m24', name='dhgap', labels=('motor',))  # MagHGap
@@ -61,20 +61,20 @@ sltvcen = EpicsMotor('4iddx:m40', name='sltvcen', labels=('motor',))  # 8CslitIn
 kbicy = EpicsMotor('4iddx:m34', name='kbicy', labels=('motor',))  # KB IC Y
 mirxu = EpicsMotor('4idb:m37', name='mirxu', labels=('motor',))  # flat mir up
 mirxd = EpicsMotor('4idb:m38', name='mirxd', labels=('motor',))  # flat mir dow
-mphi = EpicsMotor('4iddx:m56', name='mphi', labels=('motor',))  # AMIMagnetPhi
+# mphi = EpicsMotor('4iddx:m56', name='mphi', labels=('motor',))  # AMIMagnetPhi
 mirry = EpicsMotor('4id:sm8', name='mirry', labels=('motor',))  # MirrorY
 vory = EpicsMotor('4iddx:m35', name='vory', labels=('motor',))  # VortexY
 vorx = EpicsMotor('4iddx:m36', name='vorx', labels=('motor',))  # VortexX
 uptabx = EpicsMotor('4iddx:m9', name='uptabx', labels=('motor',))  # Uptab X
-ciarot = EpicsMotor('4iddx:m58', name='ciarot', labels=('motor',))  # CIA ROT
+# ciarot = EpicsMotor('4iddx:m58', name='ciarot', labels=('motor',))  # CIA ROT
 xbpmx = EpicsMotor('4iddx:m19', name='xbpmx', labels=('motor',))  # XBPM hor
 xbpmy = EpicsMotor('4iddx:m20', name='xbpmy', labels=('motor',))  # XBPM ver
-scaler1 = ScalerCH('4id:scaler1', name='scaler1', labels=('detectors',))
+# scaler1 = ScalerCH('4id:scaler1', name='scaler1', labels=('detectors',))
 # counter: sec = SpecCounter(mne='sec', config_line='0', name='Seconds', unit='0', chan='0', pvname=4id:scaler1.S1)
 # counter: ic1 = SpecCounter(mne='ic1', config_line='1', name='IC1', unit='0', chan='1', pvname=4id:scaler1.S2)
 # counter: ic2 = SpecCounter(mne='ic2', config_line='2', name='IC2', unit='0', chan='2', pvname=4id:scaler1.S3) # misc_par_2=0
 # counter: ic3 = SpecCounter(mne='ic3', config_line='3', name='IC3', unit='0', chan='3', pvname=4id:scaler1.S4)
-ic4 = EpicsSignal('4id:scaler1currentAI', name='ic4', labels=('detectors',))
+# ic4 = EpicsSignal('4id:scaler1currentAI', name='ic4', labels=('detectors',))
 # counter: ic5 = SpecCounter(mne='ic5', config_line='5', name='IC5', unit='0', chan='5', pvname=4id:scaler1.S6)
 # counter: cyber8c = SpecCounter(mne='cyber8c', config_line='6', name='Cyber8C', unit='0', chan='6', pvname=4id:scaler1.S7)
 # counter: cyberm = SpecCounter(mne='cyberm', config_line='7', name='CyberMag', unit='0', chan='7', pvname=4id:scaler1.S8)
@@ -91,7 +91,7 @@ ic4 = EpicsSignal('4id:scaler1currentAI', name='ic4', labels=('detectors',))
 # 18: CNT018 =     NONE  3  2      1 0x000    ddiff  DichroDiff
 # 19: CNT019 =     NONE  3  3      1 0x000    dflip  DichroFlip
 # 20: CNT020 =     NONE  3  4      1 0x000     dart  DichroArt
-iaps = EpicsSignal('S:SRcurrentAI', name='iaps', labels=('detectors',))  # Iaps
+# iaps = EpicsSignal('S:SRcurrentAI', name='iaps', labels=('detectors',))  # Iaps
 # 22: CNT022 =     NONE  3  4      1 0x000    spsum  SplitSum
 # 23: CNT023 =     NONE  3  5      1 0x000    sppos  SplitPos
 qsum = EpicsSignal('4id:userTran6.E', name='qsum', labels=('detectors',))  # QBPM Sum
@@ -105,8 +105,8 @@ fld = EpicsSignal('4idd:LakeShore475:Fld.VAL', name='fld', labels=('detectors',)
 # 32: CNT032 =     NONE  5  2      1 0x000  scatot1  Scatot1
 roi11 = EpicsSignal('4iddQuad:mca1.R0', name='roi11', labels=('detectors',))  # ROI11
 roi12 = EpicsSignal('4iddQuad:mca1.R1', name='roi12', labels=('detectors',))  # ROI12
-hpol = EpicsSignal('4idb:scaler1.S2', name='hpol', labels=('detectors',))  # Hor Diode
-vpol = EpicsSignal('4idb:scaler1.S3', name='vpol', labels=('detectors',))  # Ver Diode
+# hpol = EpicsSignal('4idb:scaler1.S2', name='hpol', labels=('detectors',))  # Hor Diode
+# vpol = EpicsSignal('4idb:scaler1.S3', name='vpol', labels=('detectors',))  # Ver Diode
 roi21 = EpicsSignal('4iddQuad:mca2.R0', name='roi21', labels=('detectors',))  # ROI21
 roi22 = EpicsSignal('4iddQuad:mca2.R1', name='roi22', labels=('detectors',))  # ROI22
 roi31 = EpicsSignal('4iddQuad:mca3.R0', name='roi31', labels=('detectors',))  # ROI31
