@@ -37,11 +37,8 @@ class Diffractometer(Device):
 
 huber = Diffractometer(name='huber')
 
-# TODO: How to handle 6c vs. 4c?
-#eta = EpicsMotor('4iddx:m65', name='eta', labels=('motor',))  # PSIC-ETA
-#del = EpicsMotor('4iddx:m66', name='del', labels=('motor',))  # PSIC-Delta
-#mu = EpicsMotor('4iddx:m69', name='mu', labels=('motor',))  # PSIC-MU
-#nu = EpicsMotor('4iddx:m70', name='nu', labels=('motor',))  # PSIC-NU
+# TODO: look at todo folder. Use hklpy when setting these up, so that we
+#       can create fourc and sixc
 
 # TODO: discuss the extend of which we want to add classes like the one below
 #class Diffractometer(Device):

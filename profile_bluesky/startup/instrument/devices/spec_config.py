@@ -23,15 +23,15 @@
 # cryox = EpicsMotor('4iddx:m14', name='cryox', labels=('motor',))  # Cryo X
 # cryoy = EpicsMotor('4iddx:m15', name='cryoy', labels=('motor',))  # Cryo Y
 # cryoz = EpicsMotor('4iddx:m16', name='cryoz', labels=('motor',))  # Cryo Z
-pr1x = EpicsMotor('4idb:m10', name='pr1x', labels=('motor',))  # PhaseR1 X
-pr1y = EpicsMotor('4idb:m11', name='pr1y', labels=('motor',))  # PhaseR1 Y
-pr1th = EpicsMotor('4idb:m13', name='pr1th', labels=('motor',))  # PhaseR1 Th
-pr2x = EpicsMotor('4idb:m15', name='pr2x', labels=('motor',))  # PhasR2 X
-pr2y = EpicsMotor('4idb:m16', name='pr2y', labels=('motor',))  # PhasR2 Y
-pr2th = EpicsMotor('4idb:m18', name='pr2th', labels=('motor',))  # PhasR2 Th
-pr3x = EpicsMotor('4idb:m19', name='pr3x', labels=('motor',))  # PhasR3 X
-pr3y = EpicsMotor('4idb:m20', name='pr3y', labels=('motor',))  # PhasR3 Y
-pr3th = EpicsMotor('4idb:m21', name='pr3th', labels=('motor',))  # PhasR3 Th
+# pr1x = EpicsMotor('4idb:m10', name='pr1x', labels=('motor',))  # PhaseR1 X
+# pr1y = EpicsMotor('4idb:m11', name='pr1y', labels=('motor',))  # PhaseR1 Y
+# pr1th = EpicsMotor('4idb:m13', name='pr1th', labels=('motor',))  # PhaseR1 Th
+# pr2x = EpicsMotor('4idb:m15', name='pr2x', labels=('motor',))  # PhasR2 X
+# pr2y = EpicsMotor('4idb:m16', name='pr2y', labels=('motor',))  # PhasR2 Y
+# pr2th = EpicsMotor('4idb:m18', name='pr2th', labels=('motor',))  # PhasR2 Th
+# pr3x = EpicsMotor('4idb:m19', name='pr3x', labels=('motor',))  # PhasR3 X
+# pr3y = EpicsMotor('4idb:m20', name='pr3y', labels=('motor',))  # PhasR3 Y
+# pr3th = EpicsMotor('4idb:m21', name='pr3th', labels=('motor',))  # PhasR3 Th
 uptaby = EpicsMotor('4iddx:m10', name='uptaby', labels=('motor',))  # Uptable Y
 mtop = EpicsMotor('4iddx:m61', name='mtop', labels=('motor',))  # MagGrdTop
 mbot = EpicsMotor('4iddx:m62', name='mbot', labels=('motor',))  # MagGrdBot
