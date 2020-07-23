@@ -23,13 +23,18 @@ class SlitDevice(Device):
     def __init__(PV,motorsDict,signalsDict,**kwargs):
         super().__init__(PV,**kwargs)
 
+        name = ''
+        if 'name' in kwargs.keys():
+            if kwargs['name'] is not None:
+                name = kwargs['name']+'.'
+
         for key in motorsDict.keys():
             setattr(self,key,Component(EpicsMotor, motorsDict[key],
-                                       name = key, labels=('motor','slits')))
+                                       name = name+key, labels=('motor','slits')))
 
         for key in signalsDict.keys():
             setattr(self,key,Component(EpicsSignal, signalsDict[key],
-                                       name = key, labels=('slits')))
+                                       name = name+key, labels=('slits')))
 
             # self.make_centers_sizes(slitPV)
 
