@@ -23,8 +23,7 @@ class PRDevice(Device):
 
     def make_motors(self,motorsPVdict):
         for key in motorsPVdict.keys():
-            pv,name  = motorsPVdict[key]
-            setattr(self,key,Component(EpicsMotor,pv, name=name,
+            setattr(self,key,Component(EpicsMotor,motorsPVdict[key],name=key,
                                        labels=('motor','phase retarder')))
 
 pr1 = PRDevice('4idb',{'x':'m10','y':'m11','th':'m13'},name='pr1')
