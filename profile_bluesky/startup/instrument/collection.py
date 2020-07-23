@@ -10,13 +10,8 @@ from . import mpl
 
 logger.info("bluesky framework")
 
-from .sim_framework import *
-#from .framework import *
-
-from .sim_devices import *
-#from .devices import *
-# TODO: add a condition to import either
-
+from .framework import *
+from .devices import *
 from .callbacks import *
 from .plans import *
 from .utils import *
