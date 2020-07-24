@@ -7,49 +7,29 @@ __all__ = ['enslt']
 from instrument.session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor,EpicsSignal
+from ophyd import Device, EpicsMotor,EpicsSignal
 
 class SlitDevice(Device):
 
-    # top = None
-    # bot = None
-    # out = None
-    # inb = None
-    # vsize = None
-    # vcen  = None
-    # hsize = None
-    # hcen  = None
-
-    def __init__(PV,motorsDict,signalsDict,**kwargs):
-        super().__init__(PV,**kwargs)
-
-        name = ''
-        if 'name' in kwargs.keys():
-            if kwargs['name'] is not None:
-                name = kwargs['name']+'.'
+    def __init__(self,PV,motorsDict,signalsDict,name,**kwargs):
+        super().__init__(prefix=PV, name=name, **kwargs)
 
         for key in motorsDict.keys():
-            setattr(self,key,Component(EpicsMotor, motorsDict[key],
-                                       name = name+key, labels=('motor','slits')))
-
+            setattr(self,key,EpicsMotor(PV+motorsDict[key], name=key,
+                                        labels=('motor','slits'),parent=self))
         for key in signalsDict.keys():
-            setattr(self,key,Component(EpicsSignal, signalsDict[key],
-                                       name = name+key, labels=('slits')))
+            setattr(self,key,EpicsSignal(PV+signalsDict[key][0],
+                                         write_pv = PV+signalsDict[key][1],
+                                         name=key,
+                                         labels=('slits'),parent=self))
 
-            # self.make_centers_sizes(slitPV)
-
-    # def make_centers_sizes(self,slitPV):
-        # self.vsize = Component(EpicsSignal,slitPV+'Vsize', labels=['slits'])
-        # self.vcen  = Component(EpicsSignal,slitPV+'Vcenter', labels=['slits'])
-        # self.hsize = Component(EpicsSignal,slitPV+'Hsize', labels=['slits'])
-        # self.hcen  = Component(EpicsSignal,slitPV+'Hcenter', labels=['slits'])
-
-    # TODO: these read, but can't scan, options:
-    # This may be fine. We just need to do create a plan to that scans the center.
-    # or use: from ophyd import PVPositioner, PseudoPositioner ??
+# TODO: Do we need to change the "name" of these devices? Depends on how it
+# is saved in the database.
 
 enslt = SlitDevice('4iddx:',
-                   {'top': ':m1','bot',':m2','out':':m3','inb':':m4'},
-                   {'vcen': ':Slit1Vcenter','vsize': ':Slit1Vsize',
-                    'hcen': ':Slit1Hcenter','hsize': ':Slit1Hsize'},
-                   name='enslt')
+                   {'top': 'm1','bot':'m2','out':'m3','inb':'m4'},
+                   {'vcen': ['Slit1Vt2.D','Slit1Vcenter'],
+                    'vsize':['Slit1Vt2.C','Slit1Vsize'],
+                    'hcen': ['Slit1Ht2.D','Slit1Hcenter'],
+                    'hsize':['Slit1Hsize','Slit1Hsize']},
+                   'enslt')
