@@ -32,7 +32,7 @@
 # pr3x = EpicsMotor('4idb:m19', name='pr3x', labels=('motor',))  # PhasR3 X
 # pr3y = EpicsMotor('4idb:m20', name='pr3y', labels=('motor',))  # PhasR3 Y
 # pr3th = EpicsMotor('4idb:m21', name='pr3th', labels=('motor',))  # PhasR3 Th
-uptaby = EpicsMotor('4iddx:m10', name='uptaby', labels=('motor',))  # Uptable Y
+# uptaby = EpicsMotor('4iddx:m10', name='uptaby', labels=('motor',))  # Uptable Y
 mtop = EpicsMotor('4iddx:m61', name='mtop', labels=('motor',))  # MagGrdTop
 mbot = EpicsMotor('4iddx:m62', name='mbot', labels=('motor',))  # MagGrdBot
 # ciatra = EpicsMotor('4iddx:m63', name='ciatra', labels=('motor',))  # CIATRA
@@ -54,21 +54,21 @@ dvgap = EpicsMotor('4iddx:m21', name='dvgap', labels=('motor',))  # MagVGap
 dvcen = EpicsMotor('4iddx:m22', name='dvcen', labels=('motor',))  # MagVCen
 dhgap = EpicsMotor('4iddx:m24', name='dhgap', labels=('motor',))  # MagHGap
 dhcen = EpicsMotor('4iddx:m23', name='dhcen', labels=('motor',))  # MagHCen
-kbicx = EpicsMotor('4iddx:m33', name='kbicx', labels=('motor',))  # KB IC X
+# kbicx = EpicsMotor('4iddx:m33', name='kbicx', labels=('motor',))  # KB IC X
 lofff = EpicsMotor('4id:sm6', name='lofff', labels=('motor',))  # LockOff
 qbpm = EpicsMotor('4idb:m31', name='qbpm', labels=('motor',))  # Quad-BPM
 sltvcen = EpicsMotor('4iddx:m40', name='sltvcen', labels=('motor',))  # 8CslitIn-Vcen
-kbicy = EpicsMotor('4iddx:m34', name='kbicy', labels=('motor',))  # KB IC Y
+# kbicy = EpicsMotor('4iddx:m34', name='kbicy', labels=('motor',))  # KB IC Y
 mirxu = EpicsMotor('4idb:m37', name='mirxu', labels=('motor',))  # flat mir up
 mirxd = EpicsMotor('4idb:m38', name='mirxd', labels=('motor',))  # flat mir dow
 # mphi = EpicsMotor('4iddx:m56', name='mphi', labels=('motor',))  # AMIMagnetPhi
 mirry = EpicsMotor('4id:sm8', name='mirry', labels=('motor',))  # MirrorY
 vory = EpicsMotor('4iddx:m35', name='vory', labels=('motor',))  # VortexY
 vorx = EpicsMotor('4iddx:m36', name='vorx', labels=('motor',))  # VortexX
-uptabx = EpicsMotor('4iddx:m9', name='uptabx', labels=('motor',))  # Uptab X
+# uptabx = EpicsMotor('4iddx:m9', name='uptabx', labels=('motor',))  # Uptab X
 # ciarot = EpicsMotor('4iddx:m58', name='ciarot', labels=('motor',))  # CIA ROT
-xbpmx = EpicsMotor('4iddx:m19', name='xbpmx', labels=('motor',))  # XBPM hor
-xbpmy = EpicsMotor('4iddx:m20', name='xbpmy', labels=('motor',))  # XBPM ver
+# xbpmx = EpicsMotor('4iddx:m19', name='xbpmx', labels=('motor',))  # XBPM hor
+# xbpmy = EpicsMotor('4iddx:m20', name='xbpmy', labels=('motor',))  # XBPM ver
 # scaler1 = ScalerCH('4id:scaler1', name='scaler1', labels=('detectors',))
 # counter: sec = SpecCounter(mne='sec', config_line='0', name='Seconds', unit='0', chan='0', pvname=4id:scaler1.S1)
 # counter: ic1 = SpecCounter(mne='ic1', config_line='1', name='IC1', unit='0', chan='1', pvname=4id:scaler1.S2)
