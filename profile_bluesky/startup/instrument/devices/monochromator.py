@@ -22,4 +22,5 @@ class Monochromator(Kohzu):
 
 mono = Monochromator('4idb:', name='monochromator')
 
-# TODO: Should we add control over other stuff?
+# TODO: It looks like we cannot do epics_put to energy in MEDM screen, so Kohzu
+# won't work.
