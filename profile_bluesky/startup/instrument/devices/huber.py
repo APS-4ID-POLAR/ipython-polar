@@ -15,27 +15,27 @@ from ophyd import Component, Device, EpicsMotor
 
 ## Cryo carrier ##
 class CryoStage(Device):
-    x = Component(EpicsMotor, '4iddx:m14', labels=('motor', 'cryo'))  # Cryo X
-    y = Component(EpicsMotor, '4iddx:m15', labels=('motor', 'cryo'))  # Cryo Y
-    z = Component(EpicsMotor, '4iddx:m16', labels=('motor', 'cryo'))  # Cryo Z
+    x = Component(EpicsMotor, ':m14', labels=('motor', 'cryo'))  # Cryo X
+    y = Component(EpicsMotor, ':m15', labels=('motor', 'cryo'))  # Cryo Y
+    z = Component(EpicsMotor, ':m16', labels=('motor', 'cryo'))  # Cryo Z
 
-cryo = CryoStage(name='cryo')
+cryo = CryoStage(prefix='4iddx',name='cryo')
 
 ## 8c rotations ##
 class Diffractometer(Device):
-    th = EpicsMotor('4iddx:m65', name='th', labels=('motor',))  # Theta # slop=2
-    tth = EpicsMotor('4iddx:m66', name='tth', labels=('motor',))  # Two Theta
-    phi = EpicsMotor('4iddx:m68', name='phi', labels=('motor',))  # Phi
-    chi = EpicsMotor('4iddx:m67', name='chi', labels=('motor',))  # Chi
-    bth = EpicsMotor('4iddx:m69', name='bth', labels=('motor',))  # Base Th
-    btth = EpicsMotor('4iddx:m70', name='btth', labels=('motor',))  # Base tth
-    ath = EpicsMotor('4iddx:m77', name='ath', labels=('motor',))  # Ana Theta
-    achi = EpicsMotor('4iddx:m79', name='achi', labels=('motor',))  # Ana Chi
-    atth = EpicsMotor('4iddx:m78', name='atth', labels=('motor',))  # Ana 2Theta
-    x = EpicsMotor('4iddx:m18', name='hcirc', labels=('motor',))  # 8C horiz
-    y = EpicsMotor('4iddx:m17', name='vcirc', labels=('motor',))  # 8C verical
+    th = Component(EpicsMotor,':m65', labels=('motor','diffractometer'))  # Theta # slop=2
+    tth = Component(EpicsMotor,':m66', labels=('motor','diffractometer'))  # Two Theta
+    phi = Component(EpicsMotor,':m68', labels=('motor','diffractometer'))  # Phi
+    chi = Component(EpicsMotor,':m67', labels=('motor','diffractometer'))  # Chi
+    bth = Component(EpicsMotor,':m69', labels=('motor','diffractometer'))  # Base Th
+    btth = Component(EpicsMotor,':m70', labels=('motor','diffractometer'))  # Base tth
+    ath = Component(EpicsMotor,':m77', labels=('motor','diffractometer'))  # Ana Theta
+    achi = Component(EpicsMotor,':m79', labels=('motor','diffractometer'))  # Ana Chi
+    atth = Component(EpicsMotor,':m78', labels=('motor','diffractometer'))  # Ana 2Theta
+    x = Component(EpicsMotor,':m18', labels=('motor','diffractometer'))  # 8C horiz
+    y = Component(EpicsMotor,':m17', labels=('motor','diffractometer'))  # 8C verical
 
-huber = Diffractometer(name='huber')
+huber = Diffractometer(prefix='4iddx',name='huber')
 
 # TODO: look at todo folder. Use hklpy when setting these up, so that we
 #       can create fourc and sixc

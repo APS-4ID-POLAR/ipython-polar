@@ -9,19 +9,27 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor
+from ophyd import Component, Device, EpicsMotor, FormattedComponent
 
 class PRDevice(Device):
 
-    def __init__(PV,motorsPVdict,name,**kwargs):
-        super().__init__(prefix=PV, name=name, **kwargs)
+    x = FormattedComponent(EpicsMotor,'{self.prefix}:{_motorsDict[x]}',
+                           labels=('motor','phase retarders'))
 
-        for key in motorsPVDict.keys():
-            setattr(self,key,EpicsMotor(PV+motorsDict[key], name=key,
-                                        labels=('motor','phase retarders'),parent=self))
+    y = FormattedComponent(EpicsMotor,'{self.prefix}:{_motorsDict[y]}',
+                           labels=('motor','phase retarders'))
 
-pr1 = PRDevice('4idb:',{'x':'m10','y':'m11','th':'m13'},'pr1')
-pr2 = PRDevice('4idb:',{'x':'m15','y':'m16','th':'m18'},'pr2')
-pr3 = PRDevice('4idb:',{'x':'m19','y':'m20','th':'m21'},'pr3')
+    th = FormattedComponent(EpicsMotor,'{self.prefix}:{_motorsDict[th]}',
+                            labels=('motor','phase retarders'))
+
+    def __init__(prefix,name,motorsDict,**kwargs):
+
+        self._motorsDict = motorsDict
+
+        super().__init__(prefix=prefix, name=name, **kwargs)
+
+pr1 = PRDevice('4idb','pr1',{'x':'m10','y':'m11','th':'m13'})
+pr2 = PRDevice('4idb','pr2',{'x':'m15','y':'m16','th':'m18'})
+pr3 = PRDevice('4idb','pr3',{'x':'m19','y':'m20','th':'m21'})
 
 # TODO: add other stuff to pr's, like lock-in PVS, and screen position.

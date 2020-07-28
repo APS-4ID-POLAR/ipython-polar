@@ -12,20 +12,20 @@ logger.info(__file__)
 from ophyd import Component, Device, EpicsMotor
 
 class UpTable(Device):
-    y = Component(EpicsMotor, '4iddx:m10', labels=('motor','uptable'))  # Uptable Y
-    x = Component(EpicsMotor, '4iddx:m9', labels=('motor','uptable'))  # Uptable Y
+    y = Component(EpicsMotor, ':m10', labels=('motor','uptable'))  # Uptable Y
+    x = Component(EpicsMotor, ':m9', labels=('motor','uptable'))  # Uptable Y
 
-uptab = UpTable(name='uptable')
+uptab = UpTable('4iddx',name='uptable')
 
 class KBIC(Device):
-    y = Component(EpicsMotor, '4iddx:m34', labels=('motor','KBIC'))  # KB IC Y
-    x = Component(EpicsMotor, '4iddx:m33', labels=('motor','KBIC'))  # KB IC X
+    y = Component(EpicsMotor, ':m34', labels=('motor','KBIC'))  # KB IC Y
+    x = Component(EpicsMotor, ':m33', labels=('motor','KBIC'))  # KB IC X
 
-kbic = KBIC(name='KBIC')
+kbic = KBIC('4iddx',name='KBIC')
 
 
 class XBPM(Device):
-    y = Component(EpicsMotor, '4iddx:m20', labels=('motor','XBPM'))  # XBPM ver
-    x = Component(EpicsMotor, '4iddx:m19', labels=('motor','XBPM'))  # XBPM hor
+    y = Component(EpicsMotor, ':m20', labels=('motor','XBPM'))  # XBPM ver
+    x = Component(EpicsMotor, ':m19', labels=('motor','XBPM'))  # XBPM hor
 
-xbpm = XBPM(name='XBPM')
+xbpm = XBPM('4iddx',name='XBPM')

@@ -20,4 +20,4 @@ class Monochromator(Device):
 
 mono = Monochromator(name='mono')
 
-# TODO: Z motor needs to be disabled.
+# TODO: ~~~ REPLACE THIS BY KOHZU FROM APSUTILS ~~~
