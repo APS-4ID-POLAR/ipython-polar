@@ -17,8 +17,8 @@ class Monochromator(Kohzu):
     #th = EpicsMotor('4idb:m1', name='mono', labels=('motor',))  # Kohzu Theta # home_slew_rate=0
     #y = EpicsMotor('4idb:m2', name='mon_y', labels=('motor',))  # Kohzu Y2
     #z = EpicsMotor('4idb:m3', name='mon_z', labels=('motor',))  # Kohzu Y2  # Kohzu Z2
-    thf = EpicsMotor('4idb:m4', name='mon_thf', labels=('motor',))  # Kohzu Th2f
-    chi = EpicsMotor('4idb:m5', name='mon_chi', labels=('motor',))  # Kohzu Chi
+    thf = Component(EpicsMotor,'m4',labels=('motor','monochromator'))  # Kohzu Th2f
+    chi = Component(EpicsMotor,'m5', labels=('motor','monochromator'))  # Kohzu Chi
 
 mono = Monochromator('4idb:', name='monochromator')
 
