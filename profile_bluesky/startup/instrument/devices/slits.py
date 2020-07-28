@@ -2,7 +2,7 @@
 Slits
 """
 
-__all__ = ['wbslt,''enslt','inslt','grdslt','detslt','magslt']
+__all__ = ['wbslt','enslt','inslt','grdslt','detslt','magslt']
 
 from instrument.session_logs import logger
 logger.info(__file__)

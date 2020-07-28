@@ -9,7 +9,7 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor, FormattedComponent
+from ophyd import Device, EpicsMotor, FormattedComponent
 
 class PRDevice(Device):
 
@@ -22,7 +22,7 @@ class PRDevice(Device):
     th = FormattedComponent(EpicsMotor,'{self.prefix}:{_motorsDict[th]}',
                             labels=('motor','phase retarders'))
 
-    def __init__(prefix,name,motorsDict,**kwargs):
+    def __init__(self,prefix,name,motorsDict,**kwargs):
 
         self._motorsDict = motorsDict
 
