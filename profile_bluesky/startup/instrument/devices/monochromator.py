@@ -26,5 +26,5 @@ mono = Monochromator('4idb', name='monochromator')
 
 # TODO: We should add the undulator tracking within this function as a
 # @property of the energy setter.
-# TODO: It looks like we cannot do epics_put to energy in MEDM screen, so Kohzu
-# won't work.
+# TODO: How to handle an epics PV that has options? The KohzuSeqCtl has to be
+# in "auto" mode, but it changes to "manual" if spec moves the energy.
