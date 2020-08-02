@@ -3,4 +3,5 @@
 local, custom Bluesky plans (scans) and other functions
 """
 
-from .slitscan import *
+from .slits_plans import *
+from .energy_plans import *

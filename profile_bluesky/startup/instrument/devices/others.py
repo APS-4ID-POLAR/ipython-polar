@@ -29,3 +29,5 @@ class XBPM(Device):
     x = Component(EpicsMotor, ':m19', labels=('motor','XBPM'))  # XBPM hor
 
 xbpm = XBPM('4iddx',name='XBPM')
+
+# TODO: Maybe other things that can be here? Like the motors for flags?
