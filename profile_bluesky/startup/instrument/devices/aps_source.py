@@ -38,23 +38,23 @@ class MyUndulator(apstools.devices.ApsUndulator):
 
         if value == True:
             while True:
-                offset = input("Undulator offset (keV) ({}): ".format(self._offset))
+                offset = input("Undulator offset (keV) ({}): ".format(self._offset.get()))
                 try:
                     self._offset = float(offset)
                     break
                 except ValueError:
                     if offset == '':
-                        print('Using offset = {} keV'.format(self._offset))
+                        print('Using offset = {} keV'.format(self._offset.get()))
                         break
                     print("The undulator offset has to be a number.")
 
     @property
     def offset(self):
-        return self._offset
+        return self._offset.get()
 
     @offset.setter
     def offset(self,value):
-        self._offset = float(value)
+        self._offset.put(float(value))
 
 class MyDualUndulator(Device):
     upstream = None
