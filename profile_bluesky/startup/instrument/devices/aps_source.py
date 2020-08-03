@@ -13,6 +13,7 @@ logger.info(__file__)
 
 import apstools.devices
 from ..framework import sd
+from ophyd import Device,Component
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
@@ -58,12 +59,11 @@ class MyUndulator(apstools.devices.ApsUndulator):
     def offset(self,value):
         self._offset = float(value)
 
-class MyDualUndulator(Devices):
+class MyDualUndulator(Device):
     upstream = None
     downstream = Component(MyUndulator,'ds:')
 
 # TODO: Not sure where to put the tracking.....
-# undulator = apstools.devices.ApsUndulator("ID04", name="undulator")
 
 undulator = MyDualUndulator("ID04", name="undulator")
 sd.baseline.append(undulator)
