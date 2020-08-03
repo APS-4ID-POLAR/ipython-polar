@@ -13,7 +13,7 @@ logger.info(__file__)
 
 import apstools.devices
 from ..framework import sd
-from ophyd import Device,Component
+from ophyd import Device,Component, Signal
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
@@ -22,22 +22,22 @@ class MyUndulator(apstools.devices.ApsUndulator):
 
     deadband = 0.002
     backlash = 0.25
+    _tracking = Component(Signal, value=False)
 
     def __init__(self,pv,**kwargs):
         super().__init__(pv,**kwargs)
-        self._tracking = False
         self._offset = 0
 
     @property
     def tracking(self):
-        return self._tracking
+        return self._tracking.get()
 
     @tracking.setter
     def tracking(self,value):
         if type(value) != bool:
             raise ValueError('tracking is boolean, it can only be True or False.')
         else:
-            self._tracking = value
+            self._tracking.put(value)
 
         if value == True:
             while True:
@@ -66,4 +66,5 @@ class MyDualUndulator(Device):
 # TODO: Not sure where to put the tracking.....
 
 undulator = MyDualUndulator("ID04", name="undulator")
+undulator.tracking = False
 sd.baseline.append(undulator)
