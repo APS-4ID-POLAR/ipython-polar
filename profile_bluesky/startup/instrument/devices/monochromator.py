@@ -10,10 +10,10 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
-from ophyd import Component, EpicsMotor,EpicsSignal
+from ophyd import Component, EpicsMotor, EpicsSignal
 
 class Monochromator(KohzuSeqCtl_Monochromator):
-    
+
     auto_button = Component(EpicsSignal,'KohzuModeBO')
 
     th = Component(EpicsMotor,'m1', labels=('motor','monochromator'))  # Kohzu Theta # home_slew_rate=0
@@ -30,4 +30,3 @@ mono.auto_button.put(1) #ensures that the mono is in "auto".
 # @property of the energy setter.
 # TODO: How to handle an epics PV that has options? The KohzuSeqCtl has to be
 # in "auto" mode, but it changes to "manual" if spec moves the energy.
-

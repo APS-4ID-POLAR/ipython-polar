@@ -17,9 +17,8 @@ from ..framework import sd
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
-class MyUndulator(apstools.devices.ApsUndulatorDual):
-    upstream = None
-    
+class MyUndulator(apstools.devices.ApsUndulator):
+
     deadband = 0.002
     backlash = 0.25
 
@@ -41,12 +40,11 @@ class MyUndulator(apstools.devices.ApsUndulatorDual):
 
         if value == True:
             while True:
-                offset = input("Undulator offset (keV): ")
+                offset = input("Undulator offset (keV) ({}): ".format(self._offset))
                 try:
                     self._offset = float(offset)
-                    break  # if valid entry we break the loop
+                    break
                 except ValueError:
-                    # or else we get here, print message and ask again
                     if offset == '':
                         print('Using offset = {} keV'.format(self._offset))
                         break
@@ -60,9 +58,12 @@ class MyUndulator(apstools.devices.ApsUndulatorDual):
     def offset(self,value):
         self._offset = float(value)
 
+class MyDualUndulator(Devices):
+    upstream = None
+    downstream = Component(MyUndulator,'ds:')
+
 # TODO: Not sure where to put the tracking.....
 # undulator = apstools.devices.ApsUndulator("ID04", name="undulator")
-# TODO: move tracking and other properties to the downstream undulator.       
-        
-undulator = MyUndulator("ID04", name="undulator")
+
+undulator = MyDualUndulator("ID04", name="undulator")
 sd.baseline.append(undulator)

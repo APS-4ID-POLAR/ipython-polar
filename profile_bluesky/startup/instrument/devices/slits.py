@@ -89,3 +89,5 @@ detslt = SlitDevice('4iddx','detslt',
 magslt = SlitDevice('4iddx','magslt',
                     {'top': 'm29','bot':'m30','out':'m31','inb':'m32'},
                     slitnum=5)
+
+# TODO: Test limits on EpicsSignal.
