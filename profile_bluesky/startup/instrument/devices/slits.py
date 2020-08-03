@@ -27,19 +27,19 @@ class SlitDevice(Device):
     ## Setting pseudo positioners ##
     vcen = FormattedComponent(EpicsSignal,'{self.prefix}:{_signalsDict[vcen][0]}',
                               write_pv = '{self.prefix}:{_signalsDict[vcen][1]}',
-                              labels=('slit'))
+                              labels=('slit'),limits=True)
 
     hcen = FormattedComponent(EpicsSignal,'{self.prefix}:{_signalsDict[hcen][0]}',
                               write_pv = '{self.prefix}:{_signalsDict[hcen][1]}',
-                              labels=('slit'))
+                              labels=('slit'),limits=True)
 
     vsize = FormattedComponent(EpicsSignal,'{self.prefix}:{_signalsDict[vsize][0]}',
                                write_pv = '{self.prefix}:{_signalsDict[vsize][1]}',
-                               labels=('slit'))
+                               labels=('slit'),limits=True)
 
     hsize = FormattedComponent(EpicsSignal,'{self.prefix}:{_signalsDict[hsize][0]}',
                                write_pv = '{self.prefix}:{_signalsDict[hsize][1]}',
-                               labels=('slit'))
+                               labels=('slit'),limits=True)
 
 
     def __init__(self,PV,name,motorsDict,slitnum = None, signalsDict = None,**kwargs):
