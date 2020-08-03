@@ -61,5 +61,5 @@ class MyDualUndulator(Device):
     downstream = Component(MyUndulator,'ds:')
 
 undulator = MyDualUndulator("ID04", name="undulator")
-undulator.tracking = False
+undulator.downstream.tracking = False
 sd.baseline.append(undulator)
