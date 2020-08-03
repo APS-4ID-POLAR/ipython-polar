@@ -36,6 +36,16 @@ class MyUndulator(apstools.devices.ApsUndulatorDual):
         else:
             self._tracking = value
 
+        if value == True:
+            while True:
+                offset = input("Undulator offset: ")
+                try:
+                    self._offset = offset
+                    break  # if valid entry we break the loop
+                except ValueError:
+                    # or else we get here, print message and ask again
+                    print("The undulator offset has to be a number.")
+
     @property
     def offset(self):
         return self._offset
