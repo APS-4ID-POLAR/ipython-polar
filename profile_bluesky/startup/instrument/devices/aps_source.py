@@ -22,10 +22,10 @@ class MyUndulator(apstools.devices.ApsUndulator):
 
     deadband = 0.002
     backlash = 0.25
+    _tracking = Component(Signal, value=False)
 
     def __init__(self,pv,**kwargs):
         super().__init__(pv,**kwargs)
-        self._tracking = Component(Signal, value=False)
         self._offset = 0
 
     @property
