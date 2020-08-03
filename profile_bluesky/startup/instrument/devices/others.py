@@ -18,8 +18,8 @@ class UpTable(Device):
 uptab = UpTable('4iddx:',name='uptable')
 
 class KBIC(Device):
-    y = Component(EpicsMotor, 'm34', labels=('motor','KBIC'))  # KB IC Y
-    x = Component(EpicsMotor, 'm33', labels=('motor','KBIC'))  # KB IC X
+    y = Component(EpicsMotor, 'm34', labels=('motor','kbic'))  # KB IC Y
+    x = Component(EpicsMotor, 'm33', labels=('motor','kbic'))  # KB IC X
 
 kbic = KBIC('4iddx:',name='KBIC')
 

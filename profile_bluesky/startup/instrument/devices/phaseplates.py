@@ -23,9 +23,7 @@ class PRDevice(Device):
                             labels=('motor','phase retarders'))
 
     def __init__(self,prefix,name,motorsDict,**kwargs):
-
         self._motorsDict = motorsDict
-
         super().__init__(prefix=prefix, name=name, **kwargs)
 
 pr1 = PRDevice('4idb','pr1',{'x':'m10','y':'m11','th':'m13'})

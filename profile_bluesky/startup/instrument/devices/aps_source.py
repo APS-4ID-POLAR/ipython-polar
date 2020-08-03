@@ -23,10 +23,7 @@ class MyUndulator(apstools.devices.ApsUndulator):
     deadband = 0.002
     backlash = 0.25
     _tracking = Component(Signal, value=False)
-
-    def __init__(self,pv,**kwargs):
-        super().__init__(pv,**kwargs)
-        self._offset = 0
+    _offset = Component(Signal, value = 0)
 
     @property
     def tracking(self):
@@ -62,8 +59,6 @@ class MyUndulator(apstools.devices.ApsUndulator):
 class MyDualUndulator(Device):
     upstream = None
     downstream = Component(MyUndulator,'ds:')
-
-# TODO: Not sure where to put the tracking.....
 
 undulator = MyDualUndulator("ID04", name="undulator")
 undulator.tracking = False
