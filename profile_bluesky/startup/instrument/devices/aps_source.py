@@ -67,5 +67,4 @@ class MyDualUndulator(Device):
 
 undulator = MyDualUndulator("ID04", name="undulator")
 undulator.tracking = False
-undulator.stage_sigs["tracking"] = True
 sd.baseline.append(undulator)
