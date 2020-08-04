@@ -14,8 +14,6 @@ from ophyd import Component, EpicsMotor, EpicsSignal
 
 class Monochromator(KohzuSeqCtl_Monochromator):
 
-    auto_button = Component(EpicsSignal,'KohzuModeBO')
-
     th = Component(EpicsMotor,'m1', labels=('motor','monochromator'))  # Kohzu Theta # home_slew_rate=0
     y = Component(EpicsMotor,'m2', labels=('motor','monochromator'))  # Kohzu Y2
     z = Component(EpicsMotor,'m3', labels=('motor','monochromator'))  # Kohzu Z2
@@ -24,9 +22,5 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 
 mono = Monochromator('4idb:', name='monochromator')
-mono.auto_button.put(1) #ensures that the mono is in "auto".
-
-# TODO: We should add the undulator tracking within this function as a
-# @property of the energy setter.
-# TODO: How to handle an epics PV that has options? The KohzuSeqCtl has to be
-# in "auto" mode, but it changes to "manual" if spec moves the energy.
+mono.mode.put('auto') #Switch mono to "auto".
+mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
