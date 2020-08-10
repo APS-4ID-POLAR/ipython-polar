@@ -27,12 +27,9 @@ class LS336_LoopBase(ProcessController):
     Each control loop is a separate process controller.
     """
 
-    # TODO: I don't understand why signal != temperature. And target_RBV == signal
-    # signal = FormattedComponent(EpicsSignalRO, "{self.prefix}OUT{self.loop_number}:SP_RBV")
-    # target = FormattedComponent(EpicsSignal, "{self.prefix}OUT{self.loop_number}:SP", kind="omitted")
-    # temperature = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}")
-
     signal = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}")
+    temperature = signal
+
     target = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP")
     units = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}IN{self.loop_number}:Units", kind="omitted")
 
@@ -49,10 +46,6 @@ class LS336_LoopBase(ProcessController):
 
     def get(self, *args, **kwargs):
         return self.signal.get(*args, **kwargs)
-
-    @property
-    def temperature(self):
-        return self.signal.get()
 
 class LS336_LoopMore(LS336_LoopBase):
     """
@@ -86,13 +79,7 @@ class LS336Device(Device):
 # TODO: serial = Component(AsynRecord, "serial")
     serial = Component(MyAsynRecord, "serial")
 
-    @property
-    def value(self):
-        """designate one loop as the default signal to return"""
-        return self.loop1.signal.get()
-
 lakeshore_336 = LS336Device("4idd:LS336:TC3:", name="lakeshore 360", labels=["Lakeshore"])
-
 
 ####### LAKESHORE 340 #########
 class LS340_LoopBase(ProcessController):
@@ -130,10 +117,12 @@ class LS340_LoopBase(ProcessController):
 
 def LS340_LoopSample(LS340_LoopBase):
     signal = FormattedComponent(EpicsSignalRO, "{self.prefix}Sample")
+    temperature = signal
     sensor = FormattedComponent(EpicsSignal, "{self.prefix}Spl_sel")
 
-def LS340_LoopSample(LS340_LoopBase):
+def LS340_LoopControl(LS340_LoopBase):
     signal = FormattedComponent(EpicsSignalRO, "{self.prefix}Control")
+    temperature = signal
     sensor = FormattedComponent(EpicsSignal, "{self.prefix}Ctl_sel")
 
 def LS340Device(Device):
@@ -156,15 +145,6 @@ def LS340Device(Device):
     serial = Component(MyAsynRecord, "serial")
 
 lakeshore_340lt = LS340Device('4idd:LS340:TC1:',name="lakeshore 340 - low temperature",
-                              labels=["Lakeshore"])
+                              labels=("Lakeshore"))
 lakeshore_340ht = LS340Device('4idd:LS340:TC2:',name="lakeshore 340 - high temperature",
-                              labels=["Lakeshore"])
-
-
-
-
-
-
-
-# TODO: How do should we handle these? As part of other instruments?
-# TODO: can I scan the temperature the way that it is setup now? I don't think so.
+                              labels=("Lakeshore"))

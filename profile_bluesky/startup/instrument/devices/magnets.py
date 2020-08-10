@@ -10,7 +10,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, FormattedComponent
-from .lakeshore import LS336_LoopMore
+from .lakeshore import lakeshore_336
 
 ## Magnet and sample motors ##
 class Magnet6T(Device):
@@ -27,10 +27,13 @@ class Magnet6T(Device):
     sampy = Component(EpicsMotor,'m63', labels=('motor','6T magnet'))  # CIATRA
     sampth = Component(EpicsMotor,'m58', labels=('motor','6T magnet'))  # CIA ROT
 
-    Tvaporizer = FormattedComponent(LS336_LoopMore, "4idd:LS336:TC3", loop_number=1)
-    Tsample = FormattedComponent(LS336_LoopMore, "4idd:LS336:TC3", loop_number=2)
+    Tvaporizer = None
+    Tsample = None
 
 
 mag6t = Magnet6T('4iddx:',name='6T magnet')
+# Tvaporizer = lakeshore_336.loop1
+# Tsample = lakeshore_336.loop2
 
+# TODO: Is it ok to add the lakeshores here?
 # TODO: should we add the magnet field controls here?
