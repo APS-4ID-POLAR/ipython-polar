@@ -115,17 +115,17 @@ class LS340_LoopBase(ProcessController):
     def get(self, *args, **kwargs):
         return self.signal.get(*args, **kwargs)
 
-def LS340_LoopSample(LS340_LoopBase):
+class LS340_LoopSample(LS340_LoopBase):
     signal = FormattedComponent(EpicsSignalRO, "{self.prefix}Sample")
     temperature = signal
     sensor = FormattedComponent(EpicsSignal, "{self.prefix}Spl_sel")
 
-def LS340_LoopControl(LS340_LoopBase):
+class LS340_LoopControl(LS340_LoopBase):
     signal = FormattedComponent(EpicsSignalRO, "{self.prefix}Control")
     temperature = signal
     sensor = FormattedComponent(EpicsSignal, "{self.prefix}Ctl_sel")
 
-def LS340Device(Device):
+class LS340Device(Device):
 
     control = FormattedComponent(LS340_LoopControl, "{self.prefix}", loop_number=1)
     sample = FormattedComponent(LS340_LoopSample, "{self.prefix}", loop_number=2)
