@@ -61,9 +61,31 @@ class L336_LoopControl(PVPositioner):
     def __init__(self, *args,loop_number=None,timeout=60*60*10,**kwargs):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
-        self.settle_time = 0
+        self._settle_time = 0
+        self._tolerance = 0
 
     @property
+    def settle_time(self):
+        return self._settle_time
+
+    @settle_time.setter
+    def settle_time(self,value):
+        if value < 0:
+            raise ValueError('Settle value needs to be >= 0.')
+        else:
+            self._settle_time = value
+
+    @property
+    def tolerance(self):
+        return self._tolerance
+
+    @tolerance.setter
+    def tolerance(self,value):
+        if value < 0:
+            raise ValueError('Tolerance needs to be >= 0.')
+        else:
+            self._tolerance = value
+
     def egu(self):
         return self.units.get()
 
@@ -145,11 +167,34 @@ class L340_LoopBase(PVPositioner):
     def __init__(self, *args,loop_number=None,timeout=60*60*10,**kwargs):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
-        self.settle_time = 0
+        self._settle_time = 0
+        self._tolerance = 0
 
     @property
     def egu(self):
         return self.units.get()
+
+    @property
+    def settle_time(self):
+        return self._settle_time
+
+    @settle_time.setter
+    def settle_time(self,value):
+        if value < 0:
+            raise ValueError('Settle value needs to be >= 0.')
+        else:
+            self._settle_time = value
+
+    @property
+    def tolerance(self):
+        return self._tolerance
+
+    @tolerance.setter
+    def tolerance(self,value):
+        if value < 0:
+            raise ValueError('Tolerance needs to be >= 0.')
+        else:
+            self._tolerance = value
 
     def get(self, *args, **kwargs):
         return self.readback.get(*args, **kwargs)

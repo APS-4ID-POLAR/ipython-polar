@@ -22,5 +22,5 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 
 mono = Monochromator('4idb:', name='monochromator')
-mono.mode.put('auto') #Switch mono to "auto".
+mono.mode.put('Auto') #Switch mono to "auto".
 mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
