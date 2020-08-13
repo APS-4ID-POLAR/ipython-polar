@@ -2,18 +2,18 @@
 Lakeshore temperature controllers
 """
 
+
+
 __all__ = ['lakeshore_336','lakeshore_340lt','lakeshore_340ht']
 
 from instrument.session_logs import logger
 logger.info(__file__)
 
-from apstools.devices import ProcessController
 from apstools.synApps.asyn import AsynRecord
-from bluesky import plan_stubs as bps
-from ophyd import Component, Device, DeviceStatus, Signal
+from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
-from ophyd import FormattedComponent,PVPositioner,SignalRO
-import time
+from ophyd import FormattedComponent,PVPositioner
+from ophyd.signal import SignalRO
 
 # TODO: fixes bug in apstools/synApps/asyn.py
 class MyAsynRecord(AsynRecord):
@@ -33,7 +33,7 @@ class DoneSignal(SignalRO):
 
         return self._readback
 
-class L336_LoopControl(PVPositioner):
+class LS336_LoopControl(PVPositioner):
 
     readback = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}")
     setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP")
@@ -135,7 +135,7 @@ lakeshore_336 = LS336Device("4idd:LS336:TC3:", name="lakeshore 360", labels=["La
 
 ####### LAKESHORE 340 #########
 
-class L340_LoopBase(PVPositioner):
+class LS340_LoopBase(PVPositioner):
 
     readback = Component(Signal,value=0)
     setpoint = FormattedComponent(EpicsSignal, "{self.prefix}SP{self.loop_number}",
