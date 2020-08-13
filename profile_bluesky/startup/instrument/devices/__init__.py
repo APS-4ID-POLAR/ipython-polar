@@ -11,6 +11,7 @@ from .huber import *
 from .slits import *
 from .phaseplates import *
 from .others import *
+from .lakeshores import *
 
 # under development
 # from .TODO.fourc import *
