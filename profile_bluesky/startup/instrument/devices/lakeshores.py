@@ -1,8 +1,6 @@
-"""
+"""i
 Lakeshore temperature controllers
 """
-
-
 
 __all__ = ['lakeshore_336','lakeshore_340lt','lakeshore_340ht']
 
@@ -13,30 +11,32 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent,PVPositioner
-from ophyd.signal import SignalRO
+from ophyd.status import wait as status_wait
 
 # TODO: fixes bug in apstools/synApps/asyn.py
 class MyAsynRecord(AsynRecord):
     binary_output_maxlength = Component(EpicsSignal, ".OMAX")
 
 ####### LAKESHORE 336 #########
-class DoneSignal(SignalRO):
+class DoneSignal(Signal):
     def get(self,**kwargs):
         readback = self.parent.readback.get()
         setpoint = self.parent.setpoint.get()
         tolerance = self.parent.tolerance
 
         if abs(readback-setpoint) <= tolerance:
-            self._readback = 1
+            self.put(1)
         else:
-            self._readback = 0
+            self.put(0)
 
         return self._readback
 
 class LS336_LoopControl(PVPositioner):
 
-    readback = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}")
-    setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP")
+    readback = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}",
+                                  auto_monitor=True)
+    setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP",
+                                  auto_monitor=True)
 
     done = Component(DoneSignal,value=0)
     done_value = 1
@@ -62,7 +62,10 @@ class LS336_LoopControl(PVPositioner):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
         self._settle_time = 0
-        self._tolerance = 0
+        self._tolerance = 0.1
+        
+        self.readback.subscribe(self.done.get)
+        self.setpoint.subscribe(self.done.get)
 
     @property
     def settle_time(self):
@@ -85,6 +88,7 @@ class LS336_LoopControl(PVPositioner):
             raise ValueError('Tolerance needs to be >= 0.')
         else:
             self._tolerance = value
+            _ = self.done.get()
 
     def egu(self):
         return self.units.get()
@@ -93,14 +97,70 @@ class LS336_LoopControl(PVPositioner):
         return self.readback.get(*args, **kwargs)
 
     def set(self,*args,**kwargs):
+        self.done.put(0)
         return self.move(*args,wait=True,timeout=self._timeout,**kwargs)
-
+    
     def put(self,*args,**kwargs):
-        return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
+        return self.setpoint.put(*args,**kwargs)
+        # TODO: The above seems to work better, but I will leave this here
+        #for some time just in case.
+        #return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
 
     def stop(self,*,success=False):
-        self.put(self.get())
+        if success is False:
+            self.setpoint.put(self.get(),wait=False)
         super().stop(success=success)
+        
+        
+    def move(self, position, wait=True, timeout=None, moved_cb=None):
+        '''Move to a specified position, optionally waiting for motion to
+        complete.
+        Parameters
+        ----------
+        position
+            Position to move to
+        moved_cb : callable
+            Call this callback when movement has finished. This callback must
+            accept one keyword argument: 'obj' which will be set to this
+            positioner instance.
+        timeout : float, optional
+            Maximum time to wait for the motion. If None, the default timeout
+            for this positioner is used.
+        Returns
+        -------
+        status : MoveStatus
+        Raises
+        ------
+        TimeoutError
+            When motion takes longer than `timeout`
+        ValueError
+            On invalid positions
+        RuntimeError
+            If motion fails other than timing out
+        '''
+        # Before moving, ensure we can stop (if a stop_signal is configured).
+        if self.stop_signal is not None:
+            self.stop_signal.wait_for_connection()
+            
+        status = super().move(position, timeout=timeout, moved_cb=moved_cb)
+
+        self.done.put(0)
+
+        has_done = self.done is not None
+        if not has_done:
+            moving_val = 1 - self.done_value
+            self._move_changed(value=self.done_value)
+            self._move_changed(value=moving_val)
+            
+        try:
+            self._setup_move(position)
+            if wait:
+                status_wait(status)
+        except KeyboardInterrupt:
+            self.stop()
+            raise
+
+        return status
 
 class LS336_LoopRO(Device):
     """
@@ -168,7 +228,7 @@ class LS340_LoopBase(PVPositioner):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
         self._settle_time = 0
-        self._tolerance = 0
+        self._tolerance = 0.1
 
     @property
     def egu(self):
@@ -206,7 +266,9 @@ class LS340_LoopBase(PVPositioner):
         return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
 
     def stop(self,*,success=False):
-        self.put(self.get())
+        if success == False:
+            self.put(self.get())
+            
         super().stop(success=success)
 
 class LS340_LoopControl(LS340_LoopBase):
