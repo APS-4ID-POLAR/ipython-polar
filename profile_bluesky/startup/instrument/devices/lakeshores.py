@@ -11,7 +11,6 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent,PVPositioner
-from ophyd.status import wait as status_wait
 
 # TODO: fixes bug in apstools/synApps/asyn.py
 class MyAsynRecord(AsynRecord):
@@ -97,70 +96,30 @@ class LS336_LoopControl(PVPositioner):
         return self.readback.get(*args, **kwargs)
 
     def set(self,*args,**kwargs):
-        self.done.put(0)
         return self.move(*args,wait=True,timeout=self._timeout,**kwargs)
     
     def put(self,*args,**kwargs):
-        return self.setpoint.put(*args,**kwargs)
+        #return self.setpoint.put(*args,**kwargs)
         # TODO: The above seems to work better, but I will leave this here
         #for some time just in case.
-        #return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
+        return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
 
     def stop(self,*,success=False):
         if success is False:
-            self.setpoint.put(self.get(),wait=False)
+            self.put(self.get())
         super().stop(success=success)
         
         
-    def move(self, position, wait=True, timeout=None, moved_cb=None):
-        '''Move to a specified position, optionally waiting for motion to
-        complete.
-        Parameters
-        ----------
-        position
-            Position to move to
-        moved_cb : callable
-            Call this callback when movement has finished. This callback must
-            accept one keyword argument: 'obj' which will be set to this
-            positioner instance.
-        timeout : float, optional
-            Maximum time to wait for the motion. If None, the default timeout
-            for this positioner is used.
-        Returns
-        -------
-        status : MoveStatus
-        Raises
-        ------
-        TimeoutError
-            When motion takes longer than `timeout`
-        ValueError
-            On invalid positions
-        RuntimeError
-            If motion fails other than timing out
-        '''
-        # Before moving, ensure we can stop (if a stop_signal is configured).
-        if self.stop_signal is not None:
-            self.stop_signal.wait_for_connection()
-            
-        status = super().move(position, timeout=timeout, moved_cb=moved_cb)
-
-        self.done.put(0)
-
-        has_done = self.done is not None
-        if not has_done:
-            moving_val = 1 - self.done_value
-            self._move_changed(value=self.done_value)
-            self._move_changed(value=moving_val)
-            
-        try:
-            self._setup_move(position)
-            if wait:
-                status_wait(status)
-        except KeyboardInterrupt:
-            self.stop()
-            raise
-
-        return status
+    def move(self,position,wait=True,**kwargs):
+        if wait:
+            self.done.put(0)
+            print(self.moving)
+            return super().move(position,wait=True,**kwargs)
+        else:
+            return self.setpoint.set(position,**kwargs)
+        
+    def pause(self):
+        self.put(self.get())
 
 class LS336_LoopRO(Device):
     """
