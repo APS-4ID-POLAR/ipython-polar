@@ -11,6 +11,8 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent,PVPositioner
+from ophyd import Kind
+from ophyd.sim import SynSignal
 
 # TODO: fixes bug in apstools/synApps/asyn.py
 class MyAsynRecord(AsynRecord):
@@ -29,39 +31,65 @@ class DoneSignal(Signal):
             self.put(0)
 
         return self._readback
+    
+def dummy_func():
+    return 0
+    
+class DoneSynSignal(SynSignal):
+    
+    def __init__(self,*args,**kwargs):
+        super().__init__(func=dummy_func,*args,**kwargs)
+        self._func = self.function
+        
+    def get(self,*args,**kwargs):
+        self.put(self._func())
+        return self._func()
+    
+    def function(self):
+        readback = self.parent.readback.get()
+        setpoint = self.parent.setpoint.get()
+        tolerance = self.parent.tolerance
 
+        if abs(readback-setpoint) <= tolerance:
+            return 1
+        else:
+            return 0
+    
 class LS336_LoopControl(PVPositioner):
-
+    
+    # position
     readback = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}",
-                                  auto_monitor=True)
+                                  auto_monitor=True,kind=Kind.hinted)
     setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP",
-                                  auto_monitor=True)
+                                  auto_monitor=True,kind=Kind.hinted)
+    heater = FormattedComponent(EpicsSignalRO, "{self.prefix}HTR{self.loop_number}",
+                                auto_monitor=True)
 
-    done = Component(DoneSignal,value=0)
+    #status
+    #done = Component(DoneSignal,value=0,kind=Kind.omitted)
+    done = FormattedComponent(DoneSynSignal,kind=Kind.omitted)
     done_value = 1
 
-    units = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}IN{self.loop_number}:Units", kind="omitted")
+    # configuration
+    units = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}IN{self.loop_number}:Units", kind=Kind.config)
+    pid_P = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}P{self.loop_number}", kind=Kind.config)
+    pid_I = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}I{self.loop_number}", kind=Kind.config)
+    pid_D = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}D{self.loop_number}", kind=Kind.config)
+    ramp_rate = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}RampR{self.loop_number}", kind=Kind.config)
+    ramp_on = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OnRamp{self.loop_number}", kind=Kind.config)
 
-    loop_name = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}:Name_RBV")
-
-    control = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:Cntrl")
-    manual = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:MOUT")
-    mode = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:Mode")
-
-    heater = FormattedComponent(EpicsSignalRO, "{self.prefix}HTR{self.loop_number}")
-    heater_range = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}HTR{self.loop_number}:Range")
-
-    pid_P = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}P{self.loop_number}")
-    pid_I = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}I{self.loop_number}")
-    pid_D = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}D{self.loop_number}")
-    ramp_rate = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}RampR{self.loop_number}")
-    ramp_on = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OnRamp{self.loop_number}")
-
+    loop_name = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}:Name_RBV", kind=Kind.config)
+    control = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:Cntrl", kind=Kind.config)
+    manual = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:MOUT", kind=Kind.config)
+    mode = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:Mode", kind=Kind.config)
+    heater_range = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}HTR{self.loop_number}:Range",
+                                      kind=Kind.config, auto_monitor=True)
+    
     def __init__(self, *args,loop_number=None,timeout=60*60*10,**kwargs):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
         self._settle_time = 0
-        self._tolerance = 0.1
+        self._tolerance = 1
         
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
@@ -113,13 +141,20 @@ class LS336_LoopControl(PVPositioner):
     def move(self,position,wait=True,**kwargs):
         if wait:
             self.done.put(0)
-            print(self.moving)
             return super().move(position,wait=True,**kwargs)
         else:
             return self.setpoint.set(position,**kwargs)
         
     def pause(self):
         self.put(self.get())
+        
+    @readback.sub_value
+    def _pos_changed(self,**kwargs):
+        super()._pos_changed(**kwargs)
+        
+    @done.sub_value
+    def _move_changed(self,**kwargs):
+        super()._move_changed(**kwargs)
 
 class LS336_LoopRO(Device):
     """
