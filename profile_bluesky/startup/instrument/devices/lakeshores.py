@@ -32,42 +32,19 @@ class DoneSignal(Signal):
 
         return self._readback
     
-def dummy_func():
-    return 0
-    
-class DoneSynSignal(SynSignal):
-    
-    def __init__(self,*args,**kwargs):
-        super().__init__(func=dummy_func,*args,**kwargs)
-        self._func = self.function
-        
-    def get(self,*args,**kwargs):
-        self.put(self._func())
-        return self._func()
-    
-    def function(self):
-        readback = self.parent.readback.get()
-        setpoint = self.parent.setpoint.get()
-        tolerance = self.parent.tolerance
-
-        if abs(readback-setpoint) <= tolerance:
-            return 1
-        else:
-            return 0
-    
 class LS336_LoopControl(PVPositioner):
     
     # position
     readback = FormattedComponent(EpicsSignalRO, "{self.prefix}IN{self.loop_number}",
                                   auto_monitor=True,kind=Kind.hinted)
+    # TODO: I should remove the auto_monitor for setpoint.
     setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:SP",
                                   auto_monitor=True,kind=Kind.hinted)
     heater = FormattedComponent(EpicsSignalRO, "{self.prefix}HTR{self.loop_number}",
                                 auto_monitor=True)
 
     #status
-    #done = Component(DoneSignal,value=0,kind=Kind.omitted)
-    done = FormattedComponent(DoneSynSignal,kind=Kind.omitted)
+    done = Component(DoneSignal,value=0,kind=Kind.omitted)
     done_value = 1
 
     # configuration
@@ -117,44 +94,25 @@ class LS336_LoopControl(PVPositioner):
             self._tolerance = value
             _ = self.done.get()
 
+    @property
     def egu(self):
-        return self.units.get()
-
-    def get(self, *args, **kwargs):
-        return self.readback.get(*args, **kwargs)
-
-    def set(self,*args,**kwargs):
-        return self.move(*args,wait=True,timeout=self._timeout,**kwargs)
-    
-    def put(self,*args,**kwargs):
-        #return self.setpoint.put(*args,**kwargs)
-        # TODO: The above seems to work better, but I will leave this here
-        #for some time just in case.
-        return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
+        return self.units.get(as_string=True)
 
     def stop(self,*,success=False):
         if success is False:
-            self.put(self.get())
+            self.setpoint.put(self._position)
         super().stop(success=success)
-        
-        
-    def move(self,position,wait=True,**kwargs):
-        if wait:
-            self.done.put(0)
-            return super().move(position,wait=True,**kwargs)
-        else:
-            return self.setpoint.set(position,**kwargs)
-        
+
     def pause(self):
-        self.put(self.get())
-        
-    @readback.sub_value
-    def _pos_changed(self,**kwargs):
-        super()._pos_changed(**kwargs)
+        self.setpoint.put(self._position)
         
     @done.sub_value
     def _move_changed(self,**kwargs):
         super()._move_changed(**kwargs)
+        
+    def move(self,*args,**kwargs):
+        self.done.put(0)
+        return super().move(*args,**kwargs)
 
 class LS336_LoopRO(Device):
     """
@@ -199,7 +157,7 @@ class LS340_LoopBase(PVPositioner):
     done_value = 1
 
     # TODO: Check if this PV exist...
-    units = Component(Signal,value='Kelvin')
+    units = Component(Signal,value='K')
     #units = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}IN{self.loop_number}:Units",
     #                           kind="omitted")
 
@@ -218,15 +176,15 @@ class LS340_LoopBase(PVPositioner):
                                    write_pv='{self.prefix}setRamp{self.loop_number}.BB')
     ramp_on = FormattedComponent(EpicsSignal, "{self.prefix}Ramp{self.loop_number}_on")
 
+    
     def __init__(self, *args,loop_number=None,timeout=60*60*10,**kwargs):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
         self._settle_time = 0
-        self._tolerance = 0.1
-
-    @property
-    def egu(self):
-        return self.units.get()
+        self._tolerance = 1
+        
+        self.readback.subscribe(self.done.get)
+        self.setpoint.subscribe(self.done.get)
 
     @property
     def settle_time(self):
@@ -249,21 +207,27 @@ class LS340_LoopBase(PVPositioner):
             raise ValueError('Tolerance needs to be >= 0.')
         else:
             self._tolerance = value
+            _ = self.done.get()
 
-    def get(self, *args, **kwargs):
-        return self.readback.get(*args, **kwargs)
-
-    def set(self,*args,**kwargs):
-        return self.move(*args,wait=True,timeout=self._timeout,**kwargs)
-
-    def put(self,*args,**kwargs):
-        return self.move(*args,wait=False,timeout=self._timeout,**kwargs)
+    @property
+    def egu(self):
+        return self.units.get(as_string=True)
 
     def stop(self,*,success=False):
-        if success == False:
-            self.put(self.get())
-            
+        if success is False:
+            self.setpoint.put(self._position,wait=True)
         super().stop(success=success)
+
+    def pause(self):
+        self.setpoint.put(self._position,wait=True)
+        
+    @done.sub_value
+    def _move_changed(self,**kwargs):
+        super()._move_changed(**kwargs)
+        
+    def move(self,*args,**kwargs):
+        self.done.put(0)
+        return super().move(*args,**kwargs)
 
 class LS340_LoopControl(LS340_LoopBase):
 
