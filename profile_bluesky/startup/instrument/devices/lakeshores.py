@@ -12,7 +12,6 @@ from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent,PVPositioner
 from ophyd import Kind
-from ophyd.sim import SynSignal
 
 # TODO: fixes bug in apstools/synApps/asyn.py
 class MyAsynRecord(AsynRecord):
