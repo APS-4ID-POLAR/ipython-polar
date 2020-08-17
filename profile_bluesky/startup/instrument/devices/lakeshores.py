@@ -254,7 +254,7 @@ class LS340_LoopSample(LS340_LoopBase):
                                   kind=Kind.hinted)
     sensor = FormattedComponent(EpicsSignal, "{self.prefix}Spl_sel",
                                 kind=Kind.config)
-
+    
 class LS340Device(Device):
 
     control = FormattedComponent(LS340_LoopControl, "{self.prefix}", loop_number=1)

@@ -10,7 +10,6 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, FormattedComponent
-from .lakeshores import lakeshore_336
 
 ## Magnet and sample motors ##
 class Magnet6T(Device):
