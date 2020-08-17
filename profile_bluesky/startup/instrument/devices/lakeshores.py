@@ -280,3 +280,6 @@ lakeshore_340lt = LS340Device('4idd:LS340:TC1:',name="lakeshore 340 - low temper
 
 lakeshore_340ht = LS340Device('4idd:LS340:TC2:',name="lakeshore 340 - high temperature",
                               labels=("Lakeshore"))
+
+# TODO: include limits, Fix offset AttributeError
+# TODO: lakeshore 340 won't show a status bar, I don't know why.
