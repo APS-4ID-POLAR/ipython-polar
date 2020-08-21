@@ -1,6 +1,6 @@
 __all__ = ['setup_magnet_lakeshore','setup_diffractometer_lowT']
 
-from .devices import lakeshore_336,lakeshore_340lt
+from ..devices import lakeshore_336,lakeshore_340lt
 
 def setup_magnet_lakeshore():
     Tvaporizer = lakeshore_336.loop1
