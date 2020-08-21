@@ -10,7 +10,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, PVPositioner
-from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
+from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import Kind
 
 class AMIZones(Device):
@@ -24,7 +24,7 @@ class AMIController(PVPositioner):
                          kind=Kind.hinted)
 
     setpoint = Component(EpicsSignal, "PField",
-                         write_pv="PField.Wrt.A",auto_monitor=True,
+                         write_pv="PField:Wrt.A",auto_monitor=True,
                          kind=Kind.hinted)
 
     current = Component(EpicsSignalRO, "Current",auto_monitor=True,
@@ -36,8 +36,8 @@ class AMIController(PVPositioner):
     supply_current = Component(EpicsSignalRO, "CurrentSP",
                                auto_monitor=True,kind=Kind.omitted)
     #status
-    magnet_status = Component(EpicsSignalRO, "StateInt.A",
-                              auto_monitor=True,kind=Kind.omitted)
+    done = Component(EpicsSignalRO, "StateInt.A", auto_monitor=True,
+                     kind=Kind.omitted)
     done_value = 1
     # TODO: Need to check what are the status available!!
 
@@ -50,10 +50,10 @@ class AMIController(PVPositioner):
 
     switch_heater = Component(EpicsSignal, "PSOnOff",kind=Kind.config)
 
-    zone_1 = Component(AMIZones,"RampR1:")
-    zone_2 = Component(AMIZones,"RampR2:")
-    zone_3 = Component(AMIZones,"RampR3:")
-    ramp_units = Component(EpicsSignalRO,"RampR:Units.SVAL")
+    zone_1 = Component(AMIZones,"RampR1:",kind=Kind.config)
+    zone_2 = Component(AMIZones,"RampR2:",kind=Kind.config)
+    zone_3 = Component(AMIZones,"RampR3:",kind=Kind.config)
+    ramp_units = Component(EpicsSignalRO,"RampR:Units.SVAL",kind=Kind.config)
 
     # Buttons
     ramp_button = Component(EpicsSignal,"Ramp.PROC",kind=Kind.omitted)
@@ -87,7 +87,7 @@ class AMIController(PVPositioner):
     def pause(self):
         self.pause_button.put(1)
 
-    @magnet_status.sub_value
+    @done.sub_value
     def _move_changed(self,**kwargs):
         super()._move_changed(**kwargs)
 
@@ -112,10 +112,10 @@ class Magnet6T(Device):
     Tsample = None
 
     # Magnetic field controller
-    field = Component(AMIController,'4idd:AMI430',add_prefix='')
+    field = Component(AMIController,'4idd:AMI430:',add_prefix='')
 
 
-mag6t = Magnet6T('4iddx:',name='6T magnet',labels=('6T magnet'))
+mag6t = Magnet6T('4iddx:',name='6T magnet')
 
 
 
