@@ -21,6 +21,7 @@ class PRPzt(Device):
 
     # TODO: LocalDC readback is usually a bit different from the setpoint,
     # check if tolerance = 0.01 is good.
+    # TODO: The value doesnt change in the MEDM screen, not sure why.
     localDC = Component(EpicsSignal,'DC_read_microns',
                         write_pv='DC_read_microns.VAL',auto_monitor=True,
                         kind=Kind.hinted,tolerance=0.01)
@@ -69,9 +70,9 @@ class PRDeviceBase(Device):
 
 class PRDevice(PRDeviceBase):
 
-    pzt = FormattedComponent(PRPzt,'{self.prefix}:E665:{_prnum}:','{_prnum}')
+    pzt = FormattedComponent(PRPzt,'{self.prefix}:E665:{_prnum}:',prnum='{_prnum}')
 
-    def __init__(self,prefix,name,motorsDict,prnum,**kwargs):
+    def __init__(self,prefix,name,prnum,motorsDict,**kwargs):
         self._prnum = prnum
         super().__init__(prefix, name, motorsDict, **kwargs)
 
