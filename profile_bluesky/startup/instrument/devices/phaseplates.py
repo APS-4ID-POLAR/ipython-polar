@@ -14,6 +14,9 @@ from ophyd import Component,FormattedComponent
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
 
+from scipy.constants import speed_of_light, Planck
+from numpy import arcsin,pi
+
 ## Phase Plates ##
 class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal,'set_microns.VAL',kind=Kind.omitted)
@@ -60,7 +63,7 @@ class PRDeviceBase(Device):
     th = FormattedComponent(EpicsMotor,'{self.prefix}:{_motorsDict[th]}',
                             labels=('motor','phase retarders'))
 
-    tracking = Component(Signal,value=False)
+    _tracking = Component(Signal,value=False)
     d_spacing = Component(Signal,value=0)
     # TODO: Should d_spacing be an SignalRO to prevent users from changing
     #it?
@@ -69,6 +72,28 @@ class PRDeviceBase(Device):
     def __init__(self,prefix,name,motorsDict,**kwargs):
         self._motorsDict = motorsDict
         super().__init__(prefix=prefix, name=name, **kwargs)
+
+    @property
+    def tracking(self):
+        return self._tracking.get()
+
+    @tracking.setter
+    def tracking(self,value):
+        if type(value) != bool:
+            raise ValueError('tracking is boolean, it can only be True or False')
+        else:
+            self._tracking.put(value)
+
+    def set_energy(self,energy):
+        # energy in keV!
+
+        #lamb in angstroms
+        lamb = speed_of_light*Planck*6.241509e15*1e10/energy
+
+        # theta in degrees
+        theta = arcsin(lamb/2/self.d_spacing.get())*180./pi
+
+        self.th.set_current_position(theta)
 
 class PRDevice(PRDeviceBase):
 
