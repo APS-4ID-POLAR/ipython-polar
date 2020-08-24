@@ -11,10 +11,10 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor
+from ophyd import Component,EpicsMotor,MotorBundle
 
 ## Cryo carrier ##
-class CryoStage(Device):
+class CryoStage(MotorBundle):
     x = Component(EpicsMotor, 'm14', labels=('motor', 'cryo'))  # Cryo X
     y = Component(EpicsMotor, 'm15', labels=('motor', 'cryo'))  # Cryo Y
     z = Component(EpicsMotor, 'm16', labels=('motor', 'cryo'))  # Cryo Z
@@ -22,7 +22,7 @@ class CryoStage(Device):
 cryo = CryoStage(prefix='4iddx:',name='cryo')
 
 ## 8c rotations ##
-class Diffractometer(Device):
+class Diffractometer(MotorBundle):
     th = Component(EpicsMotor,'m65', labels=('motor','diffractometer'))  # Theta # slop=2
     tth = Component(EpicsMotor,'m66', labels=('motor','diffractometer'))  # Two Theta
     phi = Component(EpicsMotor,'m68', labels=('motor','diffractometer'))  # Phi

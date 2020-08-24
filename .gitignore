@@ -1,6 +1,6 @@
 # backup files
 *~
-
+.DS_store
 db/
 history
 history.sqlite
@@ -148,4 +148,3 @@ core
 *.hdf
 *.hdf5
 *.nxs
-
