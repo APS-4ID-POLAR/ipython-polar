@@ -10,19 +10,7 @@ from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent,PVPositioner
 from ophyd import Kind
-
-class DoneSignal(Signal):
-    def get(self,**kwargs):
-        readback = self.parent.readback.get()
-        setpoint = self.parent.setpoint.get()
-        tolerance = self.parent.tolerance
-
-        if abs(readback-setpoint) <= tolerance:
-            self.put(1)
-        else:
-            self.put(0)
-
-        return self._readback
+from ..utils import DoneSignal
 
 class LS336_LoopControl(PVPositioner):
 
