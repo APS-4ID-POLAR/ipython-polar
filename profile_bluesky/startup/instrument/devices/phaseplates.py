@@ -61,7 +61,9 @@ class PRDeviceBase(Device):
                             labels=('motor','phase retarders'))
 
     tracking = Component(Signal,value=False)
-
+    d_spacing = Component(Signal,value=0)
+    # TODO: Should d_spacing be an SignalRO to prevent users from changing
+    #it?
     conversion_factor = Component(Signal,value=0.0)
 
     def __init__(self,prefix,name,motorsDict,**kwargs):
@@ -79,12 +81,16 @@ class PRDevice(PRDeviceBase):
 
 pr1 = PRDevice('4idb','pr1',1,{'x':'m10','y':'m11','th':'m13'})
 pr1.conversion_factor.put(0.001636)
+pr1.d_spacing.put(2.0595)
+# TODO: pr1 #3 says (220) in the MEDM screen, is it correct?
 
 pr2 = PRDevice('4idb','pr2',2,{'x':'m15','y':'m16','th':'m18'})
 pr2.conversion_factor.put(0.0019324)
+pr2.d_spacing.put(2.0595)
 
 pr3 = PRDeviceBase('4idb','pr3',{'x':'m19','y':'m20','th':'m21'})
 pr3.conversion_factor.put(0.0019324)
+pr3.d_spacing.put(3.135)
 
 ## Wavefunction Generator ##
 class SRS340(Device):
@@ -101,5 +107,3 @@ class SRS340(Device):
                          kind=Kind.config, labels=('phase retarders'))
 
 wavefunc_gen = SRS340('4idd:SRS340:1:',name='wavefunction generator')
-
-# TODO: add other stuff to pr's, like lock-in PVS, and screen position.
