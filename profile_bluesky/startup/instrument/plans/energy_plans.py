@@ -5,7 +5,8 @@ Slitscan
 __all__ = ['moveE']
 
 
-from bluesky.plan_stubs import mv,stage
+from bluesky.plan_stubs import mv
+from bluesky.preprocessors import stage_decorator
 from ..devices import undulator,mono
 
 def moveE(energy):
@@ -30,10 +31,12 @@ def moveE(energy):
             args_list[0] += (undulator.downstream.energy,target_energy)
             args_list[0] += (undulator.downstream.start_button,1)
 
-    stage(mono)
-    for args in args_list:
-        yield from mv(*args)
+    @stage_decorator([mono,undulator.downstream])
+    def inner():
+        for args in args_list:
+            yield from mv(*args)
 
+    return (yield from inner())
 
 # TODO: Add metadata?
 # TODO: Add energy scans. Add a check of the energy direction, and a force option
