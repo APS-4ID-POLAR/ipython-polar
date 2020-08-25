@@ -10,33 +10,27 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
-from ophyd import Component, EpicsMotor, FormattedComponent
-from epics import caget
+from ophyd import Component, EpicsSignalRO, EpicsMotor,Kind
 
 class Monochromator(KohzuSeqCtl_Monochromator):
     
-    th = FormattedComponent(EpicsMotor,'{self._theta_pv}',
-                            labels=('motor','monochromator'))  # Kohzu Theta
+    y1 = None
     
-    y = FormattedComponent(EpicsMotor,'{self._y_pv}',
-                            labels=('motor','monochromator'))   # Kohzu Y2
+    x2 = Component(EpicsMotor,'m6',labels=('motor','monochromator'),
+                  kind=Kind.omitted)
+    y2 = Component(EpicsSignalRO,'KohzuYRdbkAI',labels=('motor','monochromator'),
+                  kind=Kind.omitted)   # Kohzu Y2
+    z2 = Component(EpicsSignalRO,'KohzuZRdbkAI',labels=('motor','monochromator'),
+                  kind=Kind.omitted)  # Kohzu Z2
     
-    z = FormattedComponent(EpicsMotor,'{self._z_pv}',
-                            labels=('motor','monochromator'))  # Kohzu Z2
+    thf2 = Component(EpicsMotor,'m4',labels=('motor','monochromator'))  # Kohzu Th2f
+    chi2 = Component(EpicsMotor,'m5', labels=('motor','monochromator'))  # Kohzu Chi
     
-    thf = Component(EpicsMotor,'m4',labels=('motor','monochromator'))  # Kohzu Th2f
-    chi = Component(EpicsMotor,'m5', labels=('motor','monochromator'))  # Kohzu Chi
+    table_x = Component(EpicsMotor,'m7',labels=('motor','monochromator'),
+                  kind=Kind.omitted)
+    table_y = Component(EpicsMotor,'m8',labels=('motor','monochromator'),
+                  kind=Kind.omitted)
     
-    def __init__(self,prefix,*args,**kwargs):
-        
-        self._theta_pv = caget(prefix+'KohzuThetaPvSI')
-        self._y_pv = caget(prefix+'KohzuYPvSI')
-        self._z_pv = caget(prefix+'KohzuZPvSI')
-        
-        super().__init__(prefix,*args,**kwargs)
-        
-
 
 mono = Monochromator('4idb:', name='monochromator')
-mono.mode.put('Auto') #Switch mono to "auto".
 mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
