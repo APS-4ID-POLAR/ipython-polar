@@ -11,8 +11,8 @@ from .huber import *
 from .slits import *
 from .phaseplates import *
 from .lakeshores import *
-from flat_mirror import *
-from toroidal_mirror import *
-from xbpm import *
-from uptable import *
-from kbic import *
+from .flat_mirror import *
+from .toroidal_mirror import *
+from .xbpm import *
+from .uptable import *
+from .kbic import *
