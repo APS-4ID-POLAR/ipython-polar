@@ -3,9 +3,16 @@ local, custom Device definitions
 """
 
 from .aps_source import *
-from .motors import *
 from .scaler import *
 
-# under development
-# from .TODO.fourc import *
-# from .TODO.kappa_config import *
+from .magnets import *
+from .monochromator import *
+from .huber import *
+from .slits import *
+from .phaseplates import *
+from .lakeshores import *
+from .flat_mirror import *
+from .toroidal_mirror import *
+from .xbpm import *
+from .uptable import *
+from .kbic import *
