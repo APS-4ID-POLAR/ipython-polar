@@ -12,6 +12,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component,EpicsMotor,MotorBundle
+from ..framework import sd
 
 ## Cryo carrier ##
 class CryoStage(MotorBundle):
@@ -20,6 +21,7 @@ class CryoStage(MotorBundle):
     z = Component(EpicsMotor, 'm16', labels=('motor', 'cryo'))  # Cryo Z
 
 cryo = CryoStage(prefix='4iddx:',name='cryo')
+sd.baseline.append(cryo)
 
 ## 8c rotations ##
 class Diffractometer(MotorBundle):
@@ -36,7 +38,7 @@ class Diffractometer(MotorBundle):
     y = Component(EpicsMotor,'m17', labels=('motor','diffractometer'))  # 8C verical
 
 huber = Diffractometer(prefix='4iddx:',name='huber')
-
+sd.baseline.append(huber)
 # TODO: look at todo folder. Use hklpy when setting these up, so that we
 #       can create fourc and sixc
 

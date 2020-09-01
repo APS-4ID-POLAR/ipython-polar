@@ -9,6 +9,7 @@ logger.info(__file__)
 
 from .lakeshore336 import LS336Device
 from .lakeshore340 import LS340Device
+from ..framework import sd
 
 lakeshore_336 = LS336Device("4idd:LS336:TC3:", name="lakeshore 360", labels=["Lakeshore"])
 
@@ -17,6 +18,10 @@ lakeshore_340lt = LS340Device('4idd:LS340:TC1:',name="lakeshore 340 - low temper
 
 lakeshore_340ht = LS340Device('4idd:LS340:TC2:',name="lakeshore 340 - high temperature",
                               labels=("Lakeshore"))
+
+sd.baseline.append(lakeshore_336)
+sd.baseline.append(lakeshore_340ht)
+sd.baseline.append(lakeshore_340lt)
 
 # TODO: include limits, Fix offset AttributeError
 # TODO: lakeshore 340 won't show a status bar, I don't know why.

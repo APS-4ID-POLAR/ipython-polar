@@ -11,6 +11,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, EpicsSignal
+from ..framework import sd
 
 class FlatMirror(Device):
 
@@ -29,7 +30,7 @@ class FlatMirror(Device):
                         labels=('mirrors'))
 
 flat_mirror = FlatMirror('4idb:',name='flat mirror')
-
+sd.baseline.append(flat_mirror)
 # TODO: How to add the different default positions in the mirrors?
 # TODO: Check that the limits option of EpicsSignal will work!
 # TODO: KB mirrors.
