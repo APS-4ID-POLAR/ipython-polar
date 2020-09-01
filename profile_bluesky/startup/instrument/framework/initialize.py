@@ -17,6 +17,7 @@ logger.info(__file__)
 
 from bluesky import RunEngine
 from bluesky.utils import PersistentDict
+import os
 
 # Set up a RunEngine and use metadata-backed PersistentDict
 RE = RunEngine({})
