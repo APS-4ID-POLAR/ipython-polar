@@ -8,10 +8,19 @@ __all__ = [
     'huber'
     ]
 
+# add these imports
+
+
+# add to the `Diffractometer` Device:
+# add after this line: huber = Diffra...
+
 from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component,EpicsMotor,MotorBundle
+from bluesky.suspenders import SuspendBoolLow
+from ophyd import EpicsSignal
+from ..framework import RE
 
 ## Cryo carrier ##
 class CryoStage(MotorBundle):
@@ -35,7 +44,18 @@ class Diffractometer(MotorBundle):
     x = Component(EpicsMotor,'m18', labels=('motor','diffractometer'))  # 8C horiz
     y = Component(EpicsMotor,'m17', labels=('motor','diffractometer'))  # 8C verical
 
+
+    th_tth_min = Component(EpicsSignal, "userCalc1.C",
+                           labels=('diffractometer', 'limits'),
+                           kind='config')
+    th_tth_permit = Component(EpicsSignal, "userCalc1.VAL",
+                              labels=('diffractometer', 'limits'),
+                              kind='config')
+
+
 huber = Diffractometer(prefix='4iddx:',name='huber')
+sus = SuspendBoolLow(huber.th_tth_permit)
+RE.install_suspender(sus)
 
 # TODO: look at todo folder. Use hklpy when setting these up, so that we
 #       can create fourc and sixc
