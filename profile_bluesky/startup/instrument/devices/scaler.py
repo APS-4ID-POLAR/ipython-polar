@@ -19,6 +19,7 @@ scalerd.select_channels(None)
 sd.baseline.append(scalerd)
 
 scalerb = ScalerCH('4idb:scaler1', name='scalerb', labels=('detectors','counters'))
+scalerb.channels.chan01.chname.set('Time_b')
 scalerb.select_channels(None)
 sd.baseline.append(scalerb)
 
