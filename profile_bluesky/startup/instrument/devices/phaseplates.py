@@ -10,6 +10,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Device, EpicsMotor, FormattedComponent
+from ..framework import sd
 
 class PRDevice(Device):
 
@@ -30,4 +31,7 @@ pr1 = PRDevice('4idb','pr1',{'x':'m10','y':'m11','th':'m13'})
 pr2 = PRDevice('4idb','pr2',{'x':'m15','y':'m16','th':'m18'})
 pr3 = PRDevice('4idb','pr3',{'x':'m19','y':'m20','th':'m21'})
 
+sd.baseline.append(pr1)
+sd.baseline.append(pr2)
+sd.baseline.append(pr3)
 # TODO: add other stuff to pr's, like lock-in PVS, and screen position.

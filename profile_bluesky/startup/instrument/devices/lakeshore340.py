@@ -124,7 +124,7 @@ class LS340Device(Device):
 
     heater = Component(EpicsSignalRO, "Heater")
     heater_range = Component(EpicsSignal, "HeatRg",write_pv="Rg_rdbk",
-                             kind=Kind.omitted)
+                             kind=Kind.normal)
 
 
     read_pid = Component(EpicsSignal, "readPID.PROC", kind=Kind.omitted)

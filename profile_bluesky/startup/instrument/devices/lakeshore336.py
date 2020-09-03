@@ -39,7 +39,7 @@ class LS336_LoopControl(PVPositioner):
     manual = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:MOUT", kind=Kind.config)
     mode = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}OUT{self.loop_number}:Mode", kind=Kind.config)
     heater_range = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}HTR{self.loop_number}:Range",
-                                      kind=Kind.config, auto_monitor=True)
+                                      kind=Kind.normal, auto_monitor=True)
 
     def __init__(self, *args,loop_number=None,timeout=60*60*10,**kwargs):
         self.loop_number = loop_number

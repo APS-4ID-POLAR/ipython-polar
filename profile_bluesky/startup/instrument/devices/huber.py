@@ -21,6 +21,7 @@ from ophyd import Component,EpicsMotor,MotorBundle
 from bluesky.suspenders import SuspendBoolLow
 from ophyd import EpicsSignal
 from ..framework import RE
+from ..framework import sd
 
 ## Cryo carrier ##
 class CryoStage(MotorBundle):
@@ -29,6 +30,7 @@ class CryoStage(MotorBundle):
     z = Component(EpicsMotor, 'm16', labels=('motor', 'cryo'))  # Cryo Z
 
 cryo = CryoStage(prefix='4iddx:',name='cryo')
+sd.baseline.append(cryo)
 
 ## 8c rotations ##
 class Diffractometer(MotorBundle):
@@ -56,6 +58,8 @@ class Diffractometer(MotorBundle):
 huber = Diffractometer(prefix='4iddx:',name='huber')
 sus = SuspendBoolLow(huber.th_tth_permit)
 RE.install_suspender(sus)
+
+sd.baseline.append(huber)
 
 # TODO: look at todo folder. Use hklpy when setting these up, so that we
 #       can create fourc and sixc
