@@ -8,6 +8,7 @@ from instrument.session_logs import logger
 logger.info(__file__)
 
 from ophyd import Device, EpicsMotor, EpicsSignal, FormattedComponent
+from ..framework import sd
 
 class SlitDevice(Device):
 
@@ -64,30 +65,36 @@ class SlitDevice(Device):
 wbslt = SlitDevice('4idb','wbslt',
                    {'top': 'm25','bot':'m26','out':'m27','inb':'m28'},
                    slitnum=1)
+sd.baseline.append(wbslt)
 
 ## Entrance slit ##
 enslt = SlitDevice('4iddx','enslt',
                    {'top': 'm1','bot':'m2','out':'m3','inb':'m4'},
                    slitnum=1)
+sd.baseline.append(enslt)
 
 ## 8C incident slit ##
 inslt = SlitDevice('4iddx','inslt',
                    {'top': 'm5','bot':'m6','out':'m7','inb':'m11'},
                    slitnum=2)
+sd.baseline.append(inslt)
 
 ## 2th guard slit ##
 grdslt = SlitDevice('4iddx','grdslt',
                     {'top': 'm21','bot':'m22','out':'m23','inb':'m24'},
                     slitnum=3)
+sd.baseline.append(grdslt)
 
 ## 2th detector slit ##
 detslt = SlitDevice('4iddx','detslt',
                     {'top': 'm25','bot':'m26','out':'m27','inb':'m28'},
                     slitnum=4)
+sd.baseline.append(detslt)
 
 ## Magnet incident slit ##
 magslt = SlitDevice('4iddx','magslt',
                     {'top': 'm29','bot':'m30','out':'m31','inb':'m32'},
                     slitnum=5)
+sd.baseline.append(magslt)
 
 # TODO: Test limits on EpicsSignal.

@@ -9,7 +9,8 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor, FormattedComponent
+from ophyd import Component, Device, EpicsMotor
+from ..framework import sd
 
 ## Magnet and sample motors ##
 class Magnet6T(Device):
@@ -31,6 +32,7 @@ class Magnet6T(Device):
 
 
 mag6t = Magnet6T('4iddx:',name='6T_magnet')
+sd.baseline.append(mag6t)
 # Tvaporizer = lakeshore_336.loop1
 # Tsample = lakeshore_336.loop2
 

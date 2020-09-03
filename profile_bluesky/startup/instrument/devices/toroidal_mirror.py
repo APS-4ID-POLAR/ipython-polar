@@ -11,6 +11,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, EpicsSignal
+from ..framework import sd
 
 ## Toroidal Mirror ##
 class ToroidalMirror(Device):
@@ -33,6 +34,7 @@ class ToroidalMirror(Device):
     bender = Component(EpicsMotor,'m32',labels=('motor','mirrors'))
 
 toroidal_mirror = ToroidalMirror('4idb:',name='toroidal mirror')
+sd.baseline.append(toroidal_mirror)
 
 # TODO: How to add the different default positions in the mirrors?
 # TODO: Check that the limits option of EpicsSignal will work!
