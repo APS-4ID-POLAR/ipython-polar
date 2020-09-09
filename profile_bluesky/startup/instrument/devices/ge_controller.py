@@ -46,7 +46,7 @@ class GEController(PVPositioner):
         self.loop_number = loop_number
         super().__init__(*args,timeout=timeout,**kwargs)
         self._settle_time = 0
-        self._tolerance = 0.1
+        self._tolerance = 0.01
 
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
