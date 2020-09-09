@@ -27,7 +27,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
     table_x = Component(EpicsMotor,'m7',labels=('motor','monochromator'))
     table_y = Component(EpicsMotor,'m8',labels=('motor','monochromator'))
 
-
 mono = Monochromator('4idb:', name='monochromator')
 mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
 sd.baseline.append(mono)
