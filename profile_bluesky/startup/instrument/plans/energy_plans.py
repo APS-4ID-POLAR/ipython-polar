@@ -2,7 +2,7 @@
 Slitscan
 """
 
-__all__ = ['moveE']
+__all__ = ['moveE','Escan','Escan_list','qxscan','qxscan_setup']
 
 from bluesky.plan_stubs import mv,trigger_and_read
 from bluesky.preprocessors import stage_decorator,run_decorator
@@ -12,12 +12,12 @@ from numpy import linspace,arange,sqrt,array
 
 hbar = 6.582119569E-16 #eV.s
 speed_of_light = 299792458e10 # A/s
-electron_mass = 0.510998950E3/speed_of_light**2 # eV.s**2/A**2
+electron_mass = 0.510998950E6/speed_of_light**2 # eV.s**2/A**2
 
 global constant
-constant = 2*electron_mass/hbar^2 # A^2/eV
+constant = 2*electron_mass/hbar**2 # A^2/eV
 
-def _move_Emotors(energy,group=None):
+def moveE(energy,group=None):
 
     args_list = []
 
@@ -39,17 +39,13 @@ def _move_Emotors(energy,group=None):
             args_list[0] += (undulator.downstream.energy,target_energy)
             args_list[0] += (undulator.downstream.start_button,1)
 
-    for args in args_list:
-        yield from mv(*args,group=group)
-
-def moveE(energy):
-
     @stage_decorator([mono,undulator.downstream])
-    def _inner():
-        yield _move_Emotors(energy)
+    def _inner_moveE():
+        for args in args_list:
+            yield from mv(*args,group=group)
 
-    return (yield from _inner())
-
+    return (yield from _inner_moveE())
+    
 def Escan_list(detectors, energy_list, md = None):
 
     _positioners= [mono.energy]
@@ -68,19 +64,15 @@ def Escan_list(detectors, energy_list, md = None):
 
     _md.update(md or {})
 
-    @stage_decorator([mono,undulator.downstream])
-    @run_decorator(_md)
-    def _inner():
-        def _move(_energy):
+    @run_decorator(md=_md)
+    def _inner_Escan_list():
+        for energy in energy_list:
             grp = short_uid('set')
             yield Msg('checkpoint')
-            yield from _move_Emotors(_energy,group=grp)
+            yield from moveE(energy,group=grp)
+            yield from trigger_and_read(list(detectors)+_positioners,energy)
 
-        for energy in energy_list:
-            yield from _move(energy)
-            yield from trigger_and_read(list(detectors)+_positioners)
-
-    return (yield from _inner())
+    return (yield from _inner_Escan_list())
 
 def Escan(detectors,energy_0, energy_f, steps, md = None):
 
@@ -113,7 +105,7 @@ def qxscan_setup():
 
     qxdict['preedge_params'] = []
     for i in range(qxdict['num_preedge']):
-        print('\n Defining pre-edge #{}'.format(i))
+        print('\n Defining pre-edge #{}'.format(i+1))
         relative_energy = float(input('Start energy (in eV): '))
         energy_increment = float(input('Energy increment (in eV): '))
         #collection_time
@@ -141,11 +133,11 @@ def qxscan_setup():
 
     qxdict['postedge_params'] = []
     for i in range(qxdict['num_postedge']):
-        print('\n Defining post-edge #{}'.format(i))
+        print('\n Defining post-edge #{}'.format(i+1))
         relative_k = float(input('k end (in angstroms^-1): '))
         k_increment = float(input('k increment (in angstroms^-1): '))
         #collection_time
-        qxdict['posedge_params'].append({'relative_k_end': relative_k,
+        qxdict['postedge_params'].append({'relative_k_end': relative_k,
                                          'k_increment': k_increment})
 
 
@@ -157,7 +149,7 @@ def qxscan_setup():
         start = params['relative_energy_start']
         step = params['energy_increment']
 
-        if i != len(qxdict['num_preedge']):
+        if i != qxdict['num_preedge']-1:
             end = qxdict['preedge_params'][i+1]['relative_energy_start']
         else:
             end = qxdict['edge_params']['relative_energy_start']
@@ -176,17 +168,21 @@ def qxscan_setup():
 
     for i,params in enumerate(qxdict['postedge_params']):
 
-        end = params['relative_k_end']**2/constant
+        end = params['relative_k_end']
         step = params['k_increment']
 
         if i == 0:
-            start = qxdict['edge_params']['relative_energy_end']
+            start = sqrt(ßconstant*qxdict['edge_params']['relative_energy_end'])
         else:
-            start = qxdict['postedge_params'][i-1]['relative_k_end']**2/constant
+            start = qxdict['postedge_params'][i-1]['relative_k_end']
 
-        qxdict['relative_energy'] += list(arange(start,end,step))
+        qxdict['relative_energy'] += list(arange(start,end,step)**2/constant)
+        qxdict['relative_energy'] += [end**2/constant]
 
-    qxdict['relative_energy'] = array(qxdict['relative_energy'])[::-1]
+    qxdict['relative_energy'] = array(qxdict['relative_energy'])[::-1]/1000.
+    
+    print('\nNumber of points: {}'.format(qxdict['relative_energy'].size))
+    print('Final relative energy: {:0.3f} eV'.format(qxdict['relative_energy'].max()))
 
     return qxdict
 

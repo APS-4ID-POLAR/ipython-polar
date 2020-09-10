@@ -4,7 +4,7 @@ APS only: connect with facility information
 """
 
 __all__ = [
-    'aps',
+   # 'aps',
     'undulator',
     ]
 
@@ -40,7 +40,7 @@ class MyUndulator(apstools.devices.ApsUndulator):
             while True:
                 offset = input("Undulator offset (keV) ({}): ".format(self._offset.get()))
                 try:
-                    self._offset = float(offset)
+                    self._offset.put(float(offset))
                     break
                 except ValueError:
                     if offset == '':
