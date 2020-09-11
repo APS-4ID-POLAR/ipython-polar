@@ -5,10 +5,12 @@ Slitscan
 __all__ = ['moveE','Escan','Escan_list','qxscan','qxscan_setup']
 
 from bluesky.plan_stubs import mv,trigger_and_read
-from bluesky.preprocessors import stage_decorator,run_decorator
+from bluesky.preprocessors import stage_decorator,run_decorator,subs_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator,mono
 from numpy import linspace,arange,sqrt,array
+#from ..framework import bec
+#from ..callbacks import AbsorptionPlot
 
 hbar = 6.582119569E-16 #eV.s
 speed_of_light = 299792458e10 # A/s
@@ -64,13 +66,18 @@ def Escan_list(detectors, energy_list, md = None):
 
     _md.update(md or {})
 
+    _md['hints'] = {'dimensions': [(['monochromator_energy'],'primary')]}
+    _md['hints'].update(md.get('hints', {}) or {})
+
+    #abs_plot = AbsorptionCallback()
+    #@subs_decorator(Absorption)
     @run_decorator(md=_md)
     def _inner_Escan_list():
         for energy in energy_list:
             grp = short_uid('set')
             yield Msg('checkpoint')
             yield from moveE(energy,group=grp)
-            yield from trigger_and_read(list(detectors)+_positioners,energy)
+            yield from trigger_and_read(list(detectors)+_positioners)
 
     return (yield from _inner_Escan_list())
 
@@ -81,7 +88,7 @@ def Escan(detectors,energy_0, energy_f, steps, md = None):
                          'final_energy': repr(energy_f),
                          'steps': repr(steps)},
            'plan_name': 'Escan',
-           'hints': {},
+           'hints': {'x':['mono_energy']},
            }
 
     _md.update(md or {})
