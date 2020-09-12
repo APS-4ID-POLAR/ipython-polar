@@ -14,11 +14,16 @@ from numpy import log
 import threading
 from collections import ChainMap
 
+#TODO: update docstring
 
 @make_class_safe(logger=logger)
 class AbsorptionPlot(QtAwareCallback):
-    
+
     """
+    This is a slightly tweaked version of
+    `bluesky.callbacks.mpl_plotting.LivePlot`
+
+    ===> NEED TO UPDATE DOCSTRING <===
     Build a function that updates a plot from a stream of Events.
 
     Note: If your figure blocks the main thread when you are trying to
@@ -56,7 +61,7 @@ class AbsorptionPlot(QtAwareCallback):
     >>> my_plotter = LivePlot('det', 'motor', legend_keys=['sample'])
     >>> RE(my_scan, my_plotter)
     """
-    def __init__(self, y, monitor, x=None, *, transmission_mode=True, 
+    def __init__(self, y, monitor, x=None, *, transmission_mode=True,
                  legend_keys=None, xlim=None, ylim=None,
                  ax=None, fig=None, epoch='run', **kwargs):
         super().__init__(use_teleporter=kwargs.pop('use_teleporter', None))
@@ -129,18 +134,18 @@ class AbsorptionPlot(QtAwareCallback):
             # matplotlib v2.x (warns in 3.x)
             self.legend = legend.draggable(True)
         super().start(doc)
-        
+
     def descriptor(self, doc):
         self._descriptors[doc['uid']] = doc
-        
+
     def event(self, doc):
         "Unpack data from the event and call self.update()."
         # This outer try/except block is needed because multiple event
         # streams will be emitted by the RunEngine and not all event
         # streams will have the keys we want.
-        
-        descriptor = self._descriptors[doc['descriptor']]  
-        
+
+        descriptor = self._descriptors[doc['descriptor']]
+
         if descriptor.get('name') == 'primary':
             try:
                 # This inner try/except block handles seq_num and time, which could
@@ -154,23 +159,23 @@ class AbsorptionPlot(QtAwareCallback):
                     else:
                         raise
                 new_y = doc['data'][self.y]
-                            
+
                 new_monitor = doc['data'][self.monitor]
-    
+
                 if self.transmission_mode:
                     new_xanes = log(new_monitor/new_y)
                 else:
                     new_xanes = new_y/new_monitor
-                    
+
             except KeyError:
                 # wrong event stream, skip it
                 return
-    
+
             # Special-case 'time' to plot against against experiment epoch, not
             # UNIX epoch.
             if self.x == 'time' and self._epoch == 'run':
                 new_x -= self._epoch_offset
-    
+
             self.update_caches(new_x, new_xanes)
             self.update_plot()
             super().event(doc)
