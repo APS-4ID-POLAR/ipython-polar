@@ -179,7 +179,7 @@ def qxscan_setup():
         step = params['k_increment']
 
         if i == 0:
-            start = sqrt(ßconstant*qxdict['edge_params']['relative_energy_end'])
+            start = sqrt(constant*qxdict['edge_params']['relative_energy_end'])
         else:
             start = qxdict['postedge_params'][i-1]['relative_k_end']
 
