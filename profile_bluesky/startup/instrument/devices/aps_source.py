@@ -62,4 +62,5 @@ class MyDualUndulator(Device):
 
 undulator = MyDualUndulator("ID04", name="undulator")
 undulator.downstream.tracking = False
+undulator.downstream.energy._put_complete = True #Avoids getting the undulator stuck if there is a delay in writing a new energy to the PV 
 sd.baseline.append(undulator)
