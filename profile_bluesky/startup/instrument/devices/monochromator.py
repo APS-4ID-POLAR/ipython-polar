@@ -32,4 +32,5 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 mono = Monochromator('4idb:', name='monochromator')
 mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
+mono.energy._put_complete = True #Avoids getting the mono stuck if there is a delay in writing a new energy to the PV 
 sd.baseline.append(mono)
