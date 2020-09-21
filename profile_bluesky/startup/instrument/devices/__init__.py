@@ -16,3 +16,4 @@ from .toroidal_mirror import *
 from .xbpm import *
 from .uptable import *
 from .kbic import *
+from .user_calc import *
