@@ -26,9 +26,9 @@ class UserCalcChannel(Device):
                                 '{self.prefix}.IN{self._ch}N',
                                 kind=Kind.config)
 
-    position = FormattedComponent(EpicsSignal,
-                                  '{self.prefix}.{self._ch}',
-                                  kind=Kind.config)
+    value = FormattedComponent(EpicsSignal,
+                               '{self.prefix}.{self._ch}',
+                               kind=Kind.config)
 
     def __init__(self, prefix, ch, **kwargs):
         self._ch = ch
@@ -52,7 +52,6 @@ class UserCalc(Device):
     expression = Component(EpicsSignal,'.CALC$',kind=Kind.config)
     calc_value = Component(EpicsSignal,'.VAL',kind=Kind.hinted)
     enable = Component(EpicsSignal,'.DESC',sting=True,kind=Kind.config)
-
 
 user_calc = UserCalc('4id:userCalc9',name='user_calc')
 sd.baseline.append(user_calc)
