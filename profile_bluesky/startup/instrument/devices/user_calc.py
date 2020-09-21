@@ -2,7 +2,7 @@
 User Calculator
 """
 
-__all__ = ['user_calc']
+__all__ = ['absorption_calc','normalize_calc']
 
 from instrument.session_logs import logger
 logger.info(__file__)
@@ -13,11 +13,10 @@ from string import ascii_uppercase
 from collections import OrderedDict
 from ..framework import sd
 
-## Based on scalerCH
+# Based on ophyd.ScalerCH
 
 class UserCalcChannel(Device):
 
-    # TODO set up monitor on this to automatically change the name
     trigger_option = FormattedComponent(EpicsSignal,
                                         '{self.prefix}.IN{self._ch}P',
                                         kind=Kind.config)
@@ -40,18 +39,39 @@ def _sc_chans(attr_fix, id_range):
     for k in id_range:
         defn['{}{}'.format(attr_fix, k)] = (UserCalcChannel,
                                                 '', {'ch': k,
-                                                     'kind': Kind.normal})
-    return defn
+                                                     'kind': Kind.config})
+    return defn  
 
 class UserCalc(Device):
 
     channels =  DynamicDeviceComponent(_sc_chans('chan',
-                                                 list(ascii_uppercase)[:12]))
+                                                 list(ascii_uppercase)[:12]),
+                                        kind=Kind.config)
 
     scan = Component(EpicsSignal,'.SCAN',kind=Kind.omitted)
-    expression = Component(EpicsSignal,'.CALC$',kind=Kind.config)
+    expression = Component(EpicsSignal,'.CALC$',string=True,kind=Kind.config)
     calc_value = Component(EpicsSignal,'.VAL',kind=Kind.hinted)
-    enable = Component(EpicsSignal,'.DESC',sting=True,kind=Kind.config)
+    enable = Component(EpicsSignal,'.DESC',string=True,kind=Kind.config)
+    
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self._read_attrs = ['calc_value']
+    
+    @property
+    def read_attrs(self):
+        return self._read_attrs
+    
+    @read_attrs.setter
+    def read_attrs(self,value):
+        if type(value) is not list:
+            raise TypeError('read_attrs has to be a list!')
+        else:
+            self._read_attrs = value
 
-user_calc = UserCalc('4id:userCalc9',name='user_calc')
-sd.baseline.append(user_calc)
+absorption_calc = UserCalc('4id:userCalc9',name='absorption_calc')
+absorption_calc.scan.put(2)
+
+normalize_calc = UserCalc('4id:userCalc10',name='normalize_calc')
+normalize_calc.scan.put(2)
+
+sd.baseline.append(absorption_calc)
