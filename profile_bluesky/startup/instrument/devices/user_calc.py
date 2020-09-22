@@ -40,8 +40,9 @@ def _sc_chans(attr_fix, id_range):
         defn['{}{}'.format(attr_fix, k)] = (UserCalcChannel,
                                                 '', {'ch': k,
                                                      'kind': Kind.config})
+        
     return defn
-
+  
 class UserCalc(Device):
 
     channels =  DynamicDeviceComponent(_sc_chans('chan',
@@ -52,15 +53,15 @@ class UserCalc(Device):
     expression = Component(EpicsSignal,'.CALC$',string=True,kind=Kind.config)
     calc_value = Component(EpicsSignal,'.VAL',kind=Kind.hinted)
     enable = Component(EpicsSignal,'.DESC',string=True,kind=Kind.config)
-
+    
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
         self._read_attrs = ['calc_value']
-
+    
     @property
     def read_attrs(self):
         return self._read_attrs
-
+ 
     @read_attrs.setter
     def read_attrs(self,value):
         if type(value) is not list:
