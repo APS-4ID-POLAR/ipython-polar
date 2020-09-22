@@ -4,8 +4,8 @@ qxscan setup
 
 __all__ = ['qxscan_params']
 
-#from ..session_logs import logger
-#logger.info(__file__)
+from ..session_logs import logger
+logger.info(__file__)
 
 from ophyd import Signal,Device,Kind
 from ophyd import Component
