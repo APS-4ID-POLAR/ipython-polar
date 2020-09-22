@@ -4,7 +4,7 @@ APS only: connect with facility information
 """
 
 __all__ = [
-    'aps',
+   # 'aps',
     'undulator',
     ]
 
@@ -40,7 +40,7 @@ class MyUndulator(apstools.devices.ApsUndulator):
             while True:
                 offset = input("Undulator offset (keV) ({}): ".format(self._offset.get()))
                 try:
-                    self._offset = float(offset)
+                    self._offset.put(float(offset))
                     break
                 except ValueError:
                     if offset == '':
@@ -62,4 +62,5 @@ class MyDualUndulator(Device):
 
 undulator = MyDualUndulator("ID04", name="undulator")
 undulator.downstream.tracking = False
+undulator.downstream.energy._put_complete = True #Avoids getting the undulator stuck if there is a delay in writing a new energy to the PV 
 sd.baseline.append(undulator)
