@@ -110,7 +110,7 @@ class LocalScalerCH(ScalerCH):
         if float(value) <= 0:
             raise ValueError('preset_value has to be > 0.')
         
-        if self._monitor == 'chan01':
+        if self._monitor.s.name == 'Time':
             value *= 1e7 #convert to seconds
         
         self._preset_value = self._monitor.preset
