@@ -1,93 +1,101 @@
-'''
-qxscan setup
-'''
+"""
+Define qxscan_setup device.
+
+This device will holds the parameters and energy list used in a qxscan plan.
+"""
+
+from ..session_logs import logger
+import json
+from ophyd import Signal, Device, Kind
+from ophyd import Component
+from collections import OrderedDict
+from numpy import sqrt, arange
 
 __all__ = ['qxscan_params']
 
-from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Signal,Device,Kind
-from ophyd import Component
-from collections import OrderedDict
-from numpy import sqrt,arange
-import json
-
-hbar = 6.582119569E-16 #eV.s
-speed_of_light = 299792458e10 # A/s
-electron_mass = 0.510998950E6/speed_of_light**2 # eV.s**2/A**2
+hbar = 6.582119569E-16  # eV.s
+speed_of_light = 299792458e10  # A/s
+electron_mass = 0.510998950E6/speed_of_light**2  # eV.s**2/A**2
 
 global constant
-constant = 2*electron_mass/hbar**2 # A^2/eV
+constant = 2*electron_mass/hbar**2  # A^2/eV
+
 
 def _preedge_channels(attr_fix, id_range):
-        defn = OrderedDict()
-        defn['num_regions'] = (Signal,'', {'value': 0,'kind': Kind.config})
-        for k in id_range:
-            defn['{}{}_Estart'.format(attr_fix, k)] = (Signal,
-                                                      '', {'value': 0,
-                                                           'kind': Kind.config})
-            defn['{}{}_Estep'.format(attr_fix, k)] = (Signal,
-                                                      '', {'value': 0,
-                                                           'kind': Kind.config})
-        return defn
+    defn = OrderedDict()
+    defn['num_regions'] = (Signal, '', {'value': 0, 'kind': Kind.config})
+    for k in id_range:
+        defn['{}{}_Estart'.format(attr_fix, k)] = (Signal,
+                                                   '', {'value': 0,
+                                                        'kind': Kind.config})
+        defn['{}{}_Estep'.format(attr_fix, k)] = (Signal,
+                                                  '', {'value': 0,
+                                                       'kind': Kind.config})
+    return defn
+
 
 def _postedge_channels(attr_fix, id_range):
     defn = OrderedDict()
-    defn['num_regions'] = (Signal,'', {'value': 0,'kind': Kind.config})
+    defn['num_regions'] = (Signal, '', {'value': 0, 'kind': Kind.config})
     for k in id_range:
         defn['{}{}_Kend'.format(attr_fix, k)] = (Signal,
-                                                  '', {'value': 0,
-                                                       'kind': Kind.config})
+                                                 '', {'value': 0,
+                                                      'kind': Kind.config})
         defn['{}{}_Kstep'.format(attr_fix, k)] = (Signal,
                                                   '', {'value': 0,
                                                        'kind': Kind.config})
     return defn
 
+
 class EdgeDevice(Device):
-    Estart = Component(Signal,value=0)
-    Eend = Component(Signal,value=0)
-    Estep = Component(Signal,value=0)
+    Estart = Component(Signal, value=0)
+    Eend = Component(Signal, value=0)
+    Estep = Component(Signal, value=0)
+
 
 class PreEdgeRegion(Device):
-    Estart = Component(Signal,value=0)
-    Estep = Component(Signal,value=0)
+    Estart = Component(Signal, value=0)
+    Estep = Component(Signal, value=0)
+
 
 class PreEdgeDevice(Device):
-    num_regions = Component(Signal,value=0)
+    num_regions = Component(Signal, value=0)
     region1 = Component(PreEdgeRegion)
     region2 = Component(PreEdgeRegion)
     region3 = Component(PreEdgeRegion)
     region4 = Component(PreEdgeRegion)
     region5 = Component(PreEdgeRegion)
 
+
 class PostEdgeRegion(Device):
-    Kend = Component(Signal,value=0)
-    Kstep = Component(Signal,value=0)
+    Kend = Component(Signal, value=0)
+    Kstep = Component(Signal, value=0)
+
 
 class PostEdgeDevice(Device):
-    num_regions = Component(Signal,value=0)
+    num_regions = Component(Signal, value=0)
     region1 = Component(PostEdgeRegion)
     region2 = Component(PostEdgeRegion)
     region3 = Component(PostEdgeRegion)
     region4 = Component(PostEdgeRegion)
     region5 = Component(PostEdgeRegion)
 
-class QxscanParams(Device):
 
+class QxscanParams(Device):
     pre_edge = Component(PreEdgeDevice)
     edge = Component(EdgeDevice)
     post_edge = Component(PostEdgeDevice)
-    energy_list = Component(Signal,value=0)
+    energy_list = Component(Signal, value=0)
 
     def setup(self):
-
         print('Defining the energy range and steps for qxscan')
         print('All energies are relative to the absorption edge!')
 
         while True:
             value = int(input('\n Number of pre-edge regions: '))
-            if (value >= 1) and (value <= 5):
+            if 1 <= value <= 5:
                 self.pre_edge.num_regions.put(value)
                 break
             else:
@@ -98,7 +106,7 @@ class QxscanParams(Device):
             relative_energy = float(input('Start energy (in eV): '))
             energy_increment = float(input('Energy increment (in eV): '))
 
-            region = getattr(self.pre_edge,'region{}'.format(i+1))
+            region = getattr(self.pre_edge, 'region{}'.format(i+1))
             region.Estart.put(relative_energy)
             region.Estep.put(energy_increment)
 
@@ -116,7 +124,7 @@ class QxscanParams(Device):
 
         while True:
             value = int(input('\n Number of post-edge regions: '))
-            if (value >= 1) and (value <= 5):
+            if 1 <= value <= 5:
                 self.post_edge.num_regions.put(value)
                 break
             else:
@@ -127,50 +135,49 @@ class QxscanParams(Device):
             relative_k = float(input('k end (in angstroms^-1): '))
             k_increment = float(input('k increment (in angstroms^-1): '))
 
-            region = getattr(self.post_edge,'region{}'.format(i+1))
+            region = getattr(self.post_edge, 'region{}'.format(i+1))
             region.Kend.put(relative_k)
             region.Kstep.put(k_increment)
 
         self._create_energy_list()
 
     def _create_energy_list(self):
-
         elist = []
 
         # Pre-edge region
         for i in range(self.pre_edge.num_regions.get()):
-
-            region = getattr(self.pre_edge,'region{}'.format(i+1))
+            region = getattr(self.pre_edge, 'region{}'.format(i+1))
             start = region.Estart.get()
             step = region.Estep.get()
 
             if i != self.pre_edge.num_regions.get()-1:
-                end = getattr(self.pre_edge,'region{}'.format(i+2)).Estart.get()
+                end = getattr(self.pre_edge,
+                              'region{}'.format(i+2)).Estart.get()
             else:
                 end = self.edge.Estart.get()
 
-            elist += list(arange(start,end,step))
+            elist += list(arange(start, end, step))
 
         # Edge region
         start = self.edge.Estart.get()
         end = self.edge.Eend.get()
         step = self.edge.Estep.get()
 
-        elist += list(arange(start,end,step))
+        elist += list(arange(start, end, step))
 
         # Post-edge region
         for i in range(self.post_edge.num_regions.get()):
-
-            region = getattr(self.post_edge,'region{}'.format(i+1))
+            region = getattr(self.post_edge, 'region{}'.format(i+1))
             end = region.Kend.get()
             step = region.Kstep.get()
 
             if i == 0:
                 start = sqrt(constant*self.edge.Eend.get())
             else:
-                start = getattr(self.post_edge,'region{}'.format(i)).Kend.get()
+                start = getattr(self.post_edge,
+                                'region{}'.format(i)).Kend.get()
 
-            elist += list(arange(start,end,step)**2/constant)
+            elist += list(arange(start, end, step)**2/constant)
 
         elist += [end**2/constant]
 
@@ -179,7 +186,23 @@ class QxscanParams(Device):
 
         self.energy_list.put(elist)
 
-    def _read_params_dict(self,input):
+    def _read_params_dict(self, input):
+        """
+        Read an dictionary that contains the qxscan setup parameters.
+
+        Parameters
+        -----------
+        input: dictionary
+        Formatted as the output of self._make_params_dict. The dictionary has
+        to contain every qxscan_setup parameter (including all pre_edge and
+        post_edge regions!). For instance:
+        - input['edge']['Estart'] is passed to self.edge.Estart
+        - output['energy_list'] is passed to self.energy_list
+
+        Returns
+        -----------
+        None
+        """
         self.energy_list.put(input['energy_list'])
 
         self.edge.Estart.put(input['edge']['Estart'])
@@ -201,7 +224,20 @@ class QxscanParams(Device):
             region.Kstep.put(input['post_edge'][reg_key]['Kstep'])
 
     def _make_params_dict(self):
+        """
+        Create an dictionary that contains the qxscan setup parameters.
 
+        Parameters
+        -----------
+        None
+
+        Returns
+        -----------
+        output: dictionary
+        Each device is saved in a new inner dictionary. For instance:
+        - self.edge.Estart is saved at output['edge']['Estart']
+        - self.energy_list is saved at output['energy_list']
+        """
         output = {}
 
         output['energy_list'] = self.energy_list.get()
@@ -231,16 +267,42 @@ class QxscanParams(Device):
 
         return output
 
-    def save_params_json(self,fname):
+    def save_params_json(self, fname):
+        """
+        Save a json file that contains a dictionary with the qxscan parameters.
+
+        Parameters
+        -----------
+        fname: string
+        Location and name of the file to be saved.
+
+        Returns
+        -----------
+        None
+        """
         output = self._make_params_dict()
-        with open(fname,'w') as f:
+        with open(fname, 'w') as f:
             f.write(json.dumps(output))
 
+    def load_params_json(self, fname):
+        """
+        Load a json file that contains a dictionary with the qxscan parameters.
 
-    def load_params_json(self,fname):
+        This dictionary must be formatted as required by
+        self._read_params_dict.
 
-        input = json.load(open(fname,'r'))
+        Parameters
+        -----------
+        fname: string
+        Location and name of the file to be loaded
+
+        Returns
+        -----------
+        None
+        """
+        input = json.load(open(fname, 'r'))
         self._read_params_dict(input)
+
 
 qxscan_params = QxscanParams(name='qxscan_setup')
 

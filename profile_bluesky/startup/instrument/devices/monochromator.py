@@ -26,11 +26,10 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     table_x = Component(EpicsMotor,'m7',labels=('motor','monochromator'))
     table_y = Component(EpicsMotor,'m8',labels=('motor','monochromator'))
-    
+
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
-                       kind='hinted')
+                       kind='hinted', put_complete = True)
 
 mono = Monochromator('4idb:', name='monochromator')
 mono.stage_sigs['mode'] = 1 #Ensure that mono is in auto before moving.
-mono.energy._put_complete = True #Avoids getting the mono stuck if there is a delay in writing a new energy to the PV 
 sd.baseline.append(mono)

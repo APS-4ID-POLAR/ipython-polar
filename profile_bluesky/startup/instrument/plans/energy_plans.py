@@ -2,53 +2,53 @@
 Slitscan
 """
 
-__all__ = ['moveE','Escan','Escan_list','qxscan']
+__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
-from bluesky.plan_stubs import mv,trigger_and_read
-from bluesky.preprocessors import stage_decorator,run_decorator
+from bluesky.plan_stubs import mv, trigger_and_read
+from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params
 from numpy import linspace
 
-def moveE(energy,group=None):
-
+def moveE(energy, group=None):
     args_list = []
 
-    args_list.append((mono.energy,energy))
+    args_list.append((mono.energy, energy))
 
     if undulator.downstream.tracking is True:
 
         target_energy = undulator.downstream.offset + energy
-        current_energy = undulator.downstream.energy.get()+undulator.downstream.deadband
+        current_energy = undulator.downstream.energy.get() + undulator.downstream.deadband
 
         if current_energy < target_energy:
-            args_list[0] += (undulator.downstream.energy,target_energy+undulator.downstream.backlash)
-            args_list[0] += (undulator.downstream.start_button,1)
+            args_list[0] += (undulator.downstream.energy,
+                             target_energy+undulator.downstream.backlash)
+            args_list[0] += (undulator.downstream.start_button, 1)
 
-            args_list.append((undulator.downstream.energy,target_energy))
-            args_list[-1] += (undulator.downstream.start_button,1)
+            args_list.append((undulator.downstream.energy, target_energy))
+            args_list[-1] += (undulator.downstream.start_button, 1)
 
         else:
-            args_list[0] += (undulator.downstream.energy,target_energy)
-            args_list[0] += (undulator.downstream.start_button,1)
+            args_list[0] += (undulator.downstream.energy, target_energy)
+            args_list[0] += (undulator.downstream.start_button, 1)
 
-    @stage_decorator([mono,undulator.downstream])
+    @stage_decorator([mono, undulator.downstream])
     def _inner_moveE():
         for args in args_list:
-            yield from mv(*args,group=group)
+            yield from mv(*args, group=group)
 
     return (yield from _inner_moveE())
 
 def Escan_list(detectors, energy_list, md = None):
 
-    _positioners= [mono.energy]
+    _positioners = [mono.energy]
     if undulator.downstream.tracking:
         _positioners.append(undulator.downstream.energy)
 
     _md = {'detectors': [det.name for det in detectors],
            'positioners': [pos.name for pos in _positioners],
            'num_points': len(energy_list),
-           'num_intervals': len(energy_list)- 1,
+           'num_intervals': len(energy_list) - 1,
            'plan_args': {'detectors': list(map(repr, detectors)),
                          'energy_list': list(map(repr, energy_list))},
            'plan_name': 'Escan_list',
@@ -57,37 +57,31 @@ def Escan_list(detectors, energy_list, md = None):
 
     _md.update(md or {})
 
-    _md['hints'] = {'dimensions': [(['monochromator_energy'],'primary')]}
+    _md['hints'] = {'dimensions': [(['monochromator_energy'], 'primary')]}
     _md['hints'].update(md.get('hints', {}) or {})
 
-    #abs_plot = AbsorptionCallback()
-    #@subs_decorator(Absorption)
     @run_decorator(md=_md)
     def _inner_Escan_list():
         for energy in energy_list:
             grp = short_uid('set')
             yield Msg('checkpoint')
-            yield from moveE(energy,group=grp)
+            yield from moveE(energy, group=grp)
             yield from trigger_and_read(list(detectors)+_positioners)
 
     return (yield from _inner_Escan_list())
 
-def Escan(detectors,energy_0, energy_f, steps, md = None):
-
+def Escan(detectors, energy_0, energy_f, steps, md = None):
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
                          'steps': repr(steps)},
            'plan_name': 'Escan',
-           'hints': {'x':['mono_energy']},
+           'hints': {'x': ['mono_energy']},
            }
 
     _md.update(md or {})
-    energy_list = linspace(energy_0,energy_f,steps)
-    return (yield from Escan_list(detectors,energy_list,md=_md))
-
-#TODO: not sure where to put this. Maybe it is best fit for the mono?
-#TODO: How to implement distinct collection times?
+    energy_list = linspace(energy_0, energy_f, steps)
+    return (yield from Escan_list(detectors, energy_list, md=_md))
 
 def qxscan(detectors, edge_energy, md = None):
 
@@ -101,6 +95,6 @@ def qxscan(detectors, edge_energy, md = None):
 
     _md.update(md or {})
     energy_list = qxscan_params.energy_list
-    return (yield from Escan_list(detectors,energy_list,md=_md))
+    return (yield from Escan_list(detectors, energy_list, md=_md))
 
 # TODO: Add PRs
