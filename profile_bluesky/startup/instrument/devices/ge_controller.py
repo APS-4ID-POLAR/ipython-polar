@@ -97,11 +97,11 @@ class GEController(PVPositioner):
         return super().move(*args,**kwargs)
 
 
-ge_applyP = GEController("4idd:PC1:", name="GE Controller Apply Press.",
+ge_applyP = GEController("4idd:PC1:", name="GE Controller Apply Press",
                          labels=["ge_controller"])
 
 
-ge_releaseP = GEController("4idd:PC2:", name="GE Controller Release Press.",
+ge_releaseP = GEController("4idd:PC2:", name="GE Controller Release Press",
                            labels=["ge_controller"])
 
 sd.baseline.append(ge_applyP)
