@@ -7,12 +7,6 @@ __all__ = [
     'fourc',
     ]
 
-# add these imports
-
-
-# add to the `Diffractometer` Device:
-# add after this line: huber = Diffra...
-
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -21,7 +15,7 @@ import gi
 gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.diffract import E4CV
-from ophyd import Component
+from ophyd import Component, FormattedComponent
 from ophyd import PseudoSingle
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
 from bluesky.suspenders import SuspendBoolLow
@@ -31,12 +25,14 @@ from apstools.diffractometer import DiffractometerMixin
 from ..framework import RE
 from ..framework import sd
 
+
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
     E4CV: kappa diffractometer in 4-circle geometry with energy.
 
     4-ID-D setup.
     """
+
     # HKL and 4C motors
     h = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
     k = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
@@ -76,7 +72,8 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
 
     # Energy
-    energy = Component(EpicsSignalRO, "4idb:BraggERdbkAO", kind='omitted')
+    energy = FormattedComponent(EpicsSignalRO, "4idb:BraggERdbkAO",
+                                kind='omitted')
     # energy_EGU = Component(EpicsSignal, "optics:energy.EGU")
     energy_update_calc = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
@@ -102,6 +99,7 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
             # keV = pint.Quantity(local_energy, units).to("keV")
             # logger.debug("setting %s.calc.energy = %f (keV)", self.name,
             #              keV.magnitude)
+
             self._calc.energy = local_energy
             self._update_position()
 
