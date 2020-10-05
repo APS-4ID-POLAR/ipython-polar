@@ -1,14 +1,34 @@
 """
-Slitscan
+Energy scans
 """
 
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
+from bluesky.plans import list_scan
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params
 from numpy import linspace
+
+
+def undscan(detectors, energy_0, energy_f, steps, md=None):
+    _md = {'plan_args': {'detectors': list(map(repr, detectors)),
+                         'initial_energy': repr(energy_0),
+                         'final_energy': repr(energy_f),
+                         'steps': repr(steps)},
+           'plan_name': 'undscan',
+           'hints': {'x': ['undulator_downstream_energy']},
+           }
+
+    _md.update(md or {})
+    energy_list = linspace(energy_0, energy_f, steps)
+    start_list = [1 for i in range(steps)]
+    return (yield from list_scan(detectors,
+                                 undulator.downstream.energy, energy_list,
+                                 undulator.downstream.start_button, start_list,
+                                 md=_md))
+
 
 def moveE(energy, group=None):
     args_list = []
@@ -38,6 +58,7 @@ def moveE(energy, group=None):
             yield from mv(*args, group=group)
 
     return (yield from _inner_moveE())
+
 
 def Escan_list(detectors, energy_list, md = None):
 
@@ -70,6 +91,7 @@ def Escan_list(detectors, energy_list, md = None):
 
     return (yield from _inner_Escan_list())
 
+
 def Escan(detectors, energy_0, energy_f, steps, md = None):
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
@@ -82,6 +104,7 @@ def Escan(detectors, energy_0, energy_f, steps, md = None):
     _md.update(md or {})
     energy_list = linspace(energy_0, energy_f, steps)
     return (yield from Escan_list(detectors, energy_list, md=_md))
+
 
 def qxscan(detectors, edge_energy, md = None):
 
