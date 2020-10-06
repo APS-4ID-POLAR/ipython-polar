@@ -28,7 +28,7 @@ from ..framework import sd
 
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
-    E4CV: kappa diffractometer in 4-circle geometry with energy.
+    E4CV: huber diffractometer in 4-circle vertical geometry with energy.
 
     4-ID-D setup.
     """
@@ -38,7 +38,7 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     k = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
     l = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
 
-    omega = Component(EpicsMotor, 'm65', labels=("motor", "fourc"),
+    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"),
                       kind="hinted")
     chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"),
                     kind="hinted")
@@ -88,23 +88,58 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
             return
         if self.energy_update_calc.get() in (1, "Yes", "locked", "OK"):
             # energy_offset has same units as energy
-            local_energy = value + self.energy_offset.get()
-
-            # TODO: I think we don't need this. It's always keV.
-            # # either get units from control system
-            # units = self.energy_EGU.get()
-            # # or define as a constant here
-            # # units = "eV"
-            #
-            # keV = pint.Quantity(local_energy, units).to("keV")
-            # logger.debug("setting %s.calc.energy = %f (keV)", self.name,
-            #              keV.magnitude)
-
-            self._calc.energy = local_energy
+            self._calc.energy = value + self.energy_offset.get()
             self._update_position()
+
+    @property
+    def _calc_energy_update_permitted(self):
+        """return boolean `True` if permitted"""
+        acceptable_values = (1, "Yes", "locked", "OK", True, "On")
+        return self.energy_update_calc_flag.get() in acceptable_values
+
+    def _energy_changed(self, value=None, **kwargs):
+        '''
+        Callback indicating that the energy signal was updated
+        .. note::
+            The `energy` signal is subscribed to this method
+            in the :meth:`Diffractometer.__init__()` method.
+        '''
+        if not self.connected:
+            logger.warning(
+                "%s not fully connected, %s.calc.energy not updated",
+                self.name, self.name)
+            return
+
+        if self._calc_energy_update_permitted:
+            self._update_calc_energy(value)
+
+    def _update_calc_energy(self, value=None, **kwargs):
+        '''
+        writes self.calc.energy from value or self.energy
+        '''
+        if not self.connected:
+            logger.warning(
+                "%s not fully connected, %s.calc.energy not updated",
+                self.name, self.name)
+            return
+
+        # use either supplied value or get from signal
+        value = value or self.energy.get()
+
+        # energy_offset has same units as energy
+        new_calc_energy = value + self.energy_offset.get()
+        logger.debug(
+            "setting %s.calc.energy = %f (keV)",
+            self.name, new_calc_energy)
+        self.calc.energy = new_calc_energy
+        self._update_position()
 
 
 fourc = FourCircleDiffractometer(prefix='4iddx:', name='fourc')
+fourc.calc.physical_axis_names = {'omega': 'theta',
+                                  'chi': 'chi',
+                                  'phi': 'phi',
+                                  'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
 sd.baseline.append(fourc)
