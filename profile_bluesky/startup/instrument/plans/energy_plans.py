@@ -2,7 +2,7 @@
 Energy scans
 """
 
-__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
+__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.plans import list_scan
