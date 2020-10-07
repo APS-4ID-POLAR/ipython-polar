@@ -33,7 +33,7 @@ class FilterBank(Device):
 
 
 filter_pre8c = FilterBank('4idd:PCFfilter:1:', name='filter_pre8c')
-filter_tth = FilterBank('4idd:PCFfilter:1:', name='filter_pre8c')
+filter_tth = FilterBank('4idd:PCFfilter:2:', name='filter_tth')
 
 sd.baseline.append(filter_pre8c)
 sd.baseline.append(filter_tth)
