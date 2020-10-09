@@ -20,7 +20,8 @@ class LS336_LoopControl(PVPositioner):
                                   auto_monitor=True, kind=Kind.hinted)
     setpoint = FormattedComponent(EpicsSignal,
                                   "{self.prefix}OUT{self.loop_number}:SP",
-                                  auto_monitor=True, kind=Kind.omitted)
+                                  auto_monitor=True, put_complete=True,
+                                  kind=Kind.omitted)
     setpointRO = FormattedComponent(EpicsSignalRO,
                                     "{self.prefix}OUT{self.loop_number}:SP_RBV",
                                     kind=Kind.hinted)
