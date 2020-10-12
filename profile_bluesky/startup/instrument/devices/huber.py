@@ -4,7 +4,7 @@ Diffractometer motors
 """
 
 __all__ = [
-    'fourc',
+    'fourc','huber',
     ]
 
 from ..session_logs import logger
@@ -16,15 +16,31 @@ gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.diffract import E4CV
 from ophyd import Component, FormattedComponent
-from ophyd import PseudoSingle
+from ophyd import PseudoSingle, Device
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
 from bluesky.suspenders import SuspendBoolLow
-import pint
-from apstools.diffractometer import Constraint
 from apstools.diffractometer import DiffractometerMixin
 from ..framework import RE
 from ..framework import sd
 
+
+class HuberMotors(Device):
+    # Cryo carrier
+    x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
+    y = Component(EpicsMotor, 'm15', labels=('motor', 'fourc'))  # Cryo Y
+    z = Component(EpicsMotor, 'm16', labels=('motor', 'fourc'))  # Cryo Z
+
+    # Base motors
+    baseth = Component(EpicsMotor, 'm69', labels=('motor', 'fourc'))
+    basetth = Component(EpicsMotor, 'm70', labels=('motor', 'fourc'))
+
+    tablex = Component(EpicsMotor, 'm18', labels=('motor', 'fourc'))
+    tabley = Component(EpicsMotor, 'm17', labels=('motor', 'fourc'))
+
+    # Analyzer motors
+    ath = Component(EpicsMotor, 'm77', labels=('motor', 'fourc'))
+    achi = Component(EpicsMotor, 'm79', labels=('motor', 'fourc'))
+    atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
 
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
@@ -54,52 +70,22 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
                               labels=('diffractometer', 'limits'),
                               kind='config')
 
-    # Cryo carrier
-    x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
-    y = Component(EpicsMotor, 'm15', labels=('motor', 'fourc'))  # Cryo Y
-    z = Component(EpicsMotor, 'm16', labels=('motor', 'fourc'))  # Cryo Z
-
-    # Base motors
-    baseth = Component(EpicsMotor, 'm69', labels=('motor', 'fourc'))
-    basetth = Component(EpicsMotor, 'm70', labels=('motor', 'fourc'))
-
-    tablex = Component(EpicsMotor, 'm18', labels=('motor', 'fourc'))
-    tabley = Component(EpicsMotor, 'm17', labels=('motor', 'fourc'))
-
-    # Analyzer motors
-    ath = Component(EpicsMotor, 'm77', labels=('motor', 'fourc'))
-    achi = Component(EpicsMotor, 'm79', labels=('motor', 'fourc'))
-    atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
-
     # Energy
     energy = FormattedComponent(EpicsSignalRO, "4idb:BraggERdbkAO",
                                 kind='omitted')
     # energy_EGU = Component(EpicsSignal, "optics:energy.EGU")
-    energy_update_calc = Component(Signal, value=1)
+    energy_update_calc_flag = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
-
-    def _energy_changed(self, value=None, **kwargs):
-        '''
-        Callback indicating that the energy signal was updated.
-        '''
-        if not self.connected:
-            logger.warning("%s not fully connected, %s.calc.energy not updated",
-                           self.name, self.name)
-            return
-        if self.energy_update_calc.get() in (1, "Yes", "locked", "OK"):
-            # energy_offset has same units as energy
-            self._calc.energy = value + self.energy_offset.get()
-            self._update_position()
 
     @property
     def _calc_energy_update_permitted(self):
-        """return boolean `True` if permitted"""
+        """return boolean `True` if permitted."""
         acceptable_values = (1, "Yes", "locked", "OK", True, "On")
         return self.energy_update_calc_flag.get() in acceptable_values
 
     def _energy_changed(self, value=None, **kwargs):
         '''
-        Callback indicating that the energy signal was updated
+        Callback indicating that the energy signal was updated.
         .. note::
             The `energy` signal is subscribed to this method
             in the :meth:`Diffractometer.__init__()` method.
@@ -115,7 +101,7 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
 
     def _update_calc_energy(self, value=None, **kwargs):
         '''
-        writes self.calc.energy from value or self.energy
+        writes self.calc.energy from value or self.energy.
         '''
         if not self.connected:
             logger.warning(
@@ -128,18 +114,18 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
 
         # energy_offset has same units as energy
         new_calc_energy = value + self.energy_offset.get()
-        logger.debug(
-            "setting %s.calc.energy = %f (keV)",
-            self.name, new_calc_energy)
         self.calc.energy = new_calc_energy
         self._update_position()
 
 
-fourc = FourCircleDiffractometer(prefix='4iddx:', name='fourc')
+fourc = FourCircleDiffractometer('4iddx:', name='fourc')
 fourc.calc.physical_axis_names = {'omega': 'theta',
                                   'chi': 'chi',
                                   'phi': 'phi',
                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
+
+huber = HuberMotors('4iddx:', name='huber')
 sd.baseline.append(fourc)
+sd.baseline.append(huber)
