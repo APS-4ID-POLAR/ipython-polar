@@ -8,6 +8,7 @@ from ..session_logs import logger
 import json
 from ophyd import Signal, Device, Kind
 from ophyd import Component
+from ..framework import sd
 from collections import OrderedDict
 from numpy import sqrt, arange
 
@@ -156,14 +157,14 @@ class QxscanParams(Device):
             else:
                 end = self.edge.Estart.get()
 
-            elist += list(arange(start, end, step))
+            elist += list(arange(start, end, step)/1000.)
 
         # Edge region
         start = self.edge.Estart.get()
         end = self.edge.Eend.get()
         step = self.edge.Estep.get()
 
-        elist += list(arange(start, end, step))
+        elist += list(arange(start, end, step)/1000.)
 
         # Post-edge region
         for i in range(self.post_edge.num_regions.get()):
@@ -177,12 +178,14 @@ class QxscanParams(Device):
                 start = getattr(self.post_edge,
                                 'region{}'.format(i)).Kend.get()
 
-            elist += list(arange(start, end, step)**2/constant)
+            elist += list(arange(start, end, step)**2/constant/1000.)
 
-        elist += [end**2/constant]
+        elist += [end**2/constant/1000.]
 
         print('\nNumber of points: {}'.format(len(elist)))
-        print('Final relative energy: {:0.3f} eV'.format(max(elist)))
+        print('Final relative energy: {:0.3f} eV'.format(max(elist)*1000.))
+
+        elist.reverse()
 
         self.energy_list.put(elist)
 
@@ -305,5 +308,6 @@ class QxscanParams(Device):
 
 
 qxscan_params = QxscanParams(name='qxscan_setup')
+sd.baseline.append(qxscan_params)
 
 # TODO: Could not make this work using DynamicDeviceComponent. Don't know why.

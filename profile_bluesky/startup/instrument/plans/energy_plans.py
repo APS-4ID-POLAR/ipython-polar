@@ -9,7 +9,7 @@ from bluesky.plans import list_scan
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params
-from numpy import linspace
+from numpy import linspace, array
 
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
@@ -109,15 +109,13 @@ def Escan(detectors, energy_0, energy_f, steps, md = None):
 def qxscan(detectors, edge_energy, md = None):
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
-                         'edge_energy': repr(edge_energy),
-                         'qx_setup': qxscan_params._make_params_dict()},
-
+                         'edge_energy': repr(edge_energy)},
            'plan_name': 'qxscan',
            'hints': {},
            }
 
     _md.update(md or {})
-    energy_list = qxscan_params.energy_list
+    energy_list = array(qxscan_params.energy_list.get())+edge_energy
     return (yield from Escan_list(detectors, energy_list, md=_md))
 
 # TODO: Add PRs
