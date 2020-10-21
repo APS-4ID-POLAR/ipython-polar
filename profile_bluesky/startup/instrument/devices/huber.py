@@ -24,24 +24,6 @@ from ..framework import RE
 from ..framework import sd
 
 
-class HuberMotors(Device):
-    # Cryo carrier
-    x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
-    y = Component(EpicsMotor, 'm15', labels=('motor', 'fourc'))  # Cryo Y
-    z = Component(EpicsMotor, 'm16', labels=('motor', 'fourc'))  # Cryo Z
-
-    # Base motors
-    baseth = Component(EpicsMotor, 'm69', labels=('motor', 'fourc'))
-    basetth = Component(EpicsMotor, 'm70', labels=('motor', 'fourc'))
-
-    tablex = Component(EpicsMotor, 'm18', labels=('motor', 'fourc'))
-    tabley = Component(EpicsMotor, 'm17', labels=('motor', 'fourc'))
-
-    # Analyzer motors
-    ath = Component(EpicsMotor, 'm77', labels=('motor', 'fourc'))
-    achi = Component(EpicsMotor, 'm79', labels=('motor', 'fourc'))
-    atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
-
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
     E4CV: huber diffractometer in 4-circle vertical geometry with energy.
@@ -69,6 +51,26 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     th_tth_permit = Component(EpicsSignal, "userCalc1.VAL",
                               labels=('diffractometer', 'limits'),
                               kind='config')
+
+    # Explicitly selects the real motors
+    _real = ['theta', 'chi', 'phi', 'tth']
+
+    # Cryo carrier
+    x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
+    y = Component(EpicsMotor, 'm15', labels=('motor', 'fourc'))  # Cryo Y
+    z = Component(EpicsMotor, 'm16', labels=('motor', 'fourc'))  # Cryo Z
+
+    # Base motors
+    baseth = Component(EpicsMotor, 'm69', labels=('motor', 'fourc'))
+    basetth = Component(EpicsMotor, 'm70', labels=('motor', 'fourc'))
+
+    tablex = Component(EpicsMotor, 'm18', labels=('motor', 'fourc'))
+    tabley = Component(EpicsMotor, 'm17', labels=('motor', 'fourc'))
+
+    # Analyzer motors
+    ath = Component(EpicsMotor, 'm77', labels=('motor', 'fourc'))
+    achi = Component(EpicsMotor, 'm79', labels=('motor', 'fourc'))
+    atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
 
     # Energy
     energy = FormattedComponent(EpicsSignalRO, "4idb:BraggERdbkAO",
@@ -126,6 +128,4 @@ fourc.calc.physical_axis_names = {'omega': 'theta',
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
 
-huber = HuberMotors('4iddx:', name='huber')
 sd.baseline.append(fourc)
-sd.baseline.append(huber)
