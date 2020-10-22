@@ -16,6 +16,8 @@ from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
+from bluesky.plan_stubs import mv
+
 
 def PresetMonitorSignal(Signal):
     def __init__(self, *args, **kwargs):
@@ -23,7 +25,8 @@ def PresetMonitorSignal(Signal):
         self._readback = 0
 
     def put(self, value, *, timestamp=None, force=False, metadata=None):
-        '''Put updates the internal readback value
+        """Put updates the internal readback value.
+
         The value is optionally checked first, depending on the value of force.
         In addition, VALUE subscriptions are run.
         Extra kwargs are ignored (for API compatibility with EpicsSignal kwargs
@@ -39,7 +42,7 @@ def PresetMonitorSignal(Signal):
             severity, etc.)
         force : bool, optional
             Check the value prior to setting it, defaults to False
-        '''
+        """
         self.log.debug(
             'put(value=%s, timestamp=%s, force=%s, metadata=%s)',
             value, timestamp, force, metadata
@@ -89,11 +92,11 @@ class LocalScalerCH(ScalerCH):
     def hints(self):
         fields = []
         for component in scalerd.channels.component_names:
-            channel = getattr(scalerd.channels,component)
-            if channel.kind.value in [5,7]:
+            channel = getattr(scalerd.channels, component)
+            if channel.kind.value in [5, 7]:
                 if len(channel.s.name) > 0:
                     fields.append(channel.s.name)
-        return {'fields':fields}
+        return {'fields': fields}
 
     def select_plot_channels(self, chan_names):
 
@@ -111,19 +114,19 @@ class LocalScalerCH(ScalerCH):
         for ch in name_map.keys():
             try:
                 if ch in chan_names:
-                    getattr(self.channels,name_map[ch]).kind = Kind.hinted
+                    getattr(self.channels, name_map[ch]).kind = Kind.hinted
                 else:
-                    if getattr(self.channels,name_map[ch]).kind.value != 0:
-                        getattr(self.channels,name_map[ch]).kind = Kind.normal
+                    if getattr(self.channels, name_map[ch]).kind.value != 0:
+                        getattr(self.channels, name_map[ch]).kind = Kind.normal
                     else:
-                        getattr(self.channels,name_map[ch]).kind = Kind.omitted
+                        getattr(self.channels, name_map[ch]).kind = Kind.omitted
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
 
     def select_channels(self, chan_names):
-        '''Select channels based on the EPICS name PV
+        """Select channels based on the EPICS name PV.
 
         Parameters
         ----------
@@ -132,7 +135,7 @@ class LocalScalerCH(ScalerCH):
             The names (as reported by the channel.chname signal)
             of the channels to select.
             If *None*, select all channels named in the EPICS scaler.
-        '''
+        """
         self.match_names()
         name_map = {}
         for s in self.channels.component_names:
@@ -185,7 +188,7 @@ class LocalScalerCH(ScalerCH):
         current = []
         for item in self.channels.read_attrs:
             if item in self.channels.component_names:
-                current.append(getattr(self.channels,item).s.name)
+                current.append(getattr(self.channels, item).s.name)
 
         if value not in current:
             self.select_channels(current+[value])
@@ -200,14 +203,18 @@ class LocalScalerCH(ScalerCH):
             else:
                 channel.gate.put(0)
 
+    def SetCountTimePlan(self, value, **kwargs):
+        yield from mv(self.preset_monitor.put(value), **kwargs)
 
 
-scalerd = LocalScalerCH('4id:scaler1', name='scalerd', labels=('detectors','counters'))
+scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
+                        labels=('detectors', 'counters'))
 scalerd.select_channels(None)
 scalerd.select_plot_channels(None)
 sd.baseline.append(scalerd)
 
-scalerb = LocalScalerCH('4idb:scaler1', name='scalerb', labels=('detectors','counters'))
+scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
+                        labels=('detectors', 'counters'))
 scalerb.channels.chan01.chname.set('Time_b')
 scalerb.select_channels(None)
 scalerb.select_plot_channels(None)

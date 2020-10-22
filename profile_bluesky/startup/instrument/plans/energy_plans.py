@@ -60,11 +60,18 @@ def moveE(energy, group=None):
     return (yield from _inner_moveE())
 
 
-def Escan_list(detectors, energy_list, md = None):
+def Escan_list(detectors, energy_list, factor_list=None, md=None):
 
     _positioners = [mono.energy]
     if undulator.downstream.tracking:
         _positioners.append(undulator.downstream.energy)
+
+    if factor_list is None:
+        factor_list = [1 for i in range(len(energy_list))]
+    else:
+        if len(factor_list) != len(energy_list):
+            raise ValueError('The size of factor_list cannot be different \
+                              from the size of the energy_list')
 
     _md = {'detectors': [det.name for det in detectors],
            'positioners': [pos.name for pos in _positioners],
@@ -81,18 +88,34 @@ def Escan_list(detectors, energy_list, md = None):
     _md['hints'] = {'dimensions': [(['monochromator_energy'], 'primary')]}
     _md['hints'].update(md.get('hints', {}) or {})
 
+    # Collects current monitor count for each detector
+    dets_preset = []
+    for detector in detectors:
+        dets_preset.append(detector.preset_monitor.get())
+
     @run_decorator(md=_md)
     def _inner_Escan_list():
-        for energy in energy_list:
+        for energy, factor in zip(energy_list, factor_list):
             grp = short_uid('set')
             yield Msg('checkpoint')
+
+            # Change counting time
+            for detector, original_preset in zip(detectors, dets_preset):
+                yield from detector.SetCountTimePlan(factor*original_preset,
+                                                     group=grp)
+
+            # Move and scan
             yield from moveE(energy, group=grp)
             yield from trigger_and_read(list(detectors)+_positioners)
+
+        # Put counting time back to original
+        for detector, original_preset in zip(detectors, dets_preset):
+            yield from detector.SetCountTimePlan(original_preset)
 
     return (yield from _inner_Escan_list())
 
 
-def Escan(detectors, energy_0, energy_f, steps, md = None):
+def Escan(detectors, energy_0, energy_f, steps, md=None):
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
