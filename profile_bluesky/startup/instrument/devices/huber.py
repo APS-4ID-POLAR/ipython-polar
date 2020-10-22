@@ -4,7 +4,7 @@ Diffractometer motors
 """
 
 __all__ = [
-    'fourc','huber',
+    'fourc'
     ]
 
 from ..session_logs import logger
