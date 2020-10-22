@@ -5,7 +5,6 @@ Energy scans
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
-from bluesky.plans import list_scan
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params
@@ -23,36 +22,45 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
 
     _md.update(md or {})
     energy_list = linspace(energy_0, energy_f, steps)
-    start_list = [1 for i in range(steps)]
-    return (yield from list_scan(detectors,
-                                 undulator.downstream.energy, energy_list,
-                                 undulator.downstream.start_button, start_list,
-                                 md=_md))
+
+    @run_decorator(md=_md)
+    def _inner_undscan():
+        for energy in energy_list:
+            grp = short_uid('set')
+            yield Msg('checkpoint')
+            yield from moveE(energy, undscan=True, group=grp)
+            yield from trigger_and_read(list(detectors)+[undulator.downstream.energy])
+
+    return (yield from _inner_undscan())
 
 
-def moveE(energy, group=None):
+def moveE(energy, undscan=False, group=None):
     args_list = []
+    decorators = []
 
-    args_list.append((mono.energy, energy))
+    if undscan is False:
+        args_list.append((mono.energy, energy))
+        decorators.append(mono)
 
     if undulator.downstream.tracking is True:
 
         target_energy = undulator.downstream.offset + energy
-        current_energy = undulator.downstream.energy.get() + undulator.downstream.deadband
+        current_energy = undulator.downstream.energy.get()
 
-        if current_energy < target_energy:
-            args_list[0] += (undulator.downstream.energy,
-                             target_energy+undulator.downstream.backlash)
-            args_list[0] += (undulator.downstream.start_button, 1)
+        if abs(target_energy-current_energy) > undulator.downstream.deadband.get():
+            if current_energy < target_energy:
+                args_list[0] += (undulator.downstream.energy,
+                                 target_energy+undulator.downstream.backlash.get())
+                args_list[0] += (undulator.downstream.start_button, 1)
 
-            args_list.append((undulator.downstream.energy, target_energy))
-            args_list[-1] += (undulator.downstream.start_button, 1)
+                args_list.append((undulator.downstream.energy, target_energy))
+                args_list[-1] += (undulator.downstream.start_button, 1)
 
-        else:
-            args_list[0] += (undulator.downstream.energy, target_energy)
-            args_list[0] += (undulator.downstream.start_button, 1)
+            else:
+                args_list[0] += (undulator.downstream.energy, target_energy)
+                args_list[0] += (undulator.downstream.start_button, 1)
 
-    @stage_decorator([mono, undulator.downstream])
+    @stage_decorator(decorators)
     def _inner_moveE():
         for args in args_list:
             yield from mv(*args, group=group)
@@ -129,7 +137,7 @@ def Escan(detectors, energy_0, energy_f, steps, md=None):
     return (yield from Escan_list(detectors, energy_list, md=_md))
 
 
-def qxscan(detectors, edge_energy, md = None):
+def qxscan(detectors, edge_energy, md=None):
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy)},
