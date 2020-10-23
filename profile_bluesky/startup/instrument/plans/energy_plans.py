@@ -44,7 +44,7 @@ def moveE(energy, undscan=False, group=None):
     args_list = [()]
     decorators = []
     
-    _offset = undulator.downstream.offset
+    _offset = undulator.downstream.offset.get()
     _tracking = undulator.downstream.tracking
 
     if undscan is False:
