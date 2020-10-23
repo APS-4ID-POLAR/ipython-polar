@@ -12,7 +12,14 @@ from numpy import linspace, array
 
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
-    _md = {'plan_args': {'detectors': list(map(repr, detectors)),
+    
+    energy_list = linspace(energy_0, energy_f, steps)
+
+    _md = {'detectors': [det.name for det in detectors],
+           'positioners': [undulator.downstream.energy.name],
+           'num_points': len(energy_list),
+           'num_intervals': len(energy_list) - 1,
+           'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
                          'steps': repr(steps)},
@@ -21,8 +28,7 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
            }
 
     _md.update(md or {})
-    energy_list = linspace(energy_0, energy_f, steps)
-
+    
     @run_decorator(md=_md)
     def _inner_undscan():
         for energy in energy_list:
@@ -35,16 +41,24 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
 
 
 def moveE(energy, undscan=False, group=None):
-    args_list = []
+    args_list = [()]
     decorators = []
+    
+    _offset = undulator.downstream.offset
+    _tracking = undulator.downstream.tracking
 
     if undscan is False:
-        args_list.append((mono.energy, energy))
+        args_list[0] += ((mono.energy, energy))
         decorators.append(mono)
+    else:
+        _offset = 0.0
+        _tracking = True
 
-    if undulator.downstream.tracking is True:
+    if _tracking is True:
+        
+        decorators.append(undulator.downstream.energy)
 
-        target_energy = undulator.downstream.offset + energy
+        target_energy = _offset + energy
         current_energy = undulator.downstream.energy.get()
 
         if abs(target_energy-current_energy) > undulator.downstream.deadband.get():
@@ -147,6 +161,8 @@ def qxscan(detectors, edge_energy, md=None):
 
     _md.update(md or {})
     energy_list = array(qxscan_params.energy_list.get())+edge_energy
-    return (yield from Escan_list(detectors, energy_list, md=_md))
+    return (yield from Escan_list(detectors, energy_list,
+                                  factor_list = qxscan_params.factor_list.get(),
+                                  md=_md))
 
 # TODO: Add PRs

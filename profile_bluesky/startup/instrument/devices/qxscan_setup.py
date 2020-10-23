@@ -142,7 +142,7 @@ class QxscanParams(Device):
             else:
                 end = self.edge.Estart.get()
 
-            energies = list(arange(start, end, step)/1000.)
+            energies = arange(start, end, step)/1000.
 
             factorlist += [region.TimeFactor.get() for j in range(energies.size)]
             elist += list(energies)
@@ -152,7 +152,7 @@ class QxscanParams(Device):
         end = self.edge.Eend.get()
         step = self.edge.Estep.get()
 
-        energies = list(arange(start, end, step)/1000.)
+        energies = arange(start, end, step)/1000.
 
         factorlist += [self.edge.TimeFactor.get() for j in range(energies.size)]
         elist += list(energies)
@@ -169,7 +169,7 @@ class QxscanParams(Device):
                 start = getattr(self.post_edge,
                                 'region{}'.format(i)).Kend.get()
 
-            energies = list(arange(start, end, step)**2/constant/1000.)
+            energies = arange(start, end, step)**2/constant/1000.
 
             factorlist += [region.TimeFactor.get() for j in range(energies.size)]
             elist += list(energies)
@@ -204,6 +204,7 @@ class QxscanParams(Device):
         None
         """
         self.energy_list.put(input['energy_list'])
+        self.factor_list.put(input['factor_list'])
 
         self.edge.Estart.put(input['edge']['Estart'])
         self.edge.Eend.put(input['edge']['Eend'])
@@ -216,7 +217,7 @@ class QxscanParams(Device):
             region = getattr(self.pre_edge, reg_key)
             region.Estart.put(input['pre_edge'][reg_key]['Estart'])
             region.Estep.put(input['pre_edge'][reg_key]['Estep'])
-            region.TimeFactor.put(input['pre_edge']['TimeFactor'])
+            region.TimeFactor.put(input['pre_edge'][reg_key]['TimeFactor'])
 
         self.post_edge.num_regions.put(input['post_edge']['num_regions'])
         for i in range(5):
@@ -224,7 +225,7 @@ class QxscanParams(Device):
             region = getattr(self.post_edge, reg_key)
             region.Kend.put(input['post_edge'][reg_key]['Kend'])
             region.Kstep.put(input['post_edge'][reg_key]['Kstep'])
-            region.TimeFactor.put(input['post_edge']['TimeFactor'])
+            region.TimeFactor.put(input['post_edge'][reg_key]['TimeFactor'])
 
     def _make_params_dict(self):
         """
@@ -244,6 +245,7 @@ class QxscanParams(Device):
         output = {}
 
         output['energy_list'] = self.energy_list.get()
+        output['factor_list'] = self.factor_list.get()
 
         output['edge'] = {}
         output['edge']['Estart'] = self.edge.Estart.get()

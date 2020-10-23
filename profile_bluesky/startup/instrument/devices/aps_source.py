@@ -42,13 +42,13 @@ class MyUndulator(apstools.devices.ApsUndulator):
 
         if value:
             while True:
-                offset = input("Undulator offset (keV) ({}): ".format(self._offset.get()))
+                offset = input("Undulator offset (keV) ({}): ".format(self.offset.get()))
                 try:
-                    self._offset.put(float(offset))
+                    self.offset.put(float(offset))
                     break
                 except ValueError:
                     if offset == '':
-                        print('Using offset = {} keV'.format(self._offset.get()))
+                        print('Using offset = {} keV'.format(self.offset.get()))
                         break
                     print("The undulator offset has to be a number.")
 

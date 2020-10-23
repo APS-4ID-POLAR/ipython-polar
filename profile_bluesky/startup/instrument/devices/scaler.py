@@ -19,10 +19,16 @@ import time
 from bluesky.plan_stubs import mv
 
 
-def PresetMonitorSignal(Signal):
+class PresetMonitorSignal(Signal):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._readback = 0
+        
+    def get(self, **kwargs):
+        self._readback = self.parent._monitor.preset.get()
+        if self.parent._monitor.s.name == 'Time':
+            self._readback /= 1e7  # convert to seconds
+        return self._readback
 
     def put(self, value, *, timestamp=None, force=False, metadata=None):
         """Put updates the internal readback value.
@@ -52,10 +58,12 @@ def PresetMonitorSignal(Signal):
             raise ValueError('preset_value has to be > 0.')
 
         if self.parent._monitor.s.name == 'Time':
-            value *= 1e7  # convert to seconds
+            value_put = 1e7*value  # convert to seconds
+        else:
+            value_put = value
 
         old_value = self._readback
-        self.parent._monitor.preset.put(value)
+        self.parent._monitor.preset.put(value_put)
         self._readback = value
 
         if metadata is None:
@@ -204,13 +212,14 @@ class LocalScalerCH(ScalerCH):
                 channel.gate.put(0)
 
     def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.preset_monitor.put(value), **kwargs)
+        yield from mv(self.preset_monitor, value, **kwargs)
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
                         labels=('detectors', 'counters'))
 scalerd.select_channels(None)
 scalerd.select_plot_channels(None)
+scalerd.select_monitor('Time')
 sd.baseline.append(scalerd)
 
 scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
