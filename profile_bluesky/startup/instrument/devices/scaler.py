@@ -23,7 +23,7 @@ class PresetMonitorSignal(Signal):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._readback = 0
-        
+
     def get(self, **kwargs):
         self._readback = self.parent._monitor.preset.get()
         if self.parent._monitor.s.name == 'Time':
