@@ -9,10 +9,13 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
+from ..framework import sd
+
 from ophyd import Device, EpicsMotor
 from ophyd import Component,FormattedComponent
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
+
 
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin,pi
@@ -130,5 +133,9 @@ class SRS340(Device):
 
     function = Component(EpicsSignal,'FUNC.SVAL',write_pv='FUNCs.VAL',
                          kind=Kind.config, labels=('phase retarders'))
+
+sd.baseline.append(pr1)
+sd.baseline.append(pr2)
+sd.baseline.append(pr3)
 
 wavefunc_gen = SRS340('4idd:SRS340:1:',name='wavefunction generator')

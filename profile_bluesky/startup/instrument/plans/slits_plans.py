@@ -51,7 +51,14 @@ def slitscan(dets,positioner,start,end,numPts,md=None):
 
     dets = [positioner]+dets
 
-    yield from list_scan(dets,motor1,motor1_pos,motor2,motor2_pos,md=md)
+    _md = {'slit_positioner': positioner.name,
+           'plan_name': 'slitscan',
+           'start_position': start,
+           'end_position': end
+           }
+    _md.update(md or {})
+
+    yield from list_scan(dets,motor1,motor1_pos,motor2,motor2_pos,md=_md)
 
 
 def slitmv(positioner,value):
@@ -67,7 +74,7 @@ def slitmv(positioner,value):
     value: float
         Target position
     """
-    
+
     if ('vcen' in positioner.name) or ('vsize' in positioner.name):
         motor1 = positioner.parent.top
         motor2 = positioner.parent.bot
@@ -87,8 +94,8 @@ def slitmv(positioner,value):
         yield from mv(motor1,motor1_pos,motor2,motor2_pos)
 
     yield from mv(positioner,value)
-        
-    
+
+
 
 # TODO: Add metadata!
 # TODO: Change slitmv to handle moving multiple motors at the same time.
