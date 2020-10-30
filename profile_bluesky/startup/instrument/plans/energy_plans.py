@@ -7,9 +7,9 @@ __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
-from ..devices import undulator, mono, qxscan_params
-from numpy import linspace, array
-
+from ..devices import undulator, mono, qxscan_params,pr1,pr2,pr3
+from numpy import linspace, array, arcsin, pi
+from scipy.constants import speed_of_light, Planck
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
     
@@ -57,7 +57,7 @@ def moveE(energy, undscan=False, group=None):
     if _tracking is True:
         
         decorators.append(undulator.downstream.energy)
-
+        
         target_energy = _offset + energy
         current_energy = undulator.downstream.energy.get()
 
@@ -73,7 +73,13 @@ def moveE(energy, undscan=False, group=None):
             else:
                 args_list[0] += (undulator.downstream.energy, target_energy)
                 args_list[0] += (undulator.downstream.start_button, 1)
-
+                
+    for pr in [pr1,pr2,pr3]:
+        if pr.tracking is True:
+            lamb = speed_of_light*Planck*6.241509e15*1e10/energy
+            theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
+            args_list.append((pr.th,theta))
+            
     @stage_decorator(decorators)
     def _inner_moveE():
         for args in args_list:
@@ -165,4 +171,3 @@ def qxscan(detectors, edge_energy, md=None):
                                   factor_list = qxscan_params.factor_list.get(),
                                   md=_md))
 
-# TODO: Add PRs
