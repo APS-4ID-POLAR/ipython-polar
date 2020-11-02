@@ -4,14 +4,14 @@ Energy scans
 
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
-from ophyd import Kind
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
-from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3, scalerd
+from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
+from ..devices import pr_setup
 from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
-
+from local_preprocessors import stage_dichro_decorator
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
     energy_list = linspace(energy_0, energy_f, steps)
@@ -36,7 +36,8 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
             grp = short_uid('set')
             yield Msg('checkpoint')
             yield from moveE(energy, undscan=True, group=grp)
-            yield from trigger_and_read(list(detectors)+[undulator.downstream.energy])
+            yield from trigger_and_read(list(detectors) +
+                                        [undulator.downstream.energy])
 
     return (yield from _inner_undscan())
 
@@ -90,11 +91,15 @@ def moveE(energy, undscan=False, group=None):
     return (yield from _inner_moveE())
 
 
-def Escan_list(detectors, energy_list, factor_list=None, md=None):
+def Escan_list(detectors, energy_list, factor_list=None, md=None,
+               dichro=False, lockin=False):
 
     _positioners = [mono.energy]
     if undulator.downstream.tracking:
         _positioners.append(undulator.downstream.energy)
+    for pr in [pr1, pr2, pr3]:
+        if pr.tracking:
+            _positioners.append(pr.th)
 
     if factor_list is None:
         factor_list = [1 for i in range(len(energy_list))]
@@ -123,6 +128,12 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None):
     for detector in detectors:
         dets_preset.append(detector.preset_monitor.get())
 
+    if dichro:
+        pr_pos_list = [pr_setup.helicity_plus, pr_setup.helicity_minus,
+                       pr_setup.helicity_minus, pr_setup.helicity_plus]
+        _positioners.append(pr_setup.positioner())
+
+    @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
     def _inner_Escan_list():
         for energy, factor in zip(energy_list, factor_list):
@@ -136,7 +147,12 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None):
 
             # Move and scan
             yield from moveE(energy, group=grp)
-            yield from trigger_and_read(list(detectors)+_positioners)
+            if dichro:
+                for pos in pr_pos_list:
+                    yield from mv(pr_setup.positioner, pos)
+                    yield from trigger_and_read(list(detectors)+_positioners)
+            else:
+                yield from trigger_and_read(list(detectors)+_positioners)
 
         # Put counting time back to original
         for detector, original_preset in zip(detectors, dets_preset):
@@ -145,7 +161,8 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None):
     return (yield from _inner_Escan_list())
 
 
-def Escan(detectors, energy_0, energy_f, steps, md=None):
+def Escan(detectors, energy_0, energy_f, steps, md=None, dichro=False,
+          lockin=False):
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -156,13 +173,16 @@ def Escan(detectors, energy_0, energy_f, steps, md=None):
 
     _md.update(md or {})
     energy_list = linspace(energy_0, energy_f, steps)
-    return (yield from Escan_list(detectors, energy_list, md=_md))
+    return (yield from Escan_list(detectors, energy_list, md=_md,
+                                  dichro=dichro, lockin=lockin))
 
 
-def qxscan(detectors, edge_energy, md=None):
+def qxscan(detectors, edge_energy, md=None, dichro=False, lockin=False):
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
-                         'edge_energy': repr(edge_energy)},
+                         'edge_energy': repr(edge_energy),
+                         'dichro': dichro,
+                         'lockin': lockin},
            'plan_name': 'qxscan',
            'hints': {},
            }
@@ -171,34 +191,4 @@ def qxscan(detectors, edge_energy, md=None):
     energy_list = array(qxscan_params.energy_list.get())+edge_energy
     return (yield from Escan_list(detectors, energy_list,
                                   factor_list=qxscan_params.factor_list.get(),
-                                  md=_md))
-
-
-def qxlock(detectors, edge_energy, md=None):
-
-    if scalerd not in detectors:
-        detectors += [scalerd]
-
-    _current_scaler_plot = []
-    for chan in scalerd.channels.component_names:
-        scaler_channel = getattr(scalerd.channels, chan)
-        if scaler_channel.kind == Kind.hinted:
-            _current_scaler_plot.append(scaler_channel.s.name)
-
-    scalerd.select_plot_channels(['Lock DC', 'Lock AC'])
-
-    for pr in [pr1, pr2]:
-        if pr.pzt.oscilate is True:
-            yield from mv(pr.pzt.selectAC, 1)
-
-    _md = {'plan_name': 'qxlock'}
-
-    _md.update(md or {})
-
-    yield from qxscan(detectors, edge_energy, md=_md)
-
-    scalerd.select_plot_channels(_current_scaler_plot)
-
-    for pr in [pr1, pr2]:
-        if pr.pzt.oscilate is True:
-            yield from mv(pr.pzt.selectAC, 0)
+                                  md=_md, dichro=dichro, lockin=lockin))
