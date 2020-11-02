@@ -66,9 +66,12 @@ def stage_dichro_wrapper(plan, dichro, lockin):
             if True not in [pr.pzt.oscilate.get() for pr in [pr1, pr2]]:
                 raise ValueError('Phase retarder was not selected.')
 
-            for pr in [pr1, pr2]:
-                if pr.pzt.oscilate is True:
-                    yield from mv(pr.pzt.selectAC, 1)
+            if 'th' in pr_setup.positioner.name:
+                raise TypeError('Theta motor cannot be used in lock in! \
+                                Please run pr_setup.config() and choose \
+                                pzt.')
+
+            yield from mv(pr_setup.positioner.parent.selectAC, 1)
 
         if dichro:
             # get and calculate the offset, add it to the pr_setup.
