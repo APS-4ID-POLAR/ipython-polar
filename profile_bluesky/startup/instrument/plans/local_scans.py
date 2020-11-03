@@ -8,7 +8,7 @@ from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import mv, trigger_and_read, move_per_step
 from ..devices import scalerd, pr_setup
 from .local_preprocessors import (configure_monitor_decorator,
-                                 stage_dichro_decorator)
+                                  stage_dichro_decorator)
 
 # TODO: should I have some default like this?
 # DETECTORS = [scalerd]
@@ -36,11 +36,11 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
     motors = step.keys()
     yield from move_per_step(step, pos_cache)
-    
+
     offset = pr_setup.positioner.parent.offset.get()
     pr_pos = pr_setup.positioner.get()
 
-    for sign in[1,-1,-1,1]:
+    for sign in [1, -1, -1, 1]:
         yield from mv(pr_setup.positioner, pr_pos + sign*offset)
         yield from take_reading(list(detectors) + list(motors) +
                                 [pr_setup.positioner])

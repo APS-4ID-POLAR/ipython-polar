@@ -60,7 +60,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                 scaler_channel = getattr(scalerd.channels, chan)
                 if scaler_channel.kind.value >= 5:
                     _current_scaler_plot.append(scaler_channel.s.name)
-        
+
             scalerd.select_plot_channels(['Lock DC', 'Lock AC'])
 
             if pr_setup.positioner is None:

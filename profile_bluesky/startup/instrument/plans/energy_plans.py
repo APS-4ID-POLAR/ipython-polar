@@ -148,7 +148,7 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
             # Move and scan
             yield from moveE(energy, group=grp)
             if dichro:
-                for sign in [1,-1,-1,1]:
+                for sign in [1, -1, -1, 1]:
                     yield from mv(pr_setup.positioner, pr_pos + sign*offset)
                     yield from trigger_and_read(list(detectors)+_positioners)
             else:

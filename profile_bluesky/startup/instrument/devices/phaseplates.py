@@ -111,7 +111,7 @@ class PRDeviceBase(Device):
     def update_offset_degrees(self, value):
         self.offset.put(value)
 
-        
+
 class PRDevice(PRDeviceBase):
 
     pzt = FormattedComponent(PRPzt, '{self.prefix}:E665:{_prnum}:')
@@ -183,7 +183,7 @@ class PRSetup():
                                 except ValueError:
                                     print('Must be a number.')
                                     pass
-                                
+
                         while True:
                             try:
                                 _offset = float(input('\tOffset (in degrees): '))
@@ -198,7 +198,7 @@ class PRSetup():
                     else:
                         print("ValueError: Only 'yes' or 'no' are acceptable \
                                answers.")
-                        
+
             else:
                 print('\tYou already selected {} to oscillate.'.format(_positioner.name))
 
@@ -224,7 +224,6 @@ class SRS340(Device):
 pr1 = PRDevice('4idb', 'pr1', 1, {'x': 'm10', 'y': 'm11', 'th': 'm13'})
 pr1.pzt.conversion_factor.put(0.001636)
 pr1._set_d_spacing()
-# TODO: pr1 #3 says (220) in the MEDM screen, is it correct?
 
 pr2 = PRDevice('4idb', 'pr2', 2, {'x': 'm15', 'y': 'm16', 'th': 'm18'})
 pr2.pzt.conversion_factor.put(0.0019324)
