@@ -18,4 +18,5 @@ from .uptable import *
 from .kbic import *
 from .user_calc import *
 from .ge_controller import *
+from .ruby_motors import *
 from .filters import *
