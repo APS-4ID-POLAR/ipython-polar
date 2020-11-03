@@ -1,10 +1,9 @@
 """Local decorators."""
 
-from ophyd.utils import make_decorator, single_gen
-from ophyd.preprocessors import pchain, plan_mutator, finalize_wrapper
-from ophyd.plan_stubs import mv
-from ophyd import Kind
-from .devices import scalerd, pr1, pr2, pr_setup
+from bluesky.utils import make_decorator, single_gen
+from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
+from bluesky.plan_stubs import mv
+from ..devices import scalerd, pr_setup
 
 
 def configure_monitor_wrapper(plan, monitor):
@@ -50,10 +49,6 @@ def configure_monitor_wrapper(plan, monitor):
 def stage_dichro_wrapper(plan, dichro, lockin):
 
     _current_scaler_plot = []
-    for chan in scalerd.channels.component_names:
-        scaler_channel = getattr(scalerd.channels, chan)
-        if scaler_channel.kind == Kind.hinted:
-            _current_scaler_plot.append(scaler_channel.s.name)
 
     def _stage():
 
@@ -61,9 +56,14 @@ def stage_dichro_wrapper(plan, dichro, lockin):
             raise ValueError('Cannot have both dichro and lockin = True.')
 
         if lockin:
+            for chan in scalerd.channels.component_names:
+                scaler_channel = getattr(scalerd.channels, chan)
+                if scaler_channel.kind.value >= 5:
+                    _current_scaler_plot.append(scaler_channel.s.name)
+        
             scalerd.select_plot_channels(['Lock DC', 'Lock AC'])
 
-            if True not in [pr.pzt.oscilate.get() for pr in [pr1, pr2]]:
+            if pr_setup.positioner is None:
                 raise ValueError('Phase retarder was not selected.')
 
             if 'th' in pr_setup.positioner.name:
@@ -74,16 +74,15 @@ def stage_dichro_wrapper(plan, dichro, lockin):
             yield from mv(pr_setup.positioner.parent.selectAC, 1)
 
         if dichro:
-            # get and calculate the offset, add it to the pr_setup.
             # move PZT to center.
             if 'pzt' in pr_setup.positioner.name:
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
 
     def _unstage():
-        scalerd.select_plot_channels(_current_scaler_plot)
-        for pr in [pr1, pr2]:
-            yield from mv(pr.pzt.selectDC, 1)
+        if lockin:
+            scalerd.select_plot_channels(_current_scaler_plot)
+            yield from mv(pr_setup.positioner.parent.selectDC, 1)
 
     def _inner_plan():
         yield from _stage()

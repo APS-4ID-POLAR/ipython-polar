@@ -27,25 +27,25 @@ class PRPzt(Device):
     # check if tolerance = 0.01 is good.
     # TODO: The value doesnt change in the MEDM screen, not sure why.
     localDC = Component(EpicsSignal, 'DC_read_microns',
-                        write_pv='DC_read_microns.VAL', auto_monitor=True,
+                        write_pv='DC_set_microns.VAL', auto_monitor=True,
                         kind=Kind.hinted, tolerance=0.01)
 
     center = Component(EpicsSignal, 'AC_put_center.A', kind=Kind.config)
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
                                kind=Kind.config)
 
-    offset = Component(Signal, 0.0, kind=Kind.config)
+    offset = Component(Signal, value=0.0, kind=Kind.config)
 
     servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind=Kind.omitted)
     servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind=Kind.omitted)
     servoStatus = Component(EpicsSignalRO, 'svo', kind=Kind.config)
 
     selectDC = FormattedComponent(EpicsSignal,
-                                  '4idb:232DRIO:1:OFF_ch{_prnum}.PROC',
+                                  '4idb:232DRIO:1:OFF_ch{self._prnum}.PROC',
                                   kind=Kind.omitted, put_complete=True)
 
     selectAC = FormattedComponent(EpicsSignal,
-                                  '4idb:232DRIO:1:ON_ch{_prnum}.PROC',
+                                  '4idb:232DRIO:1:ON_ch{self._prnum}.PROC',
                                   kind=Kind.omitted, put_complete=True)
 
     ACstatus = FormattedComponent(EpicsSignalRO, '4idb:232DRIO:1:status',
@@ -53,9 +53,9 @@ class PRPzt(Device):
 
     conversion_factor = Component(Signal, value=0.1, kind='config')
 
-    def __init__(self, prefix, prnum, **kwargs):
-        self._prnum = prnum
-        super().__init__(prefix=prefix, **kwargs)
+    def __init__(self, PV, *args, **kwargs):
+        self._prnum = PV.split(':')[-2]
+        super().__init__(PV, *args, **kwargs)
 
     def update_offset_degrees(self, value):
         self.offset_degrees.put(value)
@@ -78,14 +78,12 @@ class PRDeviceBase(Device):
 
     _tracking = Component(Signal, value=False)
     d_spacing = Component(Signal, value=0, kind='config')
-    # TODO: Do I need oscillate?
-    # oscillate = Component(Signal, value=False, kind=Kind.omitted)
 
     offset = Component(Signal, value=0, kind='config')
 
-    def __init__(self, prefix, name, motorsDict, **kwargs):
+    def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
-        super().__init__(prefix=prefix, name=name, **kwargs)
+        super().__init__(prefix=PV, name=name, **kwargs)
 
     @property
     def tracking(self):
@@ -113,31 +111,31 @@ class PRDeviceBase(Device):
     def update_offset_degrees(self, value):
         self.offset.put(value)
 
-
+        
 class PRDevice(PRDeviceBase):
 
-    pzt = FormattedComponent(PRPzt, '{self.prefix}:E665:{_prnum}:',
-                             prnum='{_prnum}')
+    pzt = FormattedComponent(PRPzt, '{self.prefix}:E665:{_prnum}:')
 
-    select_pr = FormattedComponent(EpicsSignal, '{self.prefix}:PRA{_prnum}',
-                                   string=True, kind='config')
+# TODO: This currently doesn't work, because ophyd can't handle the microns
+# symbol.
+#    select_pr = FormattedComponent(EpicsSignal, '{self.prefix}:PRA{_prnum}',
+#                                   string=True, kind='config')
 
     def __init__(self, prefix, name, prnum, motorsDict, **kwargs):
         self._prnum = prnum
-        super().__init__(prefix, name, motorsDict, prnum, **kwargs)
+        super().__init__(prefix, name, motorsDict, **kwargs)
+#        self.select_pr.subscribe(self._set_d_spacing)
 
-        self.select_pr.subscribe(self._set_d_spacing)
-
-    def _set_d_spacing(self):
+    def _set_d_spacing(self, value='111'):
         spacing_dictionary = {'111': 2.0595, '220': 1.26118}
-        prlabel = self.select_pr.get()
-        plane = prlabel.split('(')[1].split(')')[0]
-        self.d_spacing.put(spacing_dictionary[plane])
+#        prlabel = self.select_pr.get()
+#        plane = prlabel.split('(')[1].split(')')[0]
+#        self.d_spacing.put(spacing_dictionary[plane])
+        self.d_spacing.put(spacing_dictionary[value])
 
 
 class PRSetup():
-    dichro_positioner = None
-    lockin_pr = None
+    positioner = None
 
     def config(self):
         print('Setup of the phase retarders for dichro scans.')
@@ -146,7 +144,7 @@ class PRSetup():
         _positioner = None
 
         for pr, label in zip([pr1, pr2, pr3], ['PR1', 'PR2', 'PR3']):
-            print(' {}'.format(label))
+            print(' ++ {} ++'.format(label))
             while True:
                 track = input('\tTrack? (yes/no): ')
                 if track.lower() == 'yes':
@@ -161,42 +159,50 @@ class PRSetup():
 
             if _positioner is None:
                 while True:
-                    oscillate = input('Oscillate? (yes/no): ')
+                    oscillate = input('\tOscillate? (yes/no): ')
                     if oscillate.lower() == 'yes':
                         if pr == pr3:
                             method = 'motor'
                             _positioner = pr.th
                         else:
                             while True:
-                                method = input('Use motor or PZT? \
-                                               (motor/pzt): ')
+                                method = input('\tUse motor or PZT? (motor/pzt): ')
                                 if method.lower() == 'motor':
                                     _positioner = pr.th
+                                    break
                                 elif method.lower() == 'pzt':
                                     _positioner = pr.pzt.localDC
+                                    break
                                 else:
-                                    print("ValueError: Only 'motor' or 'pzt' \
-                                           are acceptable answers.")
+                                    print("ValueError: Only 'motor' or 'pzt' are acceptable answers.")
                             while True:
                                 try:
-                                    _center = float(input('PZT center \
-                                                          (in microns): '))
+                                    _center = float(input('\tPZT center (in microns): '))
                                     _positioner.parent.center.put(_center)
                                     break
-                                except ValueError('Must be a number.'):
+                                except ValueError:
+                                    print('Must be a number.')
                                     pass
+                                
                         while True:
                             try:
-                                _offset = float(input('Offset (in degrees): '))
+                                _offset = float(input('\tOffset (in degrees): '))
                                 _positioner.parent.update_offset_degrees(_offset)
                                 break
-                            except ValueError('Must be a number.'):
+                            except ValueError:
+                                print('Must be a number.')
                                 pass
+                        break
+                    elif oscillate.lower() == 'no':
+                        break
+                    else:
+                        print("ValueError: Only 'yes' or 'no' are acceptable \
+                               answers.")
+                        
             else:
-                print('You already selected {} to \
-                      oscillate.'.format(_positioner.name))
+                print('\tYou already selected {} to oscillate.'.format(_positioner.name))
 
-        self.dichro_positioner = _positioner
+        self.positioner = _positioner
 
 
 class SRS340(Device):
@@ -221,7 +227,7 @@ pr1._set_d_spacing()
 # TODO: pr1 #3 says (220) in the MEDM screen, is it correct?
 
 pr2 = PRDevice('4idb', 'pr2', 2, {'x': 'm15', 'y': 'm16', 'th': 'm18'})
-pr2.ptz.conversion_factor.put(0.0019324)
+pr2.pzt.conversion_factor.put(0.0019324)
 pr2._set_d_spacing()
 
 pr3 = PRDeviceBase('4idb', 'pr3', {'x': 'm19', 'y': 'm20', 'th': 'm21'})

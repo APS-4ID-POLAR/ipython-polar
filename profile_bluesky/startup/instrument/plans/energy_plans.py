@@ -11,7 +11,7 @@ from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
 from ..devices import pr_setup
 from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
-from local_preprocessors import stage_dichro_decorator
+from .local_preprocessors import stage_dichro_decorator
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
     energy_list = linspace(energy_0, energy_f, steps)
@@ -129,9 +129,9 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
         dets_preset.append(detector.preset_monitor.get())
 
     if dichro:
-        pr_pos_list = [pr_setup.helicity_plus, pr_setup.helicity_minus,
-                       pr_setup.helicity_minus, pr_setup.helicity_plus]
-        _positioners.append(pr_setup.positioner())
+        offset = pr_setup.positioner.parent.offset.get()
+        pr_pos = pr_setup.positioner.get()
+        _positioners.append(pr_setup.positioner)
 
     @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
@@ -148,8 +148,8 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
             # Move and scan
             yield from moveE(energy, group=grp)
             if dichro:
-                for pos in pr_pos_list:
-                    yield from mv(pr_setup.positioner, pos)
+                for sign in [1,-1,-1,1]:
+                    yield from mv(pr_setup.positioner, pr_pos + sign*offset)
                     yield from trigger_and_read(list(detectors)+_positioners)
             else:
                 yield from trigger_and_read(list(detectors)+_positioners)
