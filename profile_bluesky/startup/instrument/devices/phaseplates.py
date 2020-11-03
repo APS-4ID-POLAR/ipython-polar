@@ -17,6 +17,11 @@ from ophyd import Kind
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi
 
+# This is here because PRDevice.select_pr has a micron symbol that utf-8
+# cannot read. See: https://github.com/bluesky/ophyd/issues/930
+from epics import utils3
+utils3.EPICS_STR_ENCODING = "latin-1"
+
 ## Phase Plates ##
 class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL',
@@ -115,23 +120,18 @@ class PRDeviceBase(Device):
 class PRDevice(PRDeviceBase):
 
     pzt = FormattedComponent(PRPzt, '{self.prefix}:E665:{_prnum}:')
-
-# TODO: This currently doesn't work, because ophyd can't handle the microns
-# symbol.
-#    select_pr = FormattedComponent(EpicsSignal, '{self.prefix}:PRA{_prnum}',
-#                                   string=True, kind='config')
+    select_pr = FormattedComponent(EpicsSignal, '{self.prefix}:PRA{_prnum}',
+                                   string=True, kind='config')
 
     def __init__(self, prefix, name, prnum, motorsDict, **kwargs):
         self._prnum = prnum
         super().__init__(prefix, name, motorsDict, **kwargs)
-#        self.select_pr.subscribe(self._set_d_spacing)
 
-    def _set_d_spacing(self, value='111'):
+    @select_pr.sub_value
+    def _set_d_spacing(self, value=None, **kwargs):
         spacing_dictionary = {'111': 2.0595, '220': 1.26118}
-#        prlabel = self.select_pr.get()
-#        plane = prlabel.split('(')[1].split(')')[0]
-#        self.d_spacing.put(spacing_dictionary[plane])
-        self.d_spacing.put(spacing_dictionary[value])
+        plane = value.split('(')[1].split(')')[0]
+        self.d_spacing.put(spacing_dictionary[plane])
 
 
 class PRSetup():
