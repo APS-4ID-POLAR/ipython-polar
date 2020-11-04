@@ -54,7 +54,7 @@ def moveE(energy, undscan=False, group=None):
         decorators.append(mono)
 
         for pr in [pr1, pr2, pr3]:
-            if pr.tracking is True:
+            if pr.tracking.get() is True:
                 _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
                 theta = arcsin(_lambda/2/pr.d_spacing.get())*180./pi
                 args_list.append((pr.th, theta))

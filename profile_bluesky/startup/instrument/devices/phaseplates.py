@@ -3,7 +3,7 @@ Phase retarders
 """
 
 __all__ = [
-    'pr1', 'pr2', 'pr3', 'wavefunc_gen', 'pr_setup',
+    'pr1', 'pr2', 'pr3', 'pr_setup',
     ]
 
 from ..session_logs import logger
@@ -151,14 +151,13 @@ class PRSetup():
             while True:
                 track = input('\tTrack? (yes/no): ')
                 if track.lower() == 'yes':
-                    pr.tracking = True
+                    pr.tracking.put(True)
                     break
                 elif track.lower() == 'no':
-                    pr.tracking = False
+                    pr.tracking.put(False)
                     break
                 else:
-                    print("ValueError: Only 'yes' or 'no' are acceptable \
-                          answers.")
+                    print("Only yes or no are acceptable answers.")
 
             if _positioner is None:
                 while True:
@@ -177,7 +176,7 @@ class PRSetup():
                                     _positioner = pr.pzt.localDC
                                     break
                                 else:
-                                    print("ValueError: Only 'motor' or 'pzt' are acceptable answers.")
+                                    print("Only motor or pzt are acceptable answers.")
                             while True:
                                 try:
                                     _center = float(input('\tPZT center (in microns): '))
@@ -199,29 +198,12 @@ class PRSetup():
                     elif oscillate.lower() == 'no':
                         break
                     else:
-                        print("ValueError: Only 'yes' or 'no' are acceptable \
-                               answers.")
+                        print("Only yes or no are acceptable answers.")
 
             else:
                 print('\tYou already selected {} to oscillate.'.format(_positioner.name))
 
         self.positioner = _positioner
-
-
-class SRS340(Device):
-    """Wavefunction generator."""
-
-    frequency = Component(EpicsSignal, 'FREQ.VAL', write_pv='SetFREQ.A',
-                          kind=Kind.config, labels=('phase retarders'))
-
-    amplitude = Component(EpicsSignal, 'AMPL.VAL', write_pv='SetAMPL.A',
-                          kind=Kind.config, labels=('phase retarders'))
-
-    offset = Component(EpicsSignal, 'OFFS.VAL', write_pv='SetOFFS.A',
-                       kind=Kind.config, labels=('phase retarders'))
-
-    function = Component(EpicsSignal, 'FUNC.SVAL', write_pv='FUNCs.VAL',
-                         kind=Kind.config, labels=('phase retarders'))
 
 
 pr1 = PRDevice('4idb', 'pr1', 1, {'x': 'm10', 'y': 'm11', 'th': 'm13'})
@@ -237,9 +219,6 @@ pr3.d_spacing.put(3.135)
 
 pr_setup = PRSetup()
 
-wavefunc_gen = SRS340('4idd:SRS340:1:', name='wavefunction_generator')
-
 sd.baseline.append(pr1)
 sd.baseline.append(pr2)
 sd.baseline.append(pr3)
-sd.baseline.append(wavefunc_gen)

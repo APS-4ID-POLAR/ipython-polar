@@ -19,3 +19,4 @@ from .kbic import *
 from .user_calc import *
 from .ge_controller import *
 from .qxscan_setup import *
+from .wavefunction_generator import *
