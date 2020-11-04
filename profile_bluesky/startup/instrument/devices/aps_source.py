@@ -30,19 +30,33 @@ class MyUndulator(apstools.devices.ApsUndulator):
     offset = Component(Signal, value=0, kind='config')
     tracking = Component(TrackingSignal, value=False, kind='config')
 
-    @tracking.sub_value
-    def _ask_for_offset(self, value=False, **kwargs):
-        if value:
+    def undulator_setup(self):
+        """Interactive setup of usual undulator parameters."""
+        while True:
+            msg = "Do you want to track the undulator energy? (yes/no): "
+            _tracking = input(msg)
+            if _tracking == 'yes':
+                self.tracking.put(True)
+                break
+            elif _tracking == 'no':
+                self.tracking.put(False)
+            else:
+                print("Only yes or no are valid answers.")
+
+        if _tracking == 'yes':
             while True:
-                offset = input("Undulator offset (keV) ({}): ".format(self.offset.get()))
+                msg = "Undulator offset (keV) ({:0.3f}): "
+                _offset = input(msg.format(self.offset.get()))
                 try:
-                    self.offset.put(float(offset))
+                    self.offset.put(float(_offset))
                     break
                 except ValueError:
-                    if offset == '':
-                        print('Using offset = {} keV'.format(self.offset.get()))
+                    if _offset == '':
+                        msg = 'Using offset = {:0.3f} keV'
+                        print(msg.format(self.offset.get()))
                         break
-                    print("The undulator offset has to be a number.")
+                    else:
+                        print("The undulator offset has to be a number.")
 
 
 class MyDualUndulator(Device):

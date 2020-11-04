@@ -36,8 +36,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
     def calibrate_energy(self, value):
         """Calibrate the mono energy.
 
-        Sets the current monochromator position to a new value.
-
         Parameters
         ----------
         value: float
