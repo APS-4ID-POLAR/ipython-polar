@@ -12,7 +12,7 @@ from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
-    
+
     energy_list = linspace(energy_0, energy_f, steps)
 
     _md = {'detectors': [det.name for det in detectors],
@@ -28,7 +28,7 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
            }
 
     _md.update(md or {})
-    
+
     @run_decorator(md=_md)
     def _inner_undscan():
         for energy in energy_list:
@@ -43,9 +43,9 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
 def moveE(energy, undscan=False, group=None):
     args_list = [()]
     decorators = []
-    
+
     _offset = undulator.downstream.offset.get()
-    _tracking = undulator.downstream.tracking
+    _tracking = undulator.downstream.tracking.get()
 
     if undscan is False:
         args_list[0] += ((mono.energy, energy))
@@ -55,9 +55,9 @@ def moveE(energy, undscan=False, group=None):
         _tracking = True
 
     if _tracking is True:
-        
+
         decorators.append(undulator.downstream.energy)
-        
+
         target_energy = _offset + energy
         current_energy = undulator.downstream.energy.get()
 
@@ -73,13 +73,13 @@ def moveE(energy, undscan=False, group=None):
             else:
                 args_list[0] += (undulator.downstream.energy, target_energy)
                 args_list[0] += (undulator.downstream.start_button, 1)
-                
+
     for pr in [pr1,pr2,pr3]:
         if pr.tracking is True:
             lamb = speed_of_light*Planck*6.241509e15*1e10/energy
             theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
             args_list.append((pr.th,theta))
-            
+
     @stage_decorator(decorators)
     def _inner_moveE():
         for args in args_list:
@@ -170,4 +170,3 @@ def qxscan(detectors, edge_energy, md=None):
     return (yield from Escan_list(detectors, energy_list,
                                   factor_list = qxscan_params.factor_list.get(),
                                   md=_md))
-

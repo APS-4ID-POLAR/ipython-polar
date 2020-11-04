@@ -13,6 +13,7 @@ logger.info(__file__)
 
 import apstools.devices
 from ..framework import sd
+from ..utils import TrackingSignal
 from ophyd import Device, Component, Signal, EpicsSignal
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
@@ -27,19 +28,10 @@ class MyUndulator(apstools.devices.ApsUndulator):
     deadband = Component(Signal, value=0.002, kind='config')
     backlash = Component(Signal, value=0.25, kind='config')
     offset = Component(Signal, value=0, kind='config')
-    _tracking = Component(Signal, value=False, kind='config')
+    tracking = Component(TrackingSignal, value=False, kind='config')
 
-    @property
-    def tracking(self):
-        return self._tracking.get()
-
-    @tracking.setter
-    def tracking(self, value):
-        if type(value) != bool:
-            raise ValueError('tracking is boolean, it can only be True or False.')
-        else:
-            self._tracking.put(value)
-
+    @tracking.sub_value
+    def _ask_for_offset(self, value=False, **kwargs):
         if value:
             while True:
                 offset = input("Undulator offset (keV) ({}): ".format(self.offset.get()))
@@ -55,7 +47,7 @@ class MyUndulator(apstools.devices.ApsUndulator):
 
 class MyDualUndulator(Device):
     upstream = None
-    downstream = Component(MyUndulator,'ds:')
+    downstream = Component(MyUndulator, 'ds:')
 
 
 undulator = MyDualUndulator("ID04", name="undulator")
