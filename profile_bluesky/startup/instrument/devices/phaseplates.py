@@ -22,7 +22,22 @@ from numpy import arcsin, pi
 from epics import utils3
 utils3.EPICS_STR_ENCODING = "latin-1"
 
-## Phase Plates ##
+
+class TrackingSignal(Signal):
+
+    def check_value(self, value):
+        """
+        Check if the value is a boolean.
+
+        Raises
+        ------
+        ValueError
+        """
+        if type(value) != bool:
+            msg = 'tracking is boolean, it can only be True or False.'
+            raise ValueError(msg)
+
+
 class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL',
                                 kind=Kind.omitted)
@@ -81,7 +96,7 @@ class PRDeviceBase(Device):
     th = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[th]}',
                             labels=('motor', 'phase retarders'))
 
-    _tracking = Component(Signal, value=False)
+    tracking = Component(TrackingSignal, value=False)
     d_spacing = Component(Signal, value=0, kind='config')
 
     offset = Component(Signal, value=0, kind='config')
@@ -89,18 +104,6 @@ class PRDeviceBase(Device):
     def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
         super().__init__(prefix=PV, name=name, **kwargs)
-
-    @property
-    def tracking(self):
-        return self._tracking.get()
-
-    @tracking.setter
-    def tracking(self, value):
-        if type(value) != bool:
-            raise ValueError('tracking is boolean, it can only be True or \
-                             False')
-        else:
-            self._tracking.put(value)
 
     def set_energy(self, energy):
         # energy in keV!
