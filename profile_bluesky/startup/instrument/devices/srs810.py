@@ -41,10 +41,8 @@ class LockinDevice(Device):
     # Reference
     reference_freq = Component(EpicsSignalRO, 'Freq.SVAL', kind='config',
                                label=('lockin'))
-    reference_phase = Component(EpicsSignalRO, 'Phas.SVAL', kind='config',
-                                label=('lockin'))
-    reference_phase_set = Component(EpicsSignal, 'Phas.SVAL', kind='omitted',
-                                    label=('lockin'))
+    reference_phase = Component(EpicsSignal, 'Phas.SVAL', write_pv='Phas.SVAL',
+                                kind='config', label=('lockin'))
 
     # Channel 1 outputs
     chan1_x = Component(EpicsSignalRO, 'X.SVAL', kind='hinted',

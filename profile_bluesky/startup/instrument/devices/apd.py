@@ -19,10 +19,8 @@ class APDDevice(Device):
     count_time = Component(EpicsSignal, 'CountTime.A', kind='config',
                            labels=('apd'))
 
-    hv_setpoint = Component(EpicsSignal, 'SetHV.A', kind='omitted',
-                            labels=('apd'))
-    hv_readback = Component(EpicsSignalRO, 'HV.VAL', kind='config',
-                            labels=('apd'))
+    hv = Component(EpicsSignalRO, 'HV.VAL', write_pv='SetHV.A',
+                   kind='config', labels=('apd'))
     hv_on = Component(EpicsSignal, 'HVOnOff.VAL', kind='config',
                       labels=('apd'))
 
@@ -30,14 +28,11 @@ class APDDevice(Device):
                          labels=('apd'))
     sca_outtime = Component(EpicsSignal, 'SetOutTime.VAL', kind='config',
                             labels=('apd'))
-    sca_low_setpoint = Component(EpicsSignal, 'SetSCALevel.A', kind='omitted',
-                                 labels=('apd'))
-    sca_low_readback = Component(EpicsSignalRO, 'SCAlow.VAL', kind='config',
-                                 labels=('apd'))
-    sca_window_readback = Component(EpicsSignalRO, 'SCAwin.VAL', kind='config',
-                                    labels=('apd'))
-    sca_window_setpoint = Component(EpicsSignal, 'SetSCALevel.B',
-                                    kind='omitted', labels=('apd'))
+    sca_low = Component(EpicsSignalRO, 'SCAlow.VAL', write_pv='SetSCALevel.A',
+                        kind='config', labels=('apd'))
+    sca_window = Component(EpicsSignalRO, 'SCAwin.VAL',
+                           write_pv='SetSCALevel.B', kind='config',
+                           labels=('apd'))
 
 
 apd_parameters = APDDevice('4idd:apd:1:', name='apd')
