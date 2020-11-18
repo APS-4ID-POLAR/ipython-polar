@@ -4,7 +4,6 @@ local, custom Device definitions
 
 from .aps_source import *
 from .scaler import *
-
 from .magnets import *
 from .monochromator import *
 from .huber import *
@@ -20,3 +19,7 @@ from .user_calc import *
 from .ge_controller import *
 from .ruby_motors import *
 from .filters import *
+from .apd import *
+from .cyberstar import *
+from .srs_amplifiers import *
+from .srs810 import *
