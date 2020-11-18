@@ -47,7 +47,7 @@ class PreAmpDevice(Device):
                                      labels=('preamps'))
 
     offset_fine = FormattedComponent(EpicsSignal,
-                                     '{prefix}A{_num}offset_u_put.VAL',
+                                     '{prefix}A{_num}off_u_put.VAL',
                                      kind='config', string=True,
                                      labels=('preamps'))
 
@@ -98,21 +98,21 @@ class PreAmpDevice(Device):
     blank = FormattedComponent(EpicsSignal, '{prefix}A{_num}blank_on.VAL',
                                kind='config', string=True, labels=('preamps'))
 
-    def __init__(self, num, *args, **kwargs):
+    def __init__(self, *args, num=0, **kwargs):
         self._num = num
         super().__init__(*args, **kwargs)
 
 
 class PreAmpStack(Device):
 
-    ch1 = Component(PreAmpDevice, 1, '', labels=('preamps'))
-    ch2 = Component(PreAmpDevice, 2, '', labels=('preamps'))
-    ch3 = Component(PreAmpDevice, 3, '', labels=('preamps'))
-    ch4 = Component(PreAmpDevice, 4, '', labels=('preamps'))
-    ch5 = Component(PreAmpDevice, 5, '', labels=('preamps'))
-    ch6 = Component(PreAmpDevice, 6, '', labels=('preamps'))
-    ch7 = Component(PreAmpDevice, 7, '', labels=('preamps'))
-    ch8 = Component(PreAmpDevice, 8, '', labels=('preamps'))
+    ch1 = Component(PreAmpDevice, '', num=1, labels=('preamps'))
+    ch2 = Component(PreAmpDevice, '', num=2, labels=('preamps'))
+    ch3 = Component(PreAmpDevice, '', num=3, labels=('preamps'))
+    ch4 = Component(PreAmpDevice, '', num=4, labels=('preamps'))
+    ch5 = Component(PreAmpDevice, '', num=5, labels=('preamps'))
+    ch6 = Component(PreAmpDevice, '', num=6, labels=('preamps'))
+    ch7 = Component(PreAmpDevice, '', num=7, labels=('preamps'))
+    ch8 = Component(PreAmpDevice, '', num=8, labels=('preamps'))
 
 
 preamps = PreAmpStack('4idd:', name='preamps')
