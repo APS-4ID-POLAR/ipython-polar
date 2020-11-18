@@ -133,6 +133,7 @@ class LocalScalerCH(ScalerCH):
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
 
+
     def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
 
@@ -203,7 +204,7 @@ class LocalScalerCH(ScalerCH):
 
         if value is None:
             value = name_map.keys()
-
+            
         self.monitor = name_map[value]
 
         # Adjust gates
