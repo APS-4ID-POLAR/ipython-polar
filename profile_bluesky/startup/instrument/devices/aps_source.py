@@ -13,52 +13,56 @@ logger.info(__file__)
 
 import apstools.devices
 from ..framework import sd
-from ophyd import Device,Component, Signal
+from ..utils import TrackingSignal
+from ophyd import Device, Component, Signal, EpicsSignal
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
+
 class MyUndulator(apstools.devices.ApsUndulator):
 
-    deadband = 0.002
-    backlash = 0.25
-    _tracking = Component(Signal, value=False)
-    _offset = Component(Signal, value = 0)
+    energy = Component(EpicsSignal, "Energy", write_pv="EnergySet",
+                       put_complete=True, kind='hinted')
 
-    @property
-    def tracking(self):
-        return self._tracking.get()
+    deadband = Component(Signal, value=0.002, kind='config')
+    backlash = Component(Signal, value=0.25, kind='config')
+    offset = Component(Signal, value=0, kind='config')
+    tracking = Component(TrackingSignal, value=False, kind='config')
 
-    @tracking.setter
-    def tracking(self,value):
-        if type(value) != bool:
-            raise ValueError('tracking is boolean, it can only be True or False.')
-        else:
-            self._tracking.put(value)
+    def undulator_setup(self):
+        """Interactive setup of usual undulator parameters."""
+        while True:
+            msg = "Do you want to track the undulator energy? (yes/no): "
+            _tracking = input(msg)
+            if _tracking == 'yes':
+                self.tracking.put(True)
+                break
+            elif _tracking == 'no':
+                self.tracking.put(False)
+            else:
+                print("Only yes or no are valid answers.")
 
-        if value == True:
+        if _tracking == 'yes':
             while True:
-                offset = input("Undulator offset (keV) ({}): ".format(self._offset.get()))
+                msg = "Undulator offset (keV) ({:0.3f}): "
+                _offset = input(msg.format(self.offset.get()))
                 try:
-                    self._offset = float(offset)
+                    self.offset.put(float(_offset))
                     break
                 except ValueError:
-                    if offset == '':
-                        print('Using offset = {} keV'.format(self._offset.get()))
+                    if _offset == '':
+                        msg = 'Using offset = {:0.3f} keV'
+                        print(msg.format(self.offset.get()))
                         break
-                    print("The undulator offset has to be a number.")
+                    else:
+                        print("The undulator offset has to be a number.")
 
-    @property
-    def offset(self):
-        return self._offset.get()
-
-    @offset.setter
-    def offset(self,value):
-        self._offset.put(float(value))
 
 class MyDualUndulator(Device):
     upstream = None
-    downstream = Component(MyUndulator,'ds:')
+    downstream = Component(MyUndulator, 'ds:')
+
 
 undulator = MyDualUndulator("ID04", name="undulator")
 undulator.downstream.tracking = False

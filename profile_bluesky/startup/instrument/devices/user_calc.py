@@ -40,8 +40,9 @@ def _sc_chans(attr_fix, id_range):
         defn['{}{}'.format(attr_fix, k)] = (UserCalcChannel,
                                                 '', {'ch': k,
                                                      'kind': Kind.config})
-    return defn  
-
+        
+    return defn
+  
 class UserCalc(Device):
 
     channels =  DynamicDeviceComponent(_sc_chans('chan',
@@ -60,7 +61,7 @@ class UserCalc(Device):
     @property
     def read_attrs(self):
         return self._read_attrs
-    
+ 
     @read_attrs.setter
     def read_attrs(self,value):
         if type(value) is not list:
@@ -75,3 +76,4 @@ normalize_calc = UserCalc('4id:userCalc10',name='normalize_calc')
 normalize_calc.scan.put(2)
 
 sd.baseline.append(absorption_calc)
+sd.baseline.append(normalize_calc)
