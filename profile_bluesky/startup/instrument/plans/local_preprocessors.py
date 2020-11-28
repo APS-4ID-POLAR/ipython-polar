@@ -2,9 +2,68 @@
 
 from bluesky.utils import make_decorator, single_gen
 from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
-from bluesky.plan_stubs import mv
-from ..devices import scalerd, pr_setup
+from bluesky.plan_stubs import mv, sleep
+from ..devices import scalerd, pr_setup, mag6t
+from ..utils import local_rd
 
+
+def stage_ami_wrapper(plan, magnet):
+
+    def _stage():
+
+        if mag6t.field.switch_heater.get() != 'On':
+
+            yield from mv(mag6t.field.ramp_button, 1)
+
+            while True:
+                supply = yield from local_rd(mag6t.field.supply_current)
+                target = yield from local_rd(mag6t.field.current)
+                if abs(supply-target) > 0.01:
+                    yield from sleep(1)
+                else:
+                    break
+
+            yield from mv(mag6t.field.switch_heater, 'On')
+
+            while True:
+                _status = yield from local_rd(mag6t.field.magnet_status)
+
+                if _status != 3:
+                    yield from sleep(1)
+                else:
+                    break
+
+            yield from mv(mag6t.field.ramp_button, 1)
+
+    def _unstage():
+
+        while True:
+            voltage = yield from local_rd(mag6t.field.voltage)
+            if abs(voltage) > 0.01:
+                yield from sleep(1)
+            else:
+                break
+
+        yield from mv(mag6t.field.switch_heater, 'Off')
+
+        while True:
+            _status = yield from local_rd(mag6t.field.magnet_status)
+
+            if _status not in [2, 3]:
+                yield from sleep(1)
+            else:
+                break
+
+        yield from mv(mag6t.field.zero_button, 1)
+
+    def _inner_plan():
+        yield from _stage()
+        return (yield from plan)
+
+    if magnet:
+        return (yield from finalize_wrapper(_inner_plan(), _unstage()))
+    else:
+        return (yield from plan)
 
 def configure_monitor_wrapper(plan, monitor):
     """
@@ -93,3 +152,4 @@ def stage_dichro_wrapper(plan, dichro, lockin):
 
 configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
+stage_ami_decorator = make_decorator(stage_ami_wrapper)
