@@ -82,12 +82,6 @@ def moveE(energy, undscan=False, group=None):
             else:
                 args_list[0] += (undulator.downstream.energy, target_energy)
                 args_list[0] += (undulator.downstream.start_button, 1)
-
-    for pr in [pr1,pr2,pr3]:
-        if pr.tracking is True:
-            lamb = speed_of_light*Planck*6.241509e15*1e10/energy
-            theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
-            args_list.append((pr.th,theta))
             
     @stage_decorator(decorators)
     def _inner_moveE():
