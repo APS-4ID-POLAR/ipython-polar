@@ -133,7 +133,8 @@ class LocalScalerCH(ScalerCH):
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
 
-    def select_channels(self, chan_names):
+
+    def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
 
         Parameters
@@ -183,7 +184,7 @@ class LocalScalerCH(ScalerCH):
         if value in self.channels.component_names:
             self._monitor = getattr(self.channels, value)
 
-    def select_monitor(self, value):
+    def select_monitor(self, value=None):
 
         self.match_names()
         name_map = {}
@@ -201,6 +202,9 @@ class LocalScalerCH(ScalerCH):
         if value not in current:
             self.select_channels(current+[value])
 
+        if value is None:
+            value = name_map.keys()
+            
         self.monitor = name_map[value]
 
         # Adjust gates
@@ -217,16 +221,16 @@ class LocalScalerCH(ScalerCH):
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
                         labels=('detectors', 'counters'))
-scalerd.select_channels(None)
-scalerd.select_plot_channels(None)
+scalerd.select_channels()
+scalerd.select_plot_channels()
 scalerd.select_monitor('Time')
 sd.baseline.append(scalerd)
 
 scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
                         labels=('detectors', 'counters'))
 scalerb.channels.chan01.chname.set('Time_b')
-scalerb.select_channels(None)
-scalerb.select_plot_channels(None)
+scalerb.select_channels()
+scalerb.select_plot_channels()
 sd.baseline.append(scalerb)
 
 # TODO: name the other channels, watch out for python keywords such as del!
