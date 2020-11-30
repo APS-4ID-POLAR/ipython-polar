@@ -2,12 +2,12 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'amifield']
+__all__ = ['lup', 'ascan', 'mv']
 
 from bluesky.plans import rel_scan, scan
-from bluesky.plan_stubs import mv, trigger_and_read, move_per_step, sleep
+from bluesky.plan_stubs import trigger_and_read, move_per_step
+from bluesky.plan_stubs import mv as bps_mv
 from ..devices import scalerd, pr_setup, mag6t
-from ..utils import local_rd
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
@@ -15,13 +15,14 @@ from .local_preprocessors import (configure_monitor_decorator,
 # TODO: should I have some default like this?
 # DETECTORS = [scalerd]
 
-def amifield(target):
-
-    @stage_ami_decorator(True)
-    def _inner_amifield():
-        yield from mv(mag6t.field, target)
-
-    return (yield from _inner_amifield())
+#def amifield(target):
+#    """ DEPRECATED - use RE(mv(mag6t.field,target)) """
+#
+#    @stage_ami_decorator(True)
+#    def _inner_amifield():
+#        yield from mv(mag6t.field, target)
+#
+#    return (yield from _inner_amifield())
     
 def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     """
@@ -95,7 +96,20 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
     @stage_ami_decorator(magnet)
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
-    def _inner_lup():
+    def _inner_ascan():
         yield from scan(detectors, *args, md=md, per_step=per_step)
 
-    return (yield from _inner_lup())
+    return (yield from _inner_ascan())
+
+def mv(*args, **kwargs):
+    
+    if mag6t.field in args:
+        magnet = True
+    else:
+        magnet = False
+        
+    @stage_ami_decorator(magnet)
+    def _inner_mv():
+        yield from bps_mv(*args, **kwargs)
+        
+    return (yield from _inner_mv())
