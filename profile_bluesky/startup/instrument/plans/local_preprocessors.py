@@ -24,6 +24,7 @@ def stage_ami_wrapper(plan, magnet):
                     break
 
             yield from mv(mag6t.field.switch_heater, 'On')
+            yield from sleep(2)
 
             while True:
                 _status = yield from local_rd(mag6t.field.magnet_status)
@@ -45,6 +46,7 @@ def stage_ami_wrapper(plan, magnet):
                 break
 
         yield from mv(mag6t.field.switch_heater, 'Off')
+        yield from sleep(2)
 
         while True:
             _status = yield from local_rd(mag6t.field.magnet_status)

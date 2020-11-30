@@ -14,6 +14,7 @@ from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import Kind
 from bluesky.plan_stubs import mv, sleep
 from ..utils import local_rd
+from ..framework import sd
 
 class AMIZones(Device):
     high_field = Component(EpicsSignal, "Field.VAL", write_pv="FieldSet")
@@ -132,3 +133,4 @@ class Magnet6T(Device):
 
 
 mag6t = Magnet6T('4iddx:', name='magnet_6T')
+sd.baseline.append(mag6t)

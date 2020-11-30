@@ -5,15 +5,15 @@ Modifed bluesky scans
 __all__ = ['lup', 'ascan', 'amifield']
 
 from bluesky.plans import rel_scan, scan
-from bluesky.plan_stubs import mv, trigger_and_read, move_per_step
+from bluesky.plan_stubs import mv, trigger_and_read, move_per_step, sleep
 from ..devices import scalerd, pr_setup, mag6t
+from ..utils import local_rd
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
 
 # TODO: should I have some default like this?
 # DETECTORS = [scalerd]
-
 
 def amifield(target):
 
@@ -22,7 +22,7 @@ def amifield(target):
         yield from mv(mag6t.field, target)
 
     return (yield from _inner_amifield())
-
+    
 def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     """
     Inner loop for dichro scans.

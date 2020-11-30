@@ -98,7 +98,7 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     if undulator.downstream.tracking:
         _positioners.append(undulator.downstream.energy)
     for pr in [pr1, pr2, pr3]:
-        if pr.tracking:
+        if pr.tracking.get():
             _positioners.append(pr.th)
 
     if factor_list is None:
@@ -130,12 +130,13 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
 
     if dichro:
         offset = pr_setup.positioner.parent.offset.get()
-        pr_pos = pr_setup.positioner.get()
+        pr_pos = pr_setup.positioner.parent.center.get()
         _positioners.append(pr_setup.positioner)
 
     @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
     def _inner_Escan_list():
+        yield from moveE(energy_list[0]+0.001)
         for energy, factor in zip(energy_list, factor_list):
             grp = short_uid('set')
             yield Msg('checkpoint')
