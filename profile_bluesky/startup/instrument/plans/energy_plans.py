@@ -13,7 +13,31 @@ from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
 from .local_preprocessors import stage_dichro_decorator
 
+
 def undscan(detectors, energy_0, energy_f, steps, md=None):
+    """
+    Scan the undulator energy.
+
+    Due to the undulator backlash, it is recommended that energy_0 > energy_f.
+
+    Parameters
+    ----------
+    detectors : list
+        list of 'readable' objects
+    energy_0 : float
+        Initial energy in keV
+    energy_f : float
+        Final energy in keV
+    steps : integer
+        Number of steps
+    md : dict, optional
+        metadata
+
+    See Also
+    --------
+    :func:`moveE`
+    :func:`Escan`
+    """
     energy_list = linspace(energy_0, energy_f, steps)
 
     _md = {'detectors': [det.name for det in detectors],
@@ -43,6 +67,26 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
 
 
 def moveE(energy, undscan=False, group=None):
+    """
+    Move beamline energy.
+
+    It reads the tracking flags of the undulator and phase retarders.
+
+    Parameters
+    ----------
+    energy : float
+        Target energy
+    undscan : boolean, optional
+        If True, it moves only the undulator energy
+    group : string, optional
+        Used to mark these as a unit to be waited on.
+
+    See Also
+    --------
+    :func:`bluesky.plan_stubs.mv`
+    :func:`undscan`
+    :func:`Escan`
+    """
     args_list = [()]
     decorators = []
 
@@ -82,7 +126,7 @@ def moveE(energy, undscan=False, group=None):
             else:
                 args_list[0] += (undulator.downstream.energy, target_energy)
                 args_list[0] += (undulator.downstream.start_button, 1)
-            
+
     @stage_decorator(decorators)
     def _inner_moveE():
         for args in args_list:
@@ -93,7 +137,38 @@ def moveE(energy, undscan=False, group=None):
 
 def Escan_list(detectors, energy_list, factor_list=None, md=None,
                dichro=False, lockin=False):
+    """
+    Scan the beamline energy using a list of energies.
 
+    Due to the undulator backlash, it is recommended for energy_list to be in
+    descending order.
+
+    Parameters
+    ----------
+    detectors : list
+        list of 'readable' objects
+    energy_list : iterable
+        List of energies to be used
+    factor_list: iterable, optional
+        Controls the time per point by multiplying the initial count time by
+        this factor. Needs to have the same length as energy_list.
+    md : dict, optional
+        metadata
+    dichro : boolean, optional
+        Flag to run a dichro energy scan. Please run pr_setup.config() prior to
+        a dichro scan. Note that this will switch the x-ray polarization at
+        every point using the +, -, -, + sequence, thus increasing the number
+        of points, and time per energy, by a factor of 4
+    lockin : boolean, optional
+        Flag to run a lockin energy scan. Please run pr_setup.config() prior to
+        a lockin scan.
+
+    See Also
+    --------
+    :func:`moveE`
+    :func:`Escan`
+    :func:`qxscan`
+    """
     _positioners = [mono.energy]
     if undulator.downstream.tracking:
         _positioners.append(undulator.downstream.energy)
@@ -164,6 +239,39 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
 
 def Escan(detectors, energy_0, energy_f, steps, md=None, dichro=False,
           lockin=False):
+    """
+    Scan the beamline energy using a fixed step size.
+
+    Due to the undulator backlash, it is recommended that
+    energy_0 > energy_f.
+
+    Parameters
+    ----------
+    detectors : list
+        list of 'readable' objects
+    energy_0 : float
+        Initial energy in keV
+    energy_f : float
+        Final energy in keV
+    steps : integer
+        Number of steps
+    md : dict, optional
+        metadata
+    dichro : boolean, optional
+        Flag to run a dichro energy scan. Please run pr_setup.config() prior to
+        a dichro scan. Note that this will switch the x-ray polarization at
+        every point using the +, -, -, + sequence, thus increasing the number
+        of points, and time per energy, by a factor of 4
+    lockin : boolean, optional
+        Flag to run a lockin energy scan. Please run pr_setup.config() prior to
+        a lockin scan.
+
+    See Also
+    --------
+    :func:`moveE`
+    :func:`Escan_list`
+    :func:`qxscan`
+    """
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -179,7 +287,36 @@ def Escan(detectors, energy_0, energy_f, steps, md=None, dichro=False,
 
 
 def qxscan(detectors, edge_energy, md=None, dichro=False, lockin=False):
+    """
+    Scan the beamline energy using variable step size.
 
+    It reads the `qxscan_params` device. Prior to this scan, please run
+    `qxscan_params.setup` or load setttings using
+    `qxscan_params.load_params_json`.
+
+    Parameters
+    ----------
+    detectors : list
+        list of 'readable' objects
+    edge_energy : float
+        Energy of the absorption edge.
+    md : dict, optional
+        metadata
+    dichro : boolean, optional
+        Flag to run a dichro energy scan. Please run pr_setup.config() prior to
+        a dichro scan. Note that this will switch the x-ray polarization at
+        every point using the +, -, -, + sequence, thus increasing the number
+        of points, and time per energy, by a factor of 4
+    lockin : boolean, optional
+        Flag to run a lockin energy scan. Please run pr_setup.config() prior to
+        a lockin scan.
+
+    See Also
+    --------
+    :func:`moveE`
+    :func:`Escan_list`
+    :func:`Escan`
+    """
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy),
                          'dichro': dichro,

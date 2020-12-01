@@ -8,7 +8,25 @@ from ..utils import local_rd
 
 
 def stage_ami_wrapper(plan, magnet):
+    """
+    Stage the AMI magnet.
 
+    Turns on/off the persistence switch heater before/after the magnetic field
+    scan or move.
+
+    Parameters
+    ----------
+    plan : iterable or iterator
+        a generator, list, or similar containing `Msg` objects
+    magnet : boolean
+        Flag that triggers the stage/unstage.
+
+    Yields
+    ------
+    msg : Msg
+        messages from plan, with 'subscribe' and 'unsubscribe' messages
+        inserted and appended
+    """
     def _stage():
 
         if mag6t.field.switch_heater.get() != 'On':
@@ -67,10 +85,12 @@ def stage_ami_wrapper(plan, magnet):
     else:
         return (yield from plan)
 
+
 def configure_monitor_wrapper(plan, monitor):
     """
-    Preprocessor that sets all devices with a `preset_monitor` to the same \
-    value. The original setting is stashed and restored at the end.
+    Set all devices with a `preset_monitor` to the same value.
+
+    The original setting is stashed and restored at the end.
 
     Parameters
     ----------
@@ -78,6 +98,7 @@ def configure_monitor_wrapper(plan, monitor):
         a generator, list, or similar containing `Msg` objects
     monitor : float or None
         If None, the plan passes through unchanged.
+
     Yields
     ------
     msg : Msg
@@ -108,7 +129,24 @@ def configure_monitor_wrapper(plan, monitor):
 
 
 def stage_dichro_wrapper(plan, dichro, lockin):
+    """
+    Stage dichoic scans.
 
+    Parameters
+    ----------
+    plan : iterable or iterator
+        a generator, list, or similar containing `Msg` objects
+    dichro : boolean
+        Flag that triggers the stage/unstage process of dichro scans.
+    lockin : boolean
+        Flag that triggers the stage/unstage process of lockin scans.
+
+    Yields
+    ------
+    msg : Msg
+        messages from plan, with 'subscribe' and 'unsubscribe' messages
+        inserted and appended
+    """
     _current_scaler_plot = []
 
     def _stage():
