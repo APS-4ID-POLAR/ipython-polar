@@ -29,7 +29,8 @@ def stage_ami_wrapper(plan, magnet):
     """
     def _stage():
 
-        if mag6t.field.switch_heater.get() != 'On':
+        _heater_status = yield from local_rd(mag6t.field.switch_heater)
+        if _heater_status != 'On':
 
             yield from mv(mag6t.field.ramp_button, 1)
 
