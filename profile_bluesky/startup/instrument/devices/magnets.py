@@ -10,10 +10,9 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, PVPositioner
-from ophyd import EpicsSignal, EpicsSignalRO
+from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
-from bluesky.plan_stubs import mv, sleep
-from ..utils import local_rd
+from ophyd.status import wait as status_wait
 from ..framework import sd
 
 class AMIZones(Device):
@@ -72,6 +71,8 @@ class AMIController(PVPositioner):
                        labels=('ami_controller', 'magnet'))
     ramp_units = Component(EpicsSignalRO, "RampR:Units.SVAL", kind=Kind.config,
                            labels=('ami_controller', 'magnet'))
+    tolerance = Component(Signal, value=0.0005, kind=Kind.config,
+                          labels=('ami_controller', 'magnet'))
 
     # Buttons
     ramp_button = Component(EpicsSignal, "Ramp.PROC", kind=Kind.omitted,
@@ -111,6 +112,25 @@ class AMIController(PVPositioner):
     @done.sub_value
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
+        
+    def move(self, position, wait=True, **kwargs):
+        
+        _current_pos = self.readback.get()
+        
+        status = super().move(position, wait=False, **kwargs)
+        
+        if abs(position-_current_pos) < self.tolerance.get():
+            self._done_moving()
+        else:
+            try:
+                self._setup_move(position)
+                if wait:
+                    status_wait(status)
+            except KeyboardInterrupt:
+                self.stop()
+                raise
+            
+        return status
 
 
 # Magnet and sample motors
