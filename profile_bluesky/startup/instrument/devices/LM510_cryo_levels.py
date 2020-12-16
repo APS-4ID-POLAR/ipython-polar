@@ -13,6 +13,7 @@ from ..framework import sd
 
 class CryoLevelMonitor(Device):
 
+
     # Cryo_1 LHe
     level_he = Component(EpicsSignalRO, 'cryo_1:LEVEL', kind='hinted',
                                 labels=('cryolevels'))
@@ -35,7 +36,7 @@ class CryoLevelMonitor(Device):
     scan_he = Component(EpicsSignal, 'cryo_1:scanSeq.SCAN', kind='config',
                                 labels=('cryolevels'))
 
-    # Cryo_2 LN2
+    # Cryo_2 LN2 
     level_n2 = Component(EpicsSignalRO, 'cryo_2:LEVEL', kind='hinted',
                                 labels=('cryolevels'))
     alarm_threshold_n2 = Component(EpicsSignalRO, 'cryo_2:HALARM', kind='omitted',
