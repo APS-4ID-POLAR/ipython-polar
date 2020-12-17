@@ -9,7 +9,7 @@ __all__ = [
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component,EpicsMotor,MotorBundle
+from ophyd import Component, EpicsMotor, MotorBundle
 from ..framework import sd
 
 class XBPM(MotorBundle):
