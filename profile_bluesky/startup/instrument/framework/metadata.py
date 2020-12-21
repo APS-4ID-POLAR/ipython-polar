@@ -7,6 +7,10 @@ __all__ = []
 from ..session_logs import logger
 logger.info(__file__)
 
+# required before hkl is imported
+import gi
+gi.require_version('Hkl', '5.0')
+
 import apstools
 import bluesky
 import databroker
@@ -14,6 +18,7 @@ from datetime import datetime
 import epics
 import getpass
 import h5py
+import hkl
 import matplotlib
 import numpy
 import ophyd
@@ -40,6 +45,8 @@ versions = dict(
     bluesky = bluesky.__version__,
     databroker = databroker.__version__,
     epics = epics.__version__,
+    h5py = h5py.__version__,
+    hklpy = hkl.__version__,
     matplotlib = matplotlib.__version__,
     numpy = numpy.__version__,
     ophyd = ophyd.__version__,
