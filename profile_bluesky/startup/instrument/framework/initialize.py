@@ -1,18 +1,23 @@
-
 """
 initialize the bluesky framework
 """
 
 __all__ = [
-    'RE', 'db', 'sd',
-    'bec', 'peaks',
-    'bp', 'bps', 'bpp',
-    'summarize_plan',
-    'np',
-    'callback_db',
-    ]
+    "bec",
+    "bp",
+    "bpp",
+    "bps",
+    "callback_db",
+    "db",
+    "np",
+    "peaks",
+    "RE",
+    "sd",
+    "summarize_plan",
+]
 
 from ..session_logs import logger
+
 logger.info(__file__)
 
 from bluesky import RunEngine
@@ -47,11 +52,11 @@ RE.md = PersistentDict(
 callback_db = {}
 
 # Set up a Broker.
-db = databroker.Broker.named('mongodb_config')
+db = databroker.Broker.named("mongodb_config")
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
-callback_db['db'] = RE.subscribe(db.insert)
+callback_db["db"] = RE.subscribe(db.insert)
 
 # Set up SupplementalData.
 sd = SupplementalData()
@@ -66,20 +71,21 @@ get_ipython().register_magics(BlueskyMagics)
 
 # Set up the BestEffortCallback.
 bec = BestEffortCallback()
-callback_db['bec'] = RE.subscribe(bec)
+callback_db["bec"] = RE.subscribe(bec)
 peaks = bec.peaks  # just an alias, for less typing
 bec.disable_baseline()
 
 # At the end of every run, verify that files were saved and
 # print a confirmation message.
-# callback_db['post_run_verify'] = RE.subscribe(post_run(verify_files_saved), 'stop')
+# _prv_ = RE.subscribe(post_run(verify_files_saved), 'stop')
+# callback_db['post_run_verify'] = _prv_
 
-# Uncomment the following lines to turn on 
+# Uncomment the following lines to turn on
 # verbose messages for debugging.
 # ophyd.logger.setLevel(logging.DEBUG)
 
 # diagnostics
-#RE.msg_hook = ts_msg_hook
+# RE.msg_hook = ts_msg_hook
 
 # set default timeout for all EpicsSignalBase connections & communications
 EpicsSignalBase.set_default_timeout(timeout=10, connection_timeout=5)
