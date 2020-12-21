@@ -33,6 +33,7 @@ from IPython import get_ipython
 from ophyd.signal import EpicsSignalBase
 import databroker
 import os
+import warnings
 
 
 # convenience imports
@@ -87,5 +88,17 @@ bec.disable_baseline()
 # diagnostics
 # RE.msg_hook = ts_msg_hook
 
-# set default timeout for all EpicsSignalBase connections & communications
-EpicsSignalBase.set_default_timeout(timeout=10, connection_timeout=5)
+# set default timeout for all EpicsSignal connections & communications
+try:
+    EpicsSignalBase.set_defaults(
+        auto_monitor=True,
+        timeout=60,
+        write_timeout=60,
+        connection_timeout=5,
+    )
+except Exception as exc:
+    warnings.warn(
+        "ophyd version is old, upgrade to 1.6.0+ "
+        "to get set_defaults() method"
+    )
+    EpicsSignalBase.set_default_timeout(timeout=10, connection_timeout=5)
