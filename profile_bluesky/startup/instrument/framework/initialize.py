@@ -52,8 +52,8 @@ RE.md = PersistentDict(
 # keep track of callback subscriptions
 callback_db = {}
 
-# Set up a Broker.
-db = databroker.Broker.named("mongodb_config")
+# Connect with mongodb database.
+db = databroker.catalog["mongodb_config"]
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
