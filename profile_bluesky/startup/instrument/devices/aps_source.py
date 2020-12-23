@@ -65,5 +65,5 @@ class MyDualUndulator(Device):
 
 
 undulator = MyDualUndulator("ID04", name="undulator")
-undulator.downstream.tracking = False
+undulator.downstream.tracking.put(False)
 sd.baseline.append(undulator)
