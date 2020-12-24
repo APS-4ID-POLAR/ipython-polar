@@ -28,20 +28,20 @@ class ThetaMotor(EpicsMotor):
 
     def update_theta(self, old_value=None, value=None, **kwargs):
 
-        if not value:
+        if value:
             # lamb in angstroms
             lamb = speed_of_light*Planck*6.241509e15*1e10/value
-
             # theta in degrees
-            theta = arcsin(lamb/2/self.d_spacing.get())*180./pi
-
+            theta = arcsin(lamb/2/self.parent.d_spacing.get())*180./pi
+            # TODO: This does not work when I use mono.energy.put, I don't
+            # understand it.
             self.set(theta)
 
 
 class EnergySignal(Signal):
 
     def update_energy(self, old_value=None, value=None, **kwargs):
-        if not value:
+        if value:
             self.put(value)
 
 
@@ -117,18 +117,21 @@ class PRDeviceBase(Device):
         if onoff is True:
             # Move to PR energy of current PR theta
             energy = (speed_of_light*Planck*6.241509e15*1e10 /
-                      2*self.d_spacing.get()*sin(self.th.get()*pi/180.))
+                      2/self.d_spacing.get()/
+                      sin(self.th.user_readback.get()*pi/180.))
             self.energy.put(energy)
 
             # Turn on theta tracking
             self._th_cid = self.energy.subscribe(
-                self.th.update_theta, sub_type=self.energy.SUB_VALUE
+                self.th.update_theta, event_type=self.energy.SUB_VALUE
                 )
 
             # Turn on energy tracking
-            # self._energy_cid = mono.energy.subscribe(
-            #     self.energy.update_energy, sub_type=mono.energy.SUB_SETPOINT
-            #     )
+            self._energy_cid = mono.energy.subscribe(
+                 self.energy.update_energy,
+                 event_type=mono.energy.SUB_SETPOINT,
+                 run=False
+                 )
 
         else:
             if not self._th_cid:
