@@ -8,7 +8,8 @@ from ophyd import Component, FormattedComponent
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
 from scipy.constants import speed_of_light, Planck
-from numpy import arcsin, pi
+from numpy import arcsin, pi, sin
+from .monochromator import mono
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
@@ -23,21 +24,6 @@ __all__ = [
     ]
 
 
-class TrackingSignal(Signal):
-
-    def check_value(self, value):
-        """
-        Check if the value is a boolean.
-
-        Raises
-        ------
-        ValueError
-        """
-        if type(value) != bool:
-            msg = 'tracking is boolean, it can only be True or False.'
-            raise ValueError(msg)
-
-
 class ThetaMotor(EpicsMotor):
 
     def update_theta(self, old_value=None, value=None, **kwargs):
@@ -50,6 +36,13 @@ class ThetaMotor(EpicsMotor):
             theta = arcsin(lamb/2/self.d_spacing.get())*180./pi
 
             self.set(theta)
+
+
+class EnergySignal(Signal):
+
+    def update_energy(self, old_value=None, value=None, **kwargs):
+        if not value:
+            self.put(value)
 
 
 class PRPzt(Device):
@@ -110,19 +103,41 @@ class PRDeviceBase(Device):
     th = FormattedComponent(ThetaMotor, '{self.prefix}:{_motorsDict[th]}',
                             labels=('motor', 'phase retarders'))
 
-    energy = Component(Signal, value=10.0, labels=('phase retardders',))
-
-    tracking = Component(TrackingSignal, value=False)
+    energy = Component(EnergySignal, value=10.0, labels=('phase retarders',))
     d_spacing = Component(Signal, value=0, kind='config')
-
     offset = Component(Signal, value=0, kind='config')
 
     def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
         super().__init__(prefix=PV, name=name, **kwargs)
+        self._th_cid = None
+        self._energy_cid = None
 
-        self.energy.subscribe(self.th.update_theta,
-                              sub_type=self.energy.SUB_VALUE)
+    def change_tracking(self, onoff):
+        if onoff is True:
+            # Move to PR energy of current PR theta
+            energy = (speed_of_light*Planck*6.241509e15*1e10 /
+                      2*self.d_spacing.get()*sin(self.th.get()*pi/180.))
+            self.energy.put(energy)
+
+            # Turn on theta tracking
+            self._th_cid = self.energy.subscribe(
+                self.th.update_theta, sub_type=self.energy.SUB_VALUE
+                )
+
+            # Turn on energy tracking
+            # self._energy_cid = mono.energy.subscribe(
+            #     self.energy.update_energy, sub_type=mono.energy.SUB_SETPOINT
+            #     )
+
+        else:
+            if not self._th_cid:
+                self.energy.unsubscribe(self._th_cid)
+                self._th_cid = None
+
+            if not self._energy_cid:
+                mono.energy.unsubscribe(self._energy_cid)
+                self._energy_cid = None
 
     def set_energy(self, energy):
         # energy in keV!
