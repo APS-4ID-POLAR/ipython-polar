@@ -3,13 +3,12 @@ Phase retarders.
 """
 
 from ..framework import sd
-from ophyd import Device, EpicsMotor, PseudoPositioner, PseudoSingle
+from ophyd import Device, EpicsMotor
 from ophyd import Component, FormattedComponent
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
-from numpy import arcsin, pi, sin
+from numpy import arcsin, pi
 from .monochromator import mono
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
@@ -25,10 +24,27 @@ __all__ = [
     ]
 
 
-class EnergyPseudo(PseudoSingle):
-    def update_energy(self, old_value=None, value=None, **kwargs):
+class ThetaMotor(EpicsMotor):
+
+    def track_theta(self, old_value=None, value=None, **kwargs):
         if value:
-            self.put(value)
+            theta = self.convert_energy_to_theta(value)
+            # TODO: This does not work when I use mono.energy.put, I don't
+            # understand it.
+            self.set(theta)
+ 
+    def convert_energy_to_theta(self, energy):
+        # lambda in angstroms
+        lamb = speed_of_light*Planck*6.241509e15*1e10/energy
+        # theta in degrees
+        theta = arcsin(lamb/2/self.parent.d_spacing.get())*180./pi
+        return theta
+
+
+# class EnergySignal(Signal):
+#     def update_energy(self, old_value=None, value=None, **kwargs):
+#         if value:
+#             self.put(value)
 
 
 class PRPzt(Device):
@@ -78,15 +94,7 @@ class PRPzt(Device):
         self.offset.put((value / self.conversion_factor.get()))
 
 
-class PRDeviceBase(PseudoPositioner):
-
-    energy = Component(EnergyPseudo, limits=(3, 20))
-
-    th = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[th]}',
-                            labels=('motor', 'phase retarders'))
-
-    # Explicitly selects the real motor
-    _real = ['th']
+class PRDeviceBase(Device):
 
     x = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[x]}',
                            labels=('motor', 'phase retarders'))
@@ -94,55 +102,57 @@ class PRDeviceBase(PseudoPositioner):
     y = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[y]}',
                            labels=('motor', 'phase retarders'))
 
+    th = FormattedComponent(ThetaMotor, '{self.prefix}:{_motorsDict[th]}',
+                            labels=('motor', 'phase retarders'))
+
+    # energy = Component(EnergySignal, value=10.0, labels=('phase retarders',))
     d_spacing = Component(Signal, value=0, kind='config')
     offset = Component(Signal, value=0, kind='config')
 
     def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
         super().__init__(prefix=PV, name=name, **kwargs)
-        self._energy_cid = None
-
-    def convert_energy_to_theta(self, energy):
-        # lambda in angstroms, theta in degrees, energy in keV
-        lamb = speed_of_light*Planck*6.241509e15*1e10/energy
-        theta = arcsin(lamb/2/self.parent.d_spacing.get())*180./pi
-        return theta
-
-    def convert_theta_to_energy(self, theta):
-        # lambda in angstroms, theta in degrees, energy in keV
-        lamb = 2*self.parent.d_spacing.get()*sin(theta*pi/180)
-        energy = speed_of_light*Planck*6.241509e15*1e10/lamb
-        return energy
-
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        '''Run a forward (pseudo -> real) calculation'''
-        return self.RealPosition(
-            th=self.convert_energy_to_theta(pseudo_pos.energy)
-            )
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        '''Run an inverse (real -> pseudo) calculation'''
-        return self.PseudoPosition(
-            energy=self.convert_theta_to_energy(real_pos.theta)
-            )
+        self._th_cid = None
+        # self._energy_cid = None
 
     def change_tracking(self, onoff):
         if onoff is True:
-            # Turn on energy tracking
-            self._energy_cid = mono.energy.subscribe(
-                 self.energy.update_energy,
+            # # Move to PR energy of current PR theta
+            # energy = (speed_of_light*Planck*6.241509e15*1e10 /
+            #           2/self.d_spacing.get() /
+            #           sin(self.th.user_readback.get()*pi/180.))
+            # self.energy.put(energy)
+
+            # # Turn on theta tracking
+            # self._th_cid = self.energy.subscribe(
+            #     self.th.update_theta, event_type=self.energy.SUB_VALUE
+            #     )
+
+            # # Turn on energy tracking
+            # self._energy_cid = mono.energy.subscribe(
+            #      self.energy.update_energy,
+            #      event_type=mono.energy.SUB_SETPOINT,
+            #      run=False
+            #      )
+
+            # Turn on tracking
+            self._th_cid = mono.energy.subscribe(
+                 self.th.track_theta,
                  event_type=mono.energy.SUB_SETPOINT
                  )
         else:
-            if not self._energy_cid:
-                mono.energy.unsubscribe(self._energy_cid)
-                self._energy_cid = None
+            if not self._th_cid:
+                mono.energy.unsubscribe(self._th_cid)
+                self._th_cid = None
+
+            # if not self._energy_cid:
+            #     mono.energy.unsubscribe(self._energy_cid)
+            #     self._energy_cid = None
 
     def set_energy(self, energy):
-        # energy in keV, theta in degrees.
-        theta = self.convert_energy_to_theta(energy)
+        # energy in keV!
+        # theta in degrees
+        theta = self.th.convert_energy_to_theta(energy)
         self.th.set_current_position(theta)
 
     def update_offset_degrees(self, value):
