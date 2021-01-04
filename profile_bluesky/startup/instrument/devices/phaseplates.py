@@ -23,12 +23,13 @@ utils3.EPICS_STR_ENCODING = "latin-1"
 __all__ = [
     'pr1', 'pr2', 'pr3', 'pr_setup',
     ]
-
-
-class EnergyPseudo(PseudoSingle):
-    def update_energy(self, old_value=None, value=None, **kwargs):
+            
+            
+class ThMotor(EpicsMotor):
+    def update_th(self, old_value=None, value=None, **kwargs):
         if value:
-            self.put(value)
+            _th = self.parent.convert_energy_to_theta(value)
+            self.user_setpoint.put(_th)
 
 
 class PRPzt(Device):
@@ -80,9 +81,8 @@ class PRPzt(Device):
 
 class PRDeviceBase(PseudoPositioner):
 
-    energy = Component(EnergyPseudo, limits=(3, 20))
-
-    th = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[th]}',
+    energy = Component(PseudoSingle, limits=(2.7, 20))
+    th = FormattedComponent(ThMotor, '{self.prefix}:{_motorsDict[th]}',
                             labels=('motor', 'phase retarders'))
 
     # Explicitly selects the real motor
@@ -105,12 +105,12 @@ class PRDeviceBase(PseudoPositioner):
     def convert_energy_to_theta(self, energy):
         # lambda in angstroms, theta in degrees, energy in keV
         lamb = speed_of_light*Planck*6.241509e15*1e10/energy
-        theta = arcsin(lamb/2/self.parent.d_spacing.get())*180./pi
+        theta = arcsin(lamb/2/self.d_spacing.get())*180./pi
         return theta
 
     def convert_theta_to_energy(self, theta):
         # lambda in angstroms, theta in degrees, energy in keV
-        lamb = 2*self.parent.d_spacing.get()*sin(theta*pi/180)
+        lamb = 2*self.d_spacing.get()*sin(theta*pi/180)
         energy = speed_of_light*Planck*6.241509e15*1e10/lamb
         return energy
 
@@ -125,14 +125,14 @@ class PRDeviceBase(PseudoPositioner):
     def inverse(self, real_pos):
         '''Run an inverse (real -> pseudo) calculation'''
         return self.PseudoPosition(
-            energy=self.convert_theta_to_energy(real_pos.theta)
+            energy=self.convert_theta_to_energy(real_pos.th)
             )
-
+        
     def change_tracking(self, onoff):
         if onoff is True:
             # Turn on energy tracking
             self._energy_cid = mono.energy.subscribe(
-                 self.energy.update_energy,
+                 self.th.update_th,
                  event_type=mono.energy.SUB_SETPOINT
                  )
         else:
