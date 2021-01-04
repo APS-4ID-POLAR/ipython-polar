@@ -6,6 +6,7 @@ __all__ = ['TrackingSignal']
 
 from ophyd import Signal
 
+
 class TrackingSignal(Signal):
 
     def check_value(self, value):
@@ -17,5 +18,5 @@ class TrackingSignal(Signal):
         ValueError
         """
         if type(value) != bool:
-            msg = 'tracking is boolean, it can only be True or False.'
-            raise ValueError(msg)
+            raise ValueError('tracking is boolean, it can only be True or \
+                False.')

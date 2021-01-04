@@ -11,6 +11,7 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi, sin
 from .monochromator import mono
+from ..utils import TrackingSignal
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
@@ -23,8 +24,8 @@ utils3.EPICS_STR_ENCODING = "latin-1"
 __all__ = [
     'pr1', 'pr2', 'pr3', 'pr_setup',
     ]
-            
-            
+
+
 class ThMotor(EpicsMotor):
     def update_th(self, old_value=None, value=None, **kwargs):
         if value:
@@ -96,6 +97,7 @@ class PRDeviceBase(PseudoPositioner):
 
     d_spacing = Component(Signal, value=0, kind='config')
     offset = Component(Signal, value=0, kind='config')
+    tracking = Component(TrackingSignal, value=False)
 
     def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
@@ -127,7 +129,7 @@ class PRDeviceBase(PseudoPositioner):
         return self.PseudoPosition(
             energy=self.convert_theta_to_energy(real_pos.th)
             )
-        
+
     def change_tracking(self, onoff):
         if onoff is True:
             # Turn on energy tracking
