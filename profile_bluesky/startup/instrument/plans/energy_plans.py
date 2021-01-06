@@ -94,9 +94,10 @@ def moveE(energy, undscan=False, group=None):
     _tracking = undulator.downstream.tracking.get()
 
     if undscan is False:
-        args_list[0] += ((mono.energy, energy))
-        decorators.append(mono)
-
+        if abs(energy-mono.energy.get()) > mono.energy.tolerance:
+            args_list[0] += ((mono.energy, energy))
+            decorators.append(mono)
+            
         for pr in [pr1, pr2, pr3]:
             if pr.tracking.get() is True:
                 _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
@@ -132,7 +133,10 @@ def moveE(energy, undscan=False, group=None):
         for args in args_list:
             yield from mv(*args, group=group)
 
-    return (yield from _inner_moveE())
+    if len(args_list[0]) > 0:
+        return (yield from _inner_moveE())
+    else:
+        return None
 
 
 def Escan_list(detectors, energy_list, factor_list=None, md=None,
