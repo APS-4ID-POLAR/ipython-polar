@@ -48,8 +48,16 @@ def moveE(energy, undscan=False, group=None):
     _tracking = undulator.downstream.tracking.get()
 
     if undscan is False:
-        args_list[0] += ((mono.energy, energy))
-        decorators.append(mono)
+        if abs(energy-mono.energy.get()) > mono.energy.tolerance:
+            args_list[0] += ((mono.energy, energy))
+            decorators.append(mono)
+
+        for pr in [pr1, pr2, pr3]:
+            if pr.tracking.get() is True:
+                _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
+                theta = arcsin(_lambda/2/pr.d_spacing.get())*180./pi
+                args_list.append((pr.th, theta))
+                decorators.append(pr)
     else:
         _offset = 0.0
         _tracking = True
@@ -74,18 +82,15 @@ def moveE(energy, undscan=False, group=None):
                 args_list[0] += (undulator.downstream.energy, target_energy)
                 args_list[0] += (undulator.downstream.start_button, 1)
 
-    for pr in [pr1,pr2,pr3]:
-        if pr.tracking is True:
-            lamb = speed_of_light*Planck*6.241509e15*1e10/energy
-            theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
-            args_list.append((pr.th,theta))
-
     @stage_decorator(decorators)
     def _inner_moveE():
         for args in args_list:
             yield from mv(*args, group=group)
 
-    return (yield from _inner_moveE())
+    if len(args_list[0]) > 0:
+        return (yield from _inner_moveE())
+    else:
+        return None
 
 
 def Escan_list(detectors, energy_list, factor_list=None, md=None):
