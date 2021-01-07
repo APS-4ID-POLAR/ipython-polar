@@ -1,13 +1,9 @@
-from ..devices.xspress import Xspress3Vortex
+from ..devices.xspress import Xspress3Vortex1Ch, Xspress3Vortex4Ch
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
 __all__ = ['load_vortex']
-
-
-class Xspress3Vortex1Ch(Xspress3Vortex):
-    Ch2 = Ch3 = Ch4 = None
 
 
 def load_vortex(electronic, num_channels):
@@ -31,7 +27,7 @@ def load_vortex(electronic, num_channels):
         if num_channels == 1:
             vortex = Xspress3Vortex1Ch('XSP3_1Chan:', name='vortex')
         elif num_channels == 4:
-            vortex = Xspress3Vortex('S4QX4:', name='vortex')
+            vortex = Xspress3Vortex4Ch('S4QX4:', name='vortex')
         else:
             raise ValueError('num_channels must be 1 or 4.')
     else:

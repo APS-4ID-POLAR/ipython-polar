@@ -41,24 +41,25 @@ class EvSignal(DerivedSignal):
 
 class Xspress3ROI(Device):
 
+    # TODO: Not sure that this is how ROIs work with our xspress.
     # Bin limits
-    # TODO: PVS!!!!
-    bin_low = Component(EpicsSignal, 'ENTER PV!!!', kind='config')
-    bin_high = Component(EpicsSignal, 'ENTER PV!!!', kind='config')
+    bin_low = Component(EpicsSignal, 'MinX', kind='config')
+    bin_size = Component(EpicsSignal, 'SizeX', kind='config')
 
     # Energy limits
     ev_low = Component(EvSignal, parent_attr='bin_low', kind='config')
-    ev_high = Component(EvSignal, parent_attr='bin_high', kind='config')
+    ev_size = Component(EvSignal, parent_attr='bin_size', kind='config')
 
     # Value
     total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='hinted')
 
     # Name
-    name = Component(EpicsSignal, 'ENTER PV!!!', kind='config')
+    name = Component(EpicsSignal, 'Name', kind='config')
 
     # Enable
-    enable_button = Component(EpicsSignal, 'ENTER PV!!!', kind='config',
-                              put_complete=True)
+    # TODO: Not clear this exists.
+    # enable_button = Component(EpicsSignal, 'ENTER PV!!!', kind='config',
+    #                           put_complete=True)
 
     def enable(self):
         return self.enable_button.set(1)
@@ -68,29 +69,33 @@ class Xspress3ROI(Device):
 
     def clear(self):
         '''Clear and disable this ROI'''
-        self.configure(0, 0, )
+        self.configure(0, 0, enable=False)
 
-    def configure(self, ev_low, ev_high, enable=True):
+    def configure(self, ev_low, ev_size, enable=True):
         '''Configure the ROI with low and high eV
         Parameters
         ----------
         ev_low : int
-            low electron volts for ROI
-        ev_high : int
-            high electron volts for ROI
+            Lower edge of ROI in electron volts.
+        ev_size : int
+            Size of ROI in electron volts.
         '''
         ev_low = int(ev_low)
-        ev_high = int(ev_high)
+        ev_size = int(ev_size)
 
-        if ev_low > ev_high:
-            raise ValueError('ev_low is larger than ev_high.')
+        if ev_low < 0:
+            raise ValueError(f'ev_low cannot be < 0, but {ev_low} was entered')
+        if ev_size < 0:
+            raise ValueError(f'ev_size cannot be < 0, but {ev_size} was \
+                entered')
 
-        if enable is True:
-            self.enable()
-        else:
-            self.disable()
+        # TODO: Check this exists.
+        # if enable is True:
+        #     self.enable()
+        # else:
+        #     self.disable()
 
-        self.ev_high.put(ev_high)
+        self.ev_size.put(ev_size)
         self.ev_low.put(ev_low)
 
 
@@ -116,16 +121,18 @@ class Xspress3Channel(Device):
         for roi in range(1, self.rois.num_rois.get() + 1):
             yield getattr(self.rois, 'roi{:02d}'.format(roi))
 
-    def set_roi(self, index, ev_low, ev_high, enable=True):
-        '''Set specified ROI to (ev_low, ev_high)
+    def set_roi(self, index, ev_low, ev_size, enable=True, name=None):
+        '''Set specified ROI to (ev_low, ev_size)
         Parameters
         ----------
         index : int or Xspress3ROI
             The roi index or instance to set
         ev_low : int
             low eV setting
-        ev_high : int
-            high eV setting
+        ev_size : int
+            size eV setting
+        enable : boolean
+            Flag to enable the ROI.
         name : str, optional
             The unformatted ROI name to set. Each channel specifies its own
             `roi_name_format` and `roi_sum_name_format` in which the name
@@ -138,20 +145,17 @@ class Xspress3Channel(Device):
                 raise ValueError('ROI index starts from 1')
             roi = list(self.all_rois)[index - 1]
 
-        roi.configure(ev_low, ev_high, enable=enable)
+        if name:
+            roi.name.put(name)
+
+        roi.configure(ev_low, ev_size, enable=enable)
 
 
-class Xspress3Vortex(Device):
+class Xspress3VortexBase(Device):
     # if name == 'S4QX4:':
     #   numCh = 4
     # if name == 'XSP3_1Chan:':
     #   numCh = 1
-
-    # Channels
-    Ch1 = Component(Xspress3Channel, 'MCA1ROI:')
-    Ch2 = Component(Xspress3Channel, 'MCA2ROI:')
-    Ch3 = Component(Xspress3Channel, 'MCA3ROI:')
-    Ch4 = Component(Xspress3Channel, 'MCA4ROI:')
 
     # Buttons
     Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
@@ -197,13 +201,21 @@ class Xspress3Vortex(Device):
     def unstage(self, *args, **kwargs):
         pass
 
-    def set_roi(self, *arg):
-        pass
+    def set_roi(self, *args, **kwargs):
+        # For now it will just pass the args and kwargs to the channels
         # make a function Edge2Emission(AbsEdge) --> returns primary emission
         # energy
         # 1st argument for roi1, 2nd for roi2...
         # 'S4QX4:MCA1ROI:1:Total_RBV'  # roi1 of channel 1
         # 'S4QX4:MCA1ROI:2:Total_RBV'  # roi1 of channel 2
+
+        for i in range(1, 10):
+            try:
+                ch = getattr(self, f'Ch{i}')
+            except AttributeError:
+                break
+
+            ch.set_roi(*args, **kwargs)
 
     def trigger(self):
 
@@ -217,9 +229,24 @@ class Xspress3Vortex(Device):
             return value in end_states and old_value not in end_states
 
         # Create status that checks the xspress state.
-        state_status = SubscriptionStatus(self.Status, _check_value)
+        state_status = SubscriptionStatus(self.State, _check_value)
 
         # Click the Acquire_button
-        button_status = super.trigger()
+        button_status = super().trigger()
 
         return AndStatus(state_status, button_status)
+
+
+class Xspress3Vortex4Ch(Xspress3VortexBase):
+
+    # Channels
+    Ch1 = Component(Xspress3Channel, 'MCA1ROI:')
+    Ch2 = Component(Xspress3Channel, 'MCA2ROI:')
+    Ch3 = Component(Xspress3Channel, 'MCA3ROI:')
+    Ch4 = Component(Xspress3Channel, 'MCA4ROI:')
+
+
+class Xspress3Vortex1Ch(Xspress3VortexBase):
+
+    # Channels
+    Ch1 = Component(Xspress3Channel, 'MCA1ROI:')
