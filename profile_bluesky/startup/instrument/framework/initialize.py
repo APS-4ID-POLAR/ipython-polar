@@ -96,7 +96,7 @@ try:
         write_timeout=60,
         connection_timeout=5,
     )
-except Exception as exc:
+except Exception:
     warnings.warn(
         "ophyd version is old, upgrade to 1.6.0+ "
         "to get set_defaults() method"
