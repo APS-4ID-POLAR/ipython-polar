@@ -3,25 +3,23 @@
 Diffractometer motors
 """
 
-__all__ = [
-    'fourc'
-    ]
+__all__ = ['fourc']
 
-from ..session_logs import logger
-logger.info(__file__)
-
-
-import gi
-gi.require_version('Hkl', '5.0')
-# MUST come before `import hkl`
-from hkl.diffract import E4CV
 from ophyd import Component, FormattedComponent
-from ophyd import PseudoSingle, Device
+from ophyd import PseudoSingle
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
 from bluesky.suspenders import SuspendBoolLow
 from apstools.diffractometer import DiffractometerMixin
 from ..framework import RE
 from ..framework import sd
+
+import gi
+gi.require_version('Hkl', '5.0')
+# MUST come before `import hkl`
+from hkl.diffract import E4CV
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
@@ -127,5 +125,4 @@ fourc.calc.physical_axis_names = {'omega': 'theta',
                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
-
 sd.baseline.append(fourc)

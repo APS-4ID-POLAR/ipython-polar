@@ -2,9 +2,6 @@
 Lakeshore temperature controllers
 """
 
-from instrument.session_logs import logger
-logger.info(__file__)
-
 from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Signal
 from ophyd import EpicsSignal, EpicsSignalRO
@@ -12,16 +9,19 @@ from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
 from ..utils import DoneSignal
 
+from instrument.session_logs import logger
+logger.info(__file__)
+
 
 class LS340_LoopBase(PVPositioner):
 
     # position
     readback = Component(Signal, value=0)
     setpoint = FormattedComponent(EpicsSignal,
-                                  '{self.prefix}wr_SP{self.loop_number}',
+                                  '{prefix}wr_SP{loop_number}',
                                   kind=Kind.omitted, put_complete=True)
     setpointRO = FormattedComponent(EpicsSignal,
-                                    "{self.prefix}SP{self.loop_number}",
+                                    "{prefix}SP{loop_number}",
                                     kind=Kind.hinted)
 
     # status
@@ -31,22 +31,22 @@ class LS340_LoopBase(PVPositioner):
     # configuration
     units = Component(Signal, value='K', kind=Kind.config)
 
-    pid_P = FormattedComponent(EpicsSignal, "{self.prefix}P{self.loop_number}",
-                               write_pv='{self.prefix}setPID{self.loop_number}.AA',
+    pid_P = FormattedComponent(EpicsSignal, "{prefix}P{loop_number}",
+                               write_pv='{prefix}setPID{loop_number}.AA',
                                kind=Kind.config)
-    pid_I = FormattedComponent(EpicsSignal, "{self.prefix}I{self.loop_number}",
-                               write_pv='{self.prefix}setPID{self.loop_number}.BB',
+    pid_I = FormattedComponent(EpicsSignal, "{prefix}I{loop_number}",
+                               write_pv='{prefix}setPID{loop_number}.BB',
                                kind=Kind.config)
-    pid_D = FormattedComponent(EpicsSignal, "{self.prefix}D{self.loop_number}",
-                               write_pv='{self.prefix}setPID{self.loop_number}.CC',
+    pid_D = FormattedComponent(EpicsSignal, "{prefix}D{loop_number}",
+                               write_pv='{prefix}setPID{loop_number}.CC',
                                kind=Kind.config)
 
     ramp_rate = FormattedComponent(EpicsSignal,
-                                   "{self.prefix}Ramp{self.loop_number}",
-                                   write_pv='{self.prefix}setRamp{self.loop_number}.BB',
+                                   "{prefix}Ramp{loop_number}",
+                                   write_pv='{prefix}setRamp{loop_number}.BB',
                                    kind=Kind.config)
     ramp_on = FormattedComponent(EpicsSignal,
-                                 "{self.prefix}Ramp{self.loop_number}_on",
+                                 "{prefix}Ramp{loop_number}_on",
                                  kind=Kind.config)
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
@@ -85,7 +85,7 @@ class LS340_LoopBase(PVPositioner):
     def egu(self):
         return self.units.get(as_string=True)
 
-    def stop(self, *, success= False):
+    def stop(self, *, success=False):
         if success is False:
             self.setpoint.put(self._position, wait=True)
         super().stop(success=success)
@@ -104,24 +104,25 @@ class LS340_LoopBase(PVPositioner):
 
 class LS340_LoopControl(LS340_LoopBase):
 
-    readback = FormattedComponent(EpicsSignalRO, "{self.prefix}Control",
+    readback = FormattedComponent(EpicsSignalRO, "{prefix}Control",
                                   kind=Kind.hinted)
-    sensor = FormattedComponent(EpicsSignal, "{self.prefix}Ctl_sel",
+    sensor = FormattedComponent(EpicsSignal, "{prefix}Ctl_sel",
                                 kind=Kind.config)
+
 
 class LS340_LoopSample(LS340_LoopBase):
 
-    readback = FormattedComponent(EpicsSignalRO, "{self.prefix}Sample",
+    readback = FormattedComponent(EpicsSignalRO, "{prefix}Sample",
                                   kind=Kind.hinted)
-    sensor = FormattedComponent(EpicsSignal, "{self.prefix}Spl_sel",
+    sensor = FormattedComponent(EpicsSignal, "{prefix}Spl_sel",
                                 kind=Kind.config)
 
 
 class LS340Device(Device):
 
-    control = FormattedComponent(LS340_LoopControl, "{self.prefix}",
+    control = FormattedComponent(LS340_LoopControl, "{prefix}",
                                  loop_number=1)
-    sample = FormattedComponent(LS340_LoopSample, "{self.prefix}",
+    sample = FormattedComponent(LS340_LoopSample, "{prefix}",
                                 loop_number=2)
 
     heater = Component(EpicsSignalRO, "Heater")
@@ -135,7 +136,3 @@ class LS340Device(Device):
     process_record = Component(EpicsSignal, "read.PROC", kind=Kind.omitted)
 
     serial = Component(AsynRecord, "serial", kind=Kind.omitted)
-
-# TODO: Check if this units PV exist
-# TODO: include limits, Fix offset AttributeError
-# TODO: Is there a manual input or mode PV? It's not in the MEDM screen.

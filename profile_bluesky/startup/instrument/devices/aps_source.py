@@ -3,18 +3,15 @@
 APS only: connect with facility information
 """
 
-__all__ = [
-    'aps',
-    'undulator',
-    ]
-
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['aps', 'undulator']
 
 import apstools.devices
 from ..framework import sd
 from ..utils import TrackingSignal
 from ophyd import Device, Component, Signal, EpicsSignal
+
+from ..session_logs import logger
+logger.info(__file__)
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
@@ -23,12 +20,15 @@ sd.baseline.append(aps)
 class MyUndulator(apstools.devices.ApsUndulator):
 
     energy = Component(EpicsSignal, "Energy", write_pv="EnergySet",
-                       put_complete=True, kind='hinted')
+                       put_complete=True, kind='hinted', labels=('undulator',))
 
-    deadband = Component(Signal, value=0.002, kind='config')
-    backlash = Component(Signal, value=0.25, kind='config')
-    offset = Component(Signal, value=0, kind='config')
-    tracking = Component(TrackingSignal, value=False, kind='config')
+    deadband = Component(Signal, value=0.002, kind='config',
+                         labels=('undulator',))
+    backlash = Component(Signal, value=0.25, kind='config',
+                         labels=('undulator',))
+    offset = Component(Signal, value=0, kind='config', labels=('undulator',))
+    tracking = Component(TrackingSignal, value=False, kind='config',
+                         labels=('undulator',))
 
     def undulator_setup(self):
         """Interactive setup of usual undulator parameters."""

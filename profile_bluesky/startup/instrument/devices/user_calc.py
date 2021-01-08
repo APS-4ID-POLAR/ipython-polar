@@ -4,17 +4,16 @@ User Calculator
 
 __all__ = ['absorption_calc', 'normalize_calc']
 
-from instrument.session_logs import logger
-logger.info(__file__)
-
 from bluesky.plan_stubs import mv
 from ophyd import Device, EpicsSignal, Kind, Signal
-from ophyd import  Component,FormattedComponent, DynamicDeviceComponent
+from ophyd import Component, FormattedComponent, DynamicDeviceComponent
 from string import ascii_uppercase
 from collections import OrderedDict
 from ..framework import sd
 
-# Based on ophyd.ScalerCH
+from instrument.session_logs import logger
+logger.info(__file__)
+
 
 class UserCalcChannel(Device):
 
@@ -52,9 +51,10 @@ class UserCalc(Device):
                                       kind=Kind.config)
 
     scan = Component(EpicsSignal, '.SCAN', kind=Kind.omitted)
-    expression = Component(EpicsSignal, '.CALC$', string=True, kind=Kind.config)
+    expression = Component(EpicsSignal, '.CALC$', string=True,
+                           kind=Kind.config)
     calc_value = Component(EpicsSignal, '.VAL', kind=Kind.hinted)
-    enable = Component(EpicsSignal,'.DESC', string=True, kind=Kind.config)
+    enable = Component(EpicsSignal, '.DESC', string=True, kind=Kind.config)
 
     # Dummy signal for compatibility
     preset_monitor = Component(Signal, value=0, kind='omitted')
