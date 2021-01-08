@@ -7,6 +7,7 @@ __all__ = ['plt']
 
 import matplotlib.pyplot as plt
 from ..session_logs import logger
+from IPython import get_ipython
 logger.info(__file__)
 
 # %matplotlib notebook
