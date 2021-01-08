@@ -22,7 +22,7 @@ class LS340_LoopBase(PVPositioner):
                                   kind=Kind.omitted, put_complete=True)
     setpointRO = FormattedComponent(EpicsSignal,
                                     "{prefix}SP{loop_number}",
-                                    kind=Kind.hinted)
+                                    kind=Kind.normal)
 
     # status
     done = Component(DoneSignal, value=0, kind=Kind.omitted)
@@ -105,7 +105,7 @@ class LS340_LoopBase(PVPositioner):
 class LS340_LoopControl(LS340_LoopBase):
 
     readback = FormattedComponent(EpicsSignalRO, "{prefix}Control",
-                                  kind=Kind.hinted)
+                                  kind=Kind.normal)
     sensor = FormattedComponent(EpicsSignal, "{prefix}Ctl_sel",
                                 kind=Kind.config)
 

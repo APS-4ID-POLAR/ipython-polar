@@ -23,9 +23,9 @@ class LS336_LoopControl(PVPositioner):
                                   kind=Kind.omitted)
     setpointRO = FormattedComponent(EpicsSignalRO,
                                     "{prefix}OUT{loop_number}:SP_RBV",
-                                    kind=Kind.hinted)
+                                    kind=Kind.normal)
     heater = FormattedComponent(EpicsSignalRO, "{prefix}HTR{loop_number}",
-                                auto_monitor=True)
+                                auto_monitor=True, kind=Kind.normal)
 
     # status
     done = Component(DoneSignal, value=0, kind=Kind.omitted)
@@ -65,7 +65,7 @@ class LS336_LoopControl(PVPositioner):
                               kind=Kind.config)
     heater_range = FormattedComponent(EpicsSignalWithRBV,
                                       "{prefix}HTR{loop_number}:Range",
-                                      kind=Kind.normal, auto_monitor=True)
+                                      kind=Kind.config, auto_monitor=True)
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
@@ -125,11 +125,12 @@ class LS336_LoopControl(PVPositioner):
 
 class LS336_LoopRO(Device):
     """
-    Additional controls for loop1 and loop2: heater and pid
+    Additional controls for loop3 and loop4: heater and pid
     """
+    # Set this to normal because we don't use it.
     readback = FormattedComponent(EpicsSignalRO,
                                   "{prefix}IN{loop_number}",
-                                  kind=Kind.hinted)
+                                  kind=Kind.normal)
     units = FormattedComponent(EpicsSignalWithRBV,
                                "{prefix}IN{loop_number}:Units",
                                kind=Kind.omitted)
