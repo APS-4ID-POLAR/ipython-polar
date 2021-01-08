@@ -44,10 +44,10 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
                     kind="hinted")
 
     th_tth_min = Component(EpicsSignal, "userCalc1.C",
-                           labels=('diffractometer', 'limits'),
+                           labels=('fourc', 'limits'),
                            kind='config')
     th_tth_permit = Component(EpicsSignal, "userCalc1.VAL",
-                              labels=('diffractometer', 'limits'),
+                              labels=('fourc', 'limits'),
                               kind='config')
 
     # Explicitly selects the real motors

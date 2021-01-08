@@ -22,7 +22,7 @@ class GEController(PVPositioner):
                                   auto_monitor=True, kind=Kind.hinted,
                                   labels=('gecontroller',))
     setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}Setpoint",
-                                  auto_monitor=True, kind=Kind.hinted,
+                                  auto_monitor=True, kind=Kind.normal,
                                   labels=('gecontroller',))
 
     # status

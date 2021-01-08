@@ -20,6 +20,7 @@ class DAC(PVPositioner):
                          kind='hinted')
 
     done = Component(DoneSignal, value=1)
+    done_value = 1
 
     low_limit = Component(EpicsSignal, '.DRVL', kind='config')
     high_limit = Component(EpicsSignal, '.DRVH', kind='config')

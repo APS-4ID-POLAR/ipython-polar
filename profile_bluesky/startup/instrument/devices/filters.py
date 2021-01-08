@@ -12,20 +12,24 @@ from ..framework import sd
 
 class FilterBank(Device):
 
-    slot1_name = Component(EpicsSignal, 'bo1.DESC', labels=('Filters'))
-    slot1_position = Component(EpicsSignal, 'bo1.VAL', auto_monitor=True,
+    slot1_name = Component(EpicsSignal, 'bo1.DESC', kind='config',
+                           labels=('Filters'))
+    slot1_position = Component(EpicsSignal, 'bo1.VAL', kind='config',
                                labels=('filters',))
 
-    slot2_name = Component(EpicsSignal, 'bo2.DESC', labels=('filters',))
-    slot2_position = Component(EpicsSignal, 'bo2.VAL', auto_monitor=True,
+    slot2_name = Component(EpicsSignal, 'bo2.DESC', kind='config',
+                           labels=('filters',))
+    slot2_position = Component(EpicsSignal, 'bo2.VAL', kind='config',
                                labels=('filters',))
 
-    slot3_name = Component(EpicsSignal, 'bo3.DESC', labels=('filters',))
-    slot3_position = Component(EpicsSignal, 'bo3.VAL', auto_monitor=True,
+    slot3_name = Component(EpicsSignal, 'bo3.DESC', kind='config',
+                           labels=('filters',))
+    slot3_position = Component(EpicsSignal, 'bo3.VAL', kind='config',
                                labels=('filters',))
 
-    slot4_name = Component(EpicsSignal, 'bo4.DESC', labels=('filters',))
-    slot4_position = Component(EpicsSignal, 'bo4.VAL', auto_monitor=True,
+    slot4_name = Component(EpicsSignal, 'bo4.DESC', kind='config',
+                           labels=('filters',))
+    slot4_position = Component(EpicsSignal, 'bo4.VAL', kind='config',
                                labels=('filters',))
 
 
