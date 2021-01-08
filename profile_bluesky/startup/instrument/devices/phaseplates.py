@@ -191,7 +191,6 @@ class PRSetup():
                                     break
                                 except ValueError:
                                     print('Must be a number.')
-                                    pass
 
                         while True:
                             try:
@@ -203,7 +202,6 @@ class PRSetup():
                                 break
                             except ValueError:
                                 print('Must be a number.')
-                                pass
                         break
                     elif oscillate.lower() == 'no':
                         break
