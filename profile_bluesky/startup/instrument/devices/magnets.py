@@ -2,12 +2,7 @@
 Magnets
 """
 
-__all__ = [
-    'mag6t',
-    ]
-
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['mag6t']
 
 from ophyd import Component, Device, EpicsMotor, PVPositioner
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
@@ -15,9 +10,16 @@ from ophyd import Kind
 from ophyd.status import wait as status_wait
 from ..framework import sd
 
+from ..session_logs import logger
+logger.info(__file__)
+
+
 class AMIZones(Device):
-    high_field = Component(EpicsSignal, "Field.VAL", write_pv="FieldSet")
-    ramp_rate = Component(EpicsSignal, "Rate", write_pv="RateSet")
+    high_field = Component(EpicsSignal, "Field.VAL", write_pv="FieldSet",
+                           kind=Kind.config)
+    ramp_rate = Component(EpicsSignal, "Rate", write_pv="RateSet",
+                          kind=Kind.config)
+
 
 class AMIController(PVPositioner):
 
@@ -26,7 +28,7 @@ class AMIController(PVPositioner):
                          kind=Kind.hinted, labels=('ami_controller', 'magnet'))
 
     setpoint = Component(EpicsSignal, "PField", write_pv="PField:Wrt.A",
-                         auto_monitor=True, kind=Kind.hinted,
+                         auto_monitor=True, kind=Kind.normal,
                          labels=('ami_controller', 'magnet'))
 
     current = Component(EpicsSignalRO, "Current", auto_monitor=True,
@@ -112,13 +114,13 @@ class AMIController(PVPositioner):
     @done.sub_value
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
-        
+
     def move(self, position, wait=True, **kwargs):
-        
+
         _current_pos = self.readback.get()
-        
+
         status = super().move(position, wait=False, **kwargs)
-        
+
         if abs(position-_current_pos) < self.tolerance.get():
             self._done_moving()
         else:
@@ -129,7 +131,7 @@ class AMIController(PVPositioner):
             except KeyboardInterrupt:
                 self.stop()
                 raise
-            
+
         return status
 
 

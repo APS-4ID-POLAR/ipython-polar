@@ -6,9 +6,6 @@ __all__ = [
     'pr1', 'pr2', 'pr3', 'pr_setup',
     ]
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ..framework import sd
 from ophyd import Device, EpicsMotor
 from ophyd import Component, FormattedComponent
@@ -20,6 +17,10 @@ from numpy import arcsin, pi
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
 from epics import utils3
+
+from ..session_logs import logger
+logger.info(__file__)
+
 utils3.EPICS_STR_ENCODING = "latin-1"
 
 
@@ -48,7 +49,7 @@ class PRPzt(Device):
     # TODO: The value doesnt change in the MEDM screen, not sure why.
     localDC = Component(EpicsSignal, 'DC_read_microns',
                         write_pv='DC_set_microns.VAL', auto_monitor=True,
-                        kind=Kind.hinted, tolerance=0.01)
+                        kind=Kind.normal, tolerance=0.01)
 
     center = Component(EpicsSignal, 'AC_put_center.A', kind=Kind.config)
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
@@ -134,7 +135,7 @@ class PRDevice(PRDeviceBase):
     def _set_d_spacing(self, value=None, **kwargs):
         if isinstance(value, int):
             value = self.select_pr.get()
-        
+
         spacing_dictionary = {'111': 2.0595, '220': 1.26118}
         plane = value.split('(')[1].split(')')[0]
         self.d_spacing.put(spacing_dictionary[plane])
@@ -171,7 +172,8 @@ class PRSetup():
                             _positioner = pr.th
                         else:
                             while True:
-                                method = input('\tUse motor or PZT? (motor/pzt): ')
+                                method = input('\tUse motor or PZT? \
+                                    (motor/pzt): ')
                                 if method.lower() == 'motor':
                                     _positioner = pr.th
                                     break
@@ -179,10 +181,12 @@ class PRSetup():
                                     _positioner = pr.pzt.localDC
                                     break
                                 else:
-                                    print("Only motor or pzt are acceptable answers.")
+                                    print("Only motor or pzt are acceptable \
+                                        answers.")
                             while True:
                                 try:
-                                    _center = float(input('\tPZT center (in microns): '))
+                                    _center = float(input('\tPZT center (in \
+                                        microns): '))
                                     _positioner.parent.center.put(_center)
                                     break
                                 except ValueError:
@@ -191,8 +195,11 @@ class PRSetup():
 
                         while True:
                             try:
-                                _offset = float(input('\tOffset (in degrees): '))
-                                _positioner.parent.update_offset_degrees(_offset)
+                                _offset = float(input('\tOffset (in degrees): \
+                                    '))
+                                _positioner.parent.update_offset_degrees(
+                                    _offset
+                                    )
                                 break
                             except ValueError:
                                 print('Must be a number.')
@@ -204,7 +211,9 @@ class PRSetup():
                         print("Only yes or no are acceptable answers.")
 
             else:
-                print('\tYou already selected {} to oscillate.'.format(_positioner.name))
+                print('\tYou already selected {} to oscillate.'.format(
+                    _positioner.name)
+                    )
 
         self.positioner = _positioner
 
