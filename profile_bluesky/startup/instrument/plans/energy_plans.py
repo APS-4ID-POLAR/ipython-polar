@@ -2,6 +2,9 @@
 Energy scans
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
@@ -10,9 +13,6 @@ from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
 from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):

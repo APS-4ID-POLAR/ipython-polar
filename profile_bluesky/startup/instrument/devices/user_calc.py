@@ -4,15 +4,15 @@ User Calculator
 
 __all__ = ['absorption_calc', 'normalize_calc']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from bluesky.plan_stubs import mv
 from ophyd import Device, EpicsSignal, Kind, Signal
 from ophyd import Component, FormattedComponent, DynamicDeviceComponent
 from string import ascii_uppercase
 from collections import OrderedDict
 from ..framework import sd
-
-from instrument.session_logs import logger
-logger.info(__file__)
 
 
 class UserCalcChannel(Device):

@@ -5,15 +5,15 @@ Scalers
 
 __all__ = ['scalerd', 'scalerb']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
 from bluesky.plan_stubs import mv
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class PresetMonitorSignal(Signal):

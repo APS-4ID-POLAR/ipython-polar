@@ -5,6 +5,9 @@ Diffractometer motors
 
 __all__ = ['fourc']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd import Component, FormattedComponent
 from ophyd import PseudoSingle
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
@@ -17,9 +20,6 @@ import gi
 gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.diffract import E4CV
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):

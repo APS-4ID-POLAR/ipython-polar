@@ -4,15 +4,15 @@ GE pressure controllers
 
 __all__ = ['ge_applyP', 'ge_releaseP']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd import Component
 from ophyd import EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
 from ..utils import DoneSignal
 from ..framework import sd
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class GEController(PVPositioner):

@@ -2,6 +2,9 @@
 """
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = []
 
 import apstools
@@ -20,9 +23,6 @@ import socket
 import spec2nexus
 
 from .initialize import RE
-
-from ..session_logs import logger
-logger.info(__file__)
 
 # Set up default metadata
 

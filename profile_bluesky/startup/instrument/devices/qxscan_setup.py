@@ -6,14 +6,14 @@ This device will holds the parameters and energy list used in a qxscan plan.
 
 __all__ = ['qxscan_params']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 import json
 from ophyd import Signal, Device
 from ophyd import Component
 from ..framework import sd
 from numpy import sqrt, arange
-
-from ..session_logs import logger
-logger.info(__file__)
 
 hbar = 6.582119569E-16  # eV.s
 speed_of_light = 299792458e10  # A/s

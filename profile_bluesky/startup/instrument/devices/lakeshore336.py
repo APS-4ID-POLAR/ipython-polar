@@ -2,15 +2,15 @@
 Lakeshore temperature controllers
 """
 
+from instrument.session_logs import logger
+logger.info(__file__)
+
 from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
 from ..utils import DoneSignal
-
-from instrument.session_logs import logger
-logger.info(__file__)
 
 
 class LS336_LoopControl(PVPositioner):

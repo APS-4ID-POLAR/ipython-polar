@@ -3,11 +3,11 @@ Slits
 """
 __all__ = ['wbslt', 'enslt', 'inslt', 'grdslt', 'detslt', 'magslt']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd import Device, EpicsMotor, EpicsSignal, FormattedComponent
 from ..framework import sd
-
-from instrument.session_logs import logger
-logger.info(__file__)
 
 
 class SlitDevice(Device):

@@ -4,6 +4,9 @@ Phase retarders
 
 __all__ = ['pr1', 'pr2', 'pr3', 'wavefunc_gen']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ..framework import sd
 from ophyd import Device, EpicsMotor
 from ophyd import Component, FormattedComponent
@@ -11,9 +14,6 @@ from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 # Phase Plates

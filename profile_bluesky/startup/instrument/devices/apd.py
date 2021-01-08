@@ -1,13 +1,14 @@
 """
 APD detector
 """
+
 __all__ = ['apd_parameters']
 
-from ophyd import Component, Device, EpicsSignal, EpicsSignalRO
-from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
+from ophyd import Component, Device, EpicsSignal, EpicsSignalRO
+from ..framework import sd
 
 class APDDevice(Device):
 

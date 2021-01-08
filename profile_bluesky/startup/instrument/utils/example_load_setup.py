@@ -1,8 +1,10 @@
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['Tvaporizer', 'Tsample']
 
 from ..devices import lakeshore_336
-from ..session_logs import logger
-logger.info(__file__)
+
 
 Tvaporizer = lakeshore_336.loop1
 Tsample = lakeshore_336.loop2

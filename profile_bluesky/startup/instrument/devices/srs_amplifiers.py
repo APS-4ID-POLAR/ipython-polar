@@ -3,11 +3,11 @@ SRS preamplifiers
 """
 __all__ = ['preamps']
 
-from ophyd import Component, Device, EpicsSignal, FormattedComponent
-from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
+
+from ophyd import Component, Device, EpicsSignal, FormattedComponent
+from ..framework import sd
 
 
 class PreAmpDevice(Device):

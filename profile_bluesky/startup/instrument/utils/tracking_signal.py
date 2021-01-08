@@ -2,11 +2,12 @@
 Tracking signal for phase retarders and undulator
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['TrackingSignal']
 
 from ophyd import Signal
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class TrackingSignal(Signal):

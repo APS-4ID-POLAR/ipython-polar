@@ -1,10 +1,10 @@
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['DoneSignal']
 
 from ophyd import Signal
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class DoneSignal(Signal):

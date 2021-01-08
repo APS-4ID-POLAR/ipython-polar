@@ -3,6 +3,9 @@
 initialize the bluesky framework
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = [
     'RE', 'db', 'sd',
     'bec', 'peaks',
@@ -35,8 +38,6 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
-from ..session_logs import logger
-logger.info(__file__)
 
 # Set up a RunEngine and use metadata-backed PersistentDict
 RE = RunEngine({})

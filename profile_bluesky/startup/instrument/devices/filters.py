@@ -3,11 +3,11 @@ Filters
 """
 __all__ = ['filter_pre8c', 'filter_tth']
 
-from ophyd import Component, Device, EpicsSignal
-from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
+
+from ophyd import Component, Device, EpicsSignal
+from ..framework import sd
 
 
 class FilterBank(Device):

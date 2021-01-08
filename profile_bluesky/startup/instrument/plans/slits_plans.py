@@ -2,14 +2,14 @@
 Slitscan
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['slitscan', 'slitmv']
 
 from bluesky.plans import list_scan
 from bluesky.plan_stubs import mv
 from numpy import linspace
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 def slitscan(dets, positioner, start, end, numPts, md=None):

@@ -4,13 +4,13 @@ Ruby spectrometer motors.
 
 __all__ = ['ruby']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd import (Component, Device, EpicsMotor, EpicsSignal, PVPositioner,
                    EpicsSignalRO, FormattedComponent)
 from ..framework import sd
 from ..utils import DoneSignal
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class DAC(PVPositioner):

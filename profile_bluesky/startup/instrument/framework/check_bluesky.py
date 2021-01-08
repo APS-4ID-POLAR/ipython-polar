@@ -3,13 +3,14 @@
 ensure BlueSky is available
 """
 
-__all__ = []
-
 from ..session_logs import logger
+logger.info(__file__)
+
 import sys
 import ophyd
 
-logger.info(__file__)
+__all__ = []
+
 
 # ensure BlueSky is available
 try:

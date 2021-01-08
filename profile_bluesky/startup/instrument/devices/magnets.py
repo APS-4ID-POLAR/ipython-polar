@@ -4,11 +4,11 @@ Magnet motors
 
 __all__ = ['mag6t']
 
-from ophyd import Component, Device, EpicsMotor
-from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
+
+from ophyd import Component, Device, EpicsMotor
+from ..framework import sd
 
 
 class Magnet6T(Device):

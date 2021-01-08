@@ -4,11 +4,11 @@ Flat mirror
 """
 __all__ = ['flat_mirror']
 
-from ophyd import Component, Device, EpicsMotor, EpicsSignal
-from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
+
+from ophyd import Component, Device, EpicsMotor, EpicsSignal
+from ..framework import sd
 
 
 class FlatMirror(Device):

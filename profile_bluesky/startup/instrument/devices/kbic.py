@@ -4,11 +4,11 @@ Other motor/counters
 
 __all__ = ['kbic']
 
-from ophyd import Component, MotorBundle, EpicsMotor
-from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
+
+from ophyd import Component, MotorBundle, EpicsMotor
+from ..framework import sd
 
 
 class KBIC(MotorBundle):

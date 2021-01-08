@@ -5,13 +5,13 @@ APS only: connect with facility information
 
 __all__ = ['aps', 'undulator']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 import apstools.devices
 from ..framework import sd
 from ..utils import TrackingSignal
 from ophyd import Device, Component, Signal, EpicsSignal
-
-from ..session_logs import logger
-logger.info(__file__)
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
