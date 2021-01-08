@@ -8,7 +8,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
-# TODO: Are these correct?
+# TODO: Are these correct?  Yes: bin1000= 10 keV, so 10000 eV corresponds to 1000th bin. 
 def ev_to_bin(ev):
     '''Convert eV to bin number'''
     return int(ev / 10)
@@ -57,7 +57,7 @@ class Xspress3ROI(Device):
     name = Component(EpicsSignal, 'Name', kind='config')
 
     # Enable
-    # TODO: Not clear this exists.
+    # TODO: Not clear this exists. yes: but need to check PVs.  
     # enable_button = Component(EpicsSignal, 'ENTER PV!!!', kind='config',
     #                           put_complete=True)
 
