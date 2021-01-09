@@ -17,33 +17,33 @@ from ..framework import sd
 
 class MonoFeedback(Device):
 
-    readback = Component(EpicsSignalRO, 'mono_pid2.CVAL', kind='normal',
-                         labels=('mono'))
+    readback = Component(EpicsSignalRO, 'mono_pid2.CVAL', kind='config',
+                         labels=('mono',))
     setpoint = Component(EpicsSignal, 'mono_pid2.VAL', kind='config',
-                         put_complete=True, labels=('mono'))
+                         put_complete=True, labels=('mono',))
     onoff = Component(EpicsSignal, 'mono_pid2.FBON', kind='config',
-                      labels=('mono'), put_complete=True)
+                      labels=('mono',), put_complete=True)
 
- 
+
 class Monochromator(KohzuSeqCtl_Monochromator):
 
     y1 = None
-    
-    x2 = Component(EpicsMotor, 'm6', labels=('motor', 'monochromator'))
+
+    x2 = Component(EpicsMotor, 'm6', labels=('motor', 'mono'))
     y2 = Component(EpicsSignalRO, 'KohzuYRdbkAI',
-                   labels=('motor', 'monochromator'))
+                   labels=('motor', 'mono'))
     z2 = Component(EpicsSignalRO, 'KohzuZRdbkAI',
-                   labels=('motor', 'monochromator'))
+                   labels=('motor', 'mono'))
 
-    thf2 = Component(EpicsMotor, 'm4', labels=('motor', 'monochromator'))
-    chi2 = Component(EpicsMotor, 'm5', labels=('motor', 'monochromator'))
+    thf2 = Component(EpicsMotor, 'm4', labels=('motor', 'mono'))
+    chi2 = Component(EpicsMotor, 'm5', labels=('motor', 'mono'))
 
-    table_x = Component(EpicsMotor, 'm7', labels=('motor', 'monochromator'))
-    table_y = Component(EpicsMotor, 'm8', labels=('motor', 'monochromator'))
+    table_x = Component(EpicsMotor, 'm7', labels=('motor', 'mono'))
+    table_y = Component(EpicsMotor, 'm8', labels=('motor', 'mono'))
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
-                       kind='hinted', put_complete=True)
-                       
+                       kind='hinted', put_complete=True, labels=('mono',))
+
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
     def calibrate_energy(self, value):

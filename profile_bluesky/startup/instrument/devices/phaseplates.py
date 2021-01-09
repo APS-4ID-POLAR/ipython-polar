@@ -2,6 +2,11 @@
 Phase retarders.
 """
 
+__all__ = ['pr1', 'pr2', 'pr3', 'pr_setup']
+
+from ..session_logs import logger
+logger.info(__file__)
+
 from ..framework import sd
 from ophyd import Device, EpicsMotor, PseudoPositioner, PseudoSingle
 from ophyd import Component, FormattedComponent
@@ -16,26 +21,12 @@ from ..utils import TrackingSignal
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
 from epics import utils3
-from ..session_logs import logger
-
-logger.info(__file__)
 utils3.EPICS_STR_ENCODING = "latin-1"
-
-__all__ = [
-    'pr1', 'pr2', 'pr3', 'pr_setup',
-    ]
-
-
-class ThMotor(EpicsMotor):
-    def update_th(self, old_value=None, value=None, **kwargs):
-        if value:
-            _th = self.parent.convert_energy_to_theta(value)
-            self.user_setpoint.put(_th)
 
 
 class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL',
-                                kind=Kind.omitted)
+                                kind=Kind.normal)
     remote_readback = Component(EpicsSignalRO, 'microns')
 
     # TODO: LocalDC readback is usually a bit different from the setpoint,
@@ -56,11 +47,11 @@ class PRPzt(Device):
     servoStatus = Component(EpicsSignalRO, 'svo', kind=Kind.config)
 
     selectDC = FormattedComponent(EpicsSignal,
-                                  '4idb:232DRIO:1:OFF_ch{self._prnum}.PROC',
+                                  '4idb:232DRIO:1:OFF_ch{_prnum}.PROC',
                                   kind=Kind.omitted, put_complete=True)
 
     selectAC = FormattedComponent(EpicsSignal,
-                                  '4idb:232DRIO:1:ON_ch{self._prnum}.PROC',
+                                  '4idb:232DRIO:1:ON_ch{_prnum}.PROC',
                                   kind=Kind.omitted, put_complete=True)
 
     ACstatus = FormattedComponent(EpicsSignalRO, '4idb:232DRIO:1:status',
@@ -83,16 +74,16 @@ class PRPzt(Device):
 class PRDeviceBase(PseudoPositioner):
 
     energy = Component(PseudoSingle, limits=(2.7, 20))
-    th = FormattedComponent(ThMotor, '{self.prefix}:{_motorsDict[th]}',
+    th = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[th]}',
                             labels=('motor', 'phase retarders'))
 
     # Explicitly selects the real motor
     _real = ['th']
 
-    x = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[x]}',
+    x = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[x]}',
                            labels=('motor', 'phase retarders'))
 
-    y = FormattedComponent(EpicsMotor, '{self.prefix}:{_motorsDict[y]}',
+    y = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[y]}',
                            labels=('motor', 'phase retarders'))
 
     d_spacing = Component(Signal, value=0, kind='config')
@@ -130,18 +121,6 @@ class PRDeviceBase(PseudoPositioner):
             energy=self.convert_theta_to_energy(real_pos.th)
             )
 
-    def change_tracking(self, onoff):
-        if onoff is True:
-            # Turn on energy tracking
-            self._energy_cid = mono.energy.subscribe(
-                 self.th.update_th,
-                 event_type=mono.energy.SUB_SETPOINT
-                 )
-        else:
-            if not self._energy_cid:
-                mono.energy.unsubscribe(self._energy_cid)
-                self._energy_cid = None
-
     def set_energy(self, energy):
         # energy in keV, theta in degrees.
         theta = self.convert_energy_to_theta(energy)
@@ -154,9 +133,10 @@ class PRDeviceBase(PseudoPositioner):
 
 class PRDevice(PRDeviceBase):
 
-    pzt = FormattedComponent(PRPzt, '{self.prefix}:E665:{_prnum}:')
-    select_pr = FormattedComponent(EpicsSignal, '{self.prefix}:PRA{_prnum}',
-                                   string=True, kind='config')
+    pzt = FormattedComponent(PRPzt, '{prefix}:E665:{_prnum}:')
+    select_pr = FormattedComponent(EpicsSignal, '{prefix}:PRA{_prnum}',
+                                   string=True, auto_monitor=True,
+                                   kind='config')
 
     def __init__(self, prefix, name, prnum, motorsDict, **kwargs):
         self._prnum = prnum

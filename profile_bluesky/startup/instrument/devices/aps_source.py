@@ -27,7 +27,7 @@ class UndulatorEnergy(PVPositioner):
     # Position
     readback = Component(EpicsSignalRO, 'Energy', kind='hinted')
     setpoint = Component(EpicsSignal, 'EnergySet', put_complete=True,
-                         kind='hinted')
+                         kind='normal')
 
     # Configuration
     deadband = Component(Signal, value=0.002, kind='config')
@@ -54,10 +54,11 @@ class UndulatorEnergy(PVPositioner):
 
     def move(self, position, **kwargs):
 
-        # Check that target position is out of the deadband.
+        # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
             status = Status(self)
             status.set_finished()
+        # Otherwise -> let's move!
         else:
             _wait = kwargs.pop('wait', True)
 
