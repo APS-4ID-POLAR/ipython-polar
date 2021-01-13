@@ -23,22 +23,11 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        flake8 profile_bluesky/startup/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/callbacks/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/devices/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/framework/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/mpl/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/plans/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 profile_bluesky/startup/instrument/utils/*.py --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 profile_bluesky/startup/* --count --select=E9,F63,F7,F82 \
+               --show-source --statistics \
+               --exclude README,ideas,TODO,vortex_nslsii_examples,__pycache__
         # exit-zero treats all errors as warnings.
-        flake8 profile_bluesky/startup/. --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/callbacks/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/devices/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/framework/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/mpl/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/plans/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
-        flake8 profile_bluesky/startup/instrument/utils/*.py --count --exit-zero --max-complexity=10 --max-line-length=79 --statistics
+        flake8 profile_bluesky/startup/* --count --exit-zero \
+               --max-complexity=10 --max-line-length=79 --statistics \
+               --exclude README,ideas,TODO,vortex_nslsii_examples,__pycache__
 
