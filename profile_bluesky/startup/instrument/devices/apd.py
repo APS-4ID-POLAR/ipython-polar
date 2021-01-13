@@ -10,6 +10,7 @@ logger.info(__file__)
 from ophyd import Component, Device, EpicsSignal, EpicsSignalRO
 from ..framework import sd
 
+
 class APDDevice(Device):
 
     source = Component(EpicsSignal, 'SetCSRC', kind='config')
