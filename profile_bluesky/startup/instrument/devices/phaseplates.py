@@ -6,6 +6,9 @@ __all__ = [
     'pr1', 'pr2', 'pr3', 'pr_setup',
     ]
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ..framework import sd
 from ophyd import Device, EpicsMotor
 from ophyd import Component, FormattedComponent
@@ -17,10 +20,6 @@ from numpy import arcsin, pi
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
 from epics import utils3
-
-from ..session_logs import logger
-logger.info(__file__)
-
 utils3.EPICS_STR_ENCODING = "latin-1"
 
 
@@ -54,9 +53,8 @@ class PRPzt(Device):
     center = Component(EpicsSignal, 'AC_put_center.A', kind=Kind.config)
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
                                kind=Kind.config)
-
     offset = Component(Signal, value=0.0, kind=Kind.config)
-
+    
     servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind=Kind.omitted)
     servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind=Kind.omitted)
     servoStatus = Component(EpicsSignalRO, 'svo', kind=Kind.config)

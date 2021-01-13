@@ -2,16 +2,14 @@
 Monochromator motors
 """
 
-__all__ = [
-    'mono',
-    ]
+__all__ = ['mono']
 
 from ..session_logs import logger
 logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
-from ophyd import Component, FormattedComponent, Device
+from ophyd import Component, Device
 from ..framework import sd
 
 
@@ -24,11 +22,11 @@ class MonoFeedback(Device):
     onoff = Component(EpicsSignal, 'mono_pid2.FBON', kind='config',
                       labels=('mono'), put_complete=True)
 
- 
+
 class Monochromator(KohzuSeqCtl_Monochromator):
 
     y1 = None
-    
+
     x2 = Component(EpicsMotor, 'm6', labels=('motor', 'monochromator'))
     y2 = Component(EpicsSignalRO, 'KohzuYRdbkAI',
                    labels=('motor', 'monochromator'))

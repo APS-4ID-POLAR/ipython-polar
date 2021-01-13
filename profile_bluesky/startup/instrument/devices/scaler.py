@@ -1,12 +1,9 @@
 
 """
-our diffractometer
+Scalers
 """
 
-__all__ = [
-    'scalerd',
-    'scalerb',
-    ]
+__all__ = ['scalerd', 'scalerb']
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -127,12 +124,12 @@ class LocalScalerCH(ScalerCH):
                     if getattr(self.channels, name_map[ch]).kind.value != 0:
                         getattr(self.channels, name_map[ch]).kind = Kind.normal
                     else:
-                        getattr(self.channels, name_map[ch]).kind = Kind.omitted
+                        getattr(self.channels, name_map[ch]).kind = \
+                            Kind.omitted
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
-
 
     def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
@@ -204,7 +201,7 @@ class LocalScalerCH(ScalerCH):
 
         if value is None:
             value = name_map.keys()
-            
+
         self.monitor = name_map[value]
 
         # Adjust gates
@@ -222,7 +219,7 @@ class LocalScalerCH(ScalerCH):
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
                         labels=('detectors', 'counters'))
 scalerd.select_channels()
-scalerd.select_plot_channels()
+scalerd.select_plot_channels(None)
 scalerd.select_monitor('Time')
 sd.baseline.append(scalerd)
 
@@ -230,7 +227,7 @@ scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
                         labels=('detectors', 'counters'))
 scalerb.channels.chan01.chname.set('Time_b')
 scalerb.select_channels()
-scalerb.select_plot_channels()
+scalerb.select_plot_channels(None)
 sd.baseline.append(scalerb)
 
 # TODO: name the other channels, watch out for python keywords such as del!

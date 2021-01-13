@@ -4,14 +4,14 @@ Magnets
 
 __all__ = ['mag6t']
 
+from ..session_logs import logger
+logger.info(__file__)
+
 from ophyd import Component, Device, EpicsMotor, PVPositioner
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
 from ophyd.status import wait as status_wait
 from ..framework import sd
-
-from ..session_logs import logger
-logger.info(__file__)
 
 
 class AMIZones(Device):
