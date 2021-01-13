@@ -12,7 +12,6 @@ from ..framework import sd
 
 
 class APDDevice(Device):
-
     source = Component(EpicsSignal, 'SetCSRC', kind='config')
     read_scan = Component(EpicsSignal, 'ReadCounts.SCAN', kind='config')
     count_time = Component(EpicsSignal, 'CountTime.A', kind='config')

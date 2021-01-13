@@ -103,7 +103,7 @@ class LocalScalerCH(ScalerCH):
                     fields.append(channel.s.name)
         return {'fields': fields}
 
-    def select_plot_channels(self, chan_names):
+    def select_plot_channels(self, chan_names=None):
 
         self.match_names()
         name_map = {}
