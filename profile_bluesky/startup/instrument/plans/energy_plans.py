@@ -100,7 +100,7 @@ def moveE(energy, undscan=False, group=None):
         if abs(energy-mono.energy.get()) > mono.energy.tolerance:
             args_list[0] += ((mono.energy, energy))
             decorators.append(mono)
-            
+
         for pr in [pr1, pr2, pr3]:
             if pr.tracking.get() is True:
                 _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
@@ -339,4 +339,3 @@ def qxscan(detectors, edge_energy, md=None, dichro=False, lockin=False):
     return (yield from Escan_list(detectors, energy_list,
                                   factor_list=qxscan_params.factor_list.get(),
                                   md=_md, dichro=dichro, lockin=lockin))
-  

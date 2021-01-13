@@ -54,7 +54,7 @@ class PRPzt(Device):
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
                                kind=Kind.config)
     offset = Component(Signal, value=0.0, kind=Kind.config)
-    
+
     servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind=Kind.omitted)
     servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind=Kind.omitted)
     servoStatus = Component(EpicsSignalRO, 'svo', kind=Kind.config)

@@ -9,7 +9,7 @@ logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
-from ophyd import Component, Device
+from ophyd import Component, Device, FormattedComponent
 from ..framework import sd
 
 
@@ -41,7 +41,7 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
                        kind='hinted', put_complete=True)
-                       
+
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
     def calibrate_energy(self, value):
