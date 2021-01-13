@@ -2,6 +2,9 @@
 initialize the bluesky framework
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = [
     "bec",
     "bp",
@@ -15,10 +18,6 @@ __all__ = [
     "sd",
     "summarize_plan",
 ]
-
-from ..session_logs import logger
-
-logger.info(__file__)
 
 from bluesky import RunEngine
 from bluesky import SupplementalData

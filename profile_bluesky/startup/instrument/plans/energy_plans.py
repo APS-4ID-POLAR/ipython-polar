@@ -2,14 +2,18 @@
 Energy scans
 """
 
+from ..session_logs import logger
+logger.info(__file__)
+
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
-from ..devices import undulator, mono, qxscan_params,pr1,pr2,pr3
+from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
 from numpy import linspace, array, arcsin, pi
 from scipy.constants import speed_of_light, Planck
+
 
 def undscan(detectors, energy_0, energy_f, steps, md=None):
 
@@ -35,7 +39,8 @@ def undscan(detectors, energy_0, energy_f, steps, md=None):
             grp = short_uid('set')
             yield Msg('checkpoint')
             yield from moveE(energy, undscan=True, group=grp)
-            yield from trigger_and_read(list(detectors)+[undulator.downstream.energy])
+            yield from trigger_and_read(list(detectors) +
+                                        [undulator.downstream.energy])
 
     return (yield from _inner_undscan())
 
@@ -69,10 +74,12 @@ def moveE(energy, undscan=False, group=None):
         target_energy = _offset + energy
         current_energy = undulator.downstream.energy.get()
 
-        if abs(target_energy-current_energy) > undulator.downstream.deadband.get():
+        if abs(target_energy-current_energy) > \
+                undulator.downstream.deadband.get():
             if current_energy < target_energy:
                 args_list[0] += (undulator.downstream.energy,
-                                 target_energy+undulator.downstream.backlash.get())
+                                 target_energy +
+                                 undulator.downstream.backlash.get())
                 args_list[0] += (undulator.downstream.start_button, 1)
 
                 args_list.append((undulator.downstream.energy, target_energy))
@@ -173,5 +180,5 @@ def qxscan(detectors, edge_energy, md=None):
     _md.update(md or {})
     energy_list = array(qxscan_params.energy_list.get())+edge_energy
     return (yield from Escan_list(detectors, energy_list,
-                                  factor_list = qxscan_params.factor_list.get(),
+                                  factor_list=qxscan_params.factor_list.get(),
                                   md=_md))
