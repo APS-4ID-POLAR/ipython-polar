@@ -13,7 +13,6 @@ from ..framework import sd
 
 
 class SRS340(Device):
-    """Wavefunction generator."""
 
     frequency = Component(EpicsSignal, 'FREQ.VAL', write_pv='SetFREQ.A',
                           kind=Kind.config, labels=('phase retarders'))

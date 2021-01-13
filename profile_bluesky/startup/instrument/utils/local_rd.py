@@ -2,8 +2,10 @@ __all__ = ['local_rd']
 
 from bluesky.plan_stubs import read
 
+
 def local_rd(obj, *, default_value=0):
-    """Reads a single-value non-triggered object
+    """Reads a single-value non-triggered object.
+
     This is a helper plan to get the scalar value out of a Device
     (such as an EpicsMotor or a single EpicsSignal).
     For devices that have more than one read key the following rules are used:
@@ -34,10 +36,12 @@ def local_rd(obj, *, default_value=0):
     hints = getattr(obj, 'hints', {}).get("fields", [])
     if len(hints) > 1:
         msg = (
-            f"Your object {obj} ({obj.name}.{getattr(obj, 'dotted_name', '')}) "
+            f"Your object {obj} "
+            f"({obj.name}.{getattr(obj, 'dotted_name', '')})"
             f"has {len(hints)} items hinted ({hints}).  We do not know how to "
-            "pick out a single value.  Please adjust the hinting by setting the "
-            "kind of the components of this device or by rd ing one of it's components"
+            "pick out a single value.  Please adjust the hinting by setting "
+            "the kind of the components of this device or by rd ing one of "
+            "it's components."
         )
         raise ValueError(msg)
     elif len(hints) == 0:
@@ -45,11 +49,12 @@ def local_rd(obj, *, default_value=0):
         if hasattr(obj, "read_attrs"):
             if len(obj.read_attrs) != 1:
                 msg = (
-                    f"Your object {obj} ({obj.name}.{getattr(obj, 'dotted_name', '')}) "
-                    f"and has {len(obj.read_attrs)} read attrs.  We do not know how to "
-                    "pick out a single value.  Please adjust the hinting/read_attrs by "
-                    "setting the kind of the components of this device or by rd ing one "
-                    "of its components"
+                    f"Your object {obj} "
+                    f"({obj.name}.{getattr(obj, 'dotted_name', '')}) "
+                    f"and has {len(obj.read_attrs)} read attrs.  We do not "
+                    "know how to pick out a single value.  Please adjust the "
+                    "hinting/read_attrs by setting the kind of the components "
+                    "of this device or by rd ing one of its components"
                 )
 
                 raise ValueError(msg)
@@ -71,10 +76,12 @@ def local_rd(obj, *, default_value=0):
         (data,) = ret.values()
     except ValueError as er:
         msg = (
-            f"Your object {obj} ({obj.name}.{getattr(obj, 'dotted_name', '')}) "
-            f"and has {len(ret)} read values.  We do not know how to pick out a "
-            "single value.  Please adjust the hinting/read_attrs by setting the "
-            "kind of the components of this device or by rd ing one of its components"
+            f"Your object {obj} "
+            f"({obj.name}.{getattr(obj, 'dotted_name', '')}) "
+            f"and has {len(ret)} read values.  We do not know how to pick out "
+            "a single value.  Please adjust the hinting/read_attrs by setting "
+            "the kind of the components of this device or by rd ing one of "
+            "its components."
         )
 
         raise ValueError(msg) from er
