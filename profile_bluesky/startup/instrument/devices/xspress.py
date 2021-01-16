@@ -54,7 +54,7 @@ class Xspress3ROI(Device):
     total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='hinted')
 
     # Name
-    name = Component(EpicsSignal, 'Name', kind='config')
+    roi_name = Component(EpicsSignal, 'Name', kind='config')
 
     # Enable
     # TODO: Not clear this exists. yes: but need to check PVs.  
@@ -103,7 +103,7 @@ def make_rois(rois_rng):
     defn = OrderedDict()
     for roi in rois_rng:
         attr = 'roi{:02d}'.format(roi)
-        defn[attr] = (Xspress3ROI, '{}:'.format(roi))
+        defn[attr] = (Xspress3ROI, f'{roi}:', dict(kind='normal'))
 
     defn['num_rois'] = (Signal, None, dict(value=len(rois_rng)))
     # e.g., device.rois.num_rois.get() => 16
@@ -146,7 +146,7 @@ class Xspress3Channel(Device):
             roi = list(self.all_rois)[index - 1]
 
         if name:
-            roi.name.put(name)
+            roi.roi_name.put(name)
 
         roi.configure(ev_low, ev_size, enable=enable)
 
@@ -164,7 +164,8 @@ class Xspress3VortexBase(Device):
     Erase_button = Component(EpicsSignal, 'det1:Erase', kind='omitted')
 
     # State
-    State = Component(EpicsSignal, 'det1:DetectorState_RBV', kind='config')
+    State = Component(EpicsSignal, 'det1:DetectorState_RBV', string=True,
+                      kind='config')
 
     # Config
     AcquireTime = Component(EpicsSignal, 'det1:AcquireTime', kind='config')

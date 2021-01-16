@@ -25,10 +25,10 @@ class CyberstarDevice(Device):
     peak_time = Component(EpicsSignal, 'Pktime.VAL', write_pv='SetPktime.VAL',
                           kind='config', labels=('cyberstar'))
 
-    sca_low = Component(EpicsSignalRO, 'SCAlo.VAL', write_pv='SetSCAlo.VAL',
+    sca_low = Component(EpicsSignal, 'SCAlo.VAL', write_pv='SetSCAlo.VAL',
                         kind='config', labels=('cyberstar'))
 
-    sca_window = Component(EpicsSignalRO, 'SCAhi.VAL', write_pv='SetSCAhi.VAL',
+    sca_window = Component(EpicsSignal, 'SCAhi.VAL', write_pv='SetSCAhi.VAL',
                            kind='config', labels=('cyberstar'))
 
 

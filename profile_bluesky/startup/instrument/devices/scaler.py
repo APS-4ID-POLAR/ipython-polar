@@ -222,7 +222,7 @@ class LocalScalerCH(ScalerCH):
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
                         labels=('detectors', 'counters'))
 scalerd.select_channels()
-scalerd.select_plot_channels()
+scalerd.select_plot_channels(None)
 scalerd.select_monitor('Time')
 sd.baseline.append(scalerd)
 
@@ -230,7 +230,7 @@ scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
                         labels=('detectors', 'counters'))
 scalerb.channels.chan01.chname.set('Time_b')
 scalerb.select_channels()
-scalerb.select_plot_channels()
+scalerb.select_plot_channels(None)
 sd.baseline.append(scalerb)
 
 # TODO: name the other channels, watch out for python keywords such as del!
