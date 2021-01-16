@@ -3,14 +3,15 @@
 from ..session_logs import logger
 logger.info(__file__)
 
-from bluesky.utils import make_decorator, single_gen, Msg
+from bluesky.utils import make_decorator, single_gen
+#from bluesky.utils import Msg
 from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
 from bluesky.plan_stubs import mv, sleep
-from bluesky_widgets.qt.figures import QtFigures
-from bluesky_widgets.utils.streaming import stream_documents_into_runs
+#from bluesky_widgets.qt.figures import QtFigures
+#from bluesky_widgets.utils.streaming import stream_documents_into_runs
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import local_rd
-from ..callbacks import AutoXanesPlot
+#from ..callbacks import AutoXanesPlot
 
 
 def stage_ami_wrapper(plan, magnet):

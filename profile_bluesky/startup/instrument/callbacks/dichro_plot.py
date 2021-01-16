@@ -5,13 +5,17 @@ Processed dichro data for plot.
 from ..session_logs import logger
 logger.info(__file__)
 
-__all__ = ['AutoDichroPlot']
-
 from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
 from bluesky_widgets.models.plot_specs import AxesSpec, FigureSpec
 from numpy import log, array
 
+#from bluesky_widgets.qt.figures import QtFigures
+#from bluesky_widgets.utils.streaming import stream_documents_into_runs
+#from ..framework import RE
+
+#__all__ = ["dichro_model", "dichro_view"]
+__all__ = ['AutoDichroPlot']
 
 def xanes(monitor, detector):
     absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
@@ -25,8 +29,10 @@ def xmcd(monitor, detector):
 
 
 def downsampled(x):
-    return array(x).reshape(-1, 4).mean(axis=1)
-
+    if array(x).size%4 == 0:
+        return array(x).reshape(-1, 4).mean(axis=1)
+    else:
+        return None
 
 class AutoDichroPlot(AutoPlotter):
     def __init__(self, monitor="Ion Ch 4", detector="Ion Ch 5"):
@@ -91,3 +97,8 @@ class AutoDichroPlot(AutoPlotter):
         # Add this Run to the figure.
         xanes_lines.add_run(run)
         xmcd_lines.add_run(run)
+
+#dichro_model = AutoDichroPlot()
+#dichro_view = QtFigures(dichro_model.figures)
+#dichro_view.show()
+#RE.subscribe(stream_documents_into_runs(dichro_model.add_run))
