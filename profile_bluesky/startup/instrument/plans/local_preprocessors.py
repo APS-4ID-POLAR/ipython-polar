@@ -187,13 +187,14 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                               pr_setup.positioner.parent.center.get())
 
             # Start plot subscription
-            model = AutoXanesPlot()
-            view = QtFigures(model.figures)
-            view.show()
+            # TODO: Remove this?
+            # model = AutoXanesPlot()
+            # view = QtFigures(model.figures)
+            # view.show()
 
-            _subs_token = yield Msg('subscribe', None,
-                                    stream_documents_into_runs(model.add_run),
-                                    'all')
+            # _subs_token = yield Msg('subscribe', None,
+            #                         stream_documents_into_runs(model.add_run),
+            #                         'all')
 
     def _unstage():
 
@@ -209,8 +210,9 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                               pr_setup.positioner.parent.offset.get())
 
             # Remove plot subscription
-            if _subs_token:
-                yield Msg('unsubscribe', None, token=_subs_token)
+            # TODO: remove this?
+            # if _subs_token:
+            #     yield Msg('unsubscribe', None, token=_subs_token)
 
     def _inner_plan():
         yield from _stage()

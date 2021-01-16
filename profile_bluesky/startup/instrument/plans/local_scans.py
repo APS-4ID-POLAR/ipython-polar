@@ -52,7 +52,7 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
 
 def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
-        **kwargs):
+        md=None, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -82,6 +82,8 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.rel_scan`.
 
@@ -92,6 +94,7 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
     """
     if dichro:
         per_step = one_dichro_step
+        md = {'hints': {'scan_type': 'dichro'}}
     else:
         per_step = None
 
@@ -104,13 +107,14 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_lup():
-        yield from rel_scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from rel_scan(detectors, *args, per_step=per_step, md=md,
+                            **kwargs)
 
     return (yield from _inner_lup())
 
 
 def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
-          dichro=False, **kwargs):
+          dichro=False, md=None, **kwargs):
     """
     Scan over one multi-motor trajectory.
 
@@ -140,6 +144,8 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.scan`.
     See Also
@@ -149,6 +155,7 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
     """
     if dichro:
         per_step = one_dichro_step
+        md = {'hints': {'scan_type': 'dichro'}}
     else:
         per_step = None
 
@@ -161,7 +168,7 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_ascan():
-        yield from scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from scan(detectors, *args, per_step=per_step, md=md, **kwargs)
 
     return (yield from _inner_ascan())
 

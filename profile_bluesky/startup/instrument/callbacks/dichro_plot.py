@@ -5,7 +5,7 @@ Processed dichro data for plot.
 from ..session_logs import logger
 logger.info(__file__)
 
-__all__ = ['AutoXanesPlot']
+__all__ = ['AutoDichroPlot']
 
 from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
@@ -28,7 +28,7 @@ def downsampled(x):
     return array(x).reshape(-1, 4).mean(axis=1)
 
 
-class AutoXanesPlot(AutoPlotter):
+class AutoDichroPlot(AutoPlotter):
     def __init__(self, monitor="Ion Ch 4", detector="Ion Ch 5"):
         super().__init__()
         self._x_to_lines = {}  # map x variable to (xanes_lines, xmcd_lines)
@@ -47,6 +47,12 @@ class AutoXanesPlot(AutoPlotter):
         if stream_name != "primary":
             # Nothing to do for this stream.
             return
+
+        # Look for the scan_type='dichro' hint
+        scan_type = run.metadata["start"]["hints"].pop('scan_type', None)
+        if scan_type != 'dichro':
+            return
+
         # Detect x variable from hints in metadata.
         first_scan_dimension = run.metadata["start"]["hints"]["dimensions"][0]
         scanning_fields, _ = first_scan_dimension
