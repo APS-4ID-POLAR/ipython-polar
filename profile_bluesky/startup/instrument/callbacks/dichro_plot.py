@@ -13,19 +13,50 @@ from bluesky_widgets.models.plot_specs import AxesSpec, FigureSpec
 from numpy import log, array
 
 
+def _process_channel(device):
+
+    _device = array(device)
+
+    if _device.size < 4:
+        return None
+    else:
+        rng = 4*(_device.size//4)
+        return _device[:rng]
+
+
 def xanes(monitor, detector):
-    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
-    return absorption.mean(axis=1)
+
+    _monitor = _process_channel(monitor)
+
+    if _monitor is None:
+        return 0
+    else:
+        _detector = _process_channel(detector)
+        absorption = log(_monitor / _detector).reshape(-1, 4)
+        return absorption.mean(axis=1)
 
 
 def xmcd(monitor, detector):
-    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
-    return (absorption[:, [0, 3]].mean(axis=1) -
-            absorption[:, [1, 2]].mean(axis=1))
+
+    _monitor = _process_channel(monitor)
+
+    if _monitor is None:
+        return 0
+    else:
+        _detector = _process_channel(detector)
+        absorption = log(_monitor / _detector).reshape(-1, 4)
+        return (absorption[:, [0, 3]].mean(axis=1) -
+                absorption[:, [1, 2]].mean(axis=1))
 
 
 def downsampled(x):
-    return array(x).reshape(-1, 4).mean(axis=1)
+
+    _x = _process_channel(x)
+
+    if _x is None:
+        return 0
+    else:
+        return array(_x).reshape(-1, 4).mean(axis=1)
 
 
 class AutoDichroPlot(AutoPlotter):
