@@ -2,11 +2,12 @@
 
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, DynamicDeviceComponent)
-from ophyd.status import SubscriptionStatus, AndStatus
+from ophyd.status import SubscriptionStatus, AndStatus, DeviceStatus, Status
 from collections import OrderedDict
 from ..session_logs import logger
 logger.info(__file__)
 
+from time import sleep
 
 # TODO: Are these correct?  Yes: bin1000= 10 keV, so 10000 eV corresponds to 1000th bin. 
 def ev_to_bin(ev):
@@ -51,7 +52,8 @@ class Xspress3ROI(Device):
     ev_size = Component(EvSignal, parent_attr='bin_size', kind='config')
 
     # Value
-    total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='hinted')
+    total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='hinted',
+                          auto_monitor=True)
 
     # Name
     roi_name = Component(EpicsSignal, 'Name', kind='config')
@@ -115,6 +117,28 @@ class Xspress3Channel(Device):
 
     # Make 5 ROIs
     rois = DynamicDeviceComponent(make_rois(range(1, 6)))
+
+    roi_trigger = Component(EpicsSignal, 'TSControl', trigger_value=0,
+                            put_complete=True, kind='omitted')
+    
+    roi_done = Component(EpicsSignal, 'TSAcquiring', kind='omitted',
+                         auto_monitor=True, string=True)
+
+    timestamp = Component(EpicsSignalRO, 'TimeStamp_RBV', kind='omitted',
+                          auto_monitor=True)
+
+    def _status_done(self):
+
+        status = Status(self.timestamp, settle_time=0.01)
+
+        def _set_finished(**kwargs):
+            status.set_finished()
+            self.timestamp.clear_sub(_set_finished)
+            
+        # Create status that checks the xspress state.
+        self.timestamp.subscribe(_set_finished, event_type='value', run=False)
+
+        return status
 
     @property
     def all_rois(self):
@@ -219,18 +243,19 @@ class Xspress3VortexBase(Device):
             ch.set_roi(*args, **kwargs)
 
     def trigger(self):
-
-        def _check_value(*, old_value, value, **kwargs):
-            """
-            Check status of acquisition.
-
-            Return True when the acquisition is complete, False otherwise.
-            """
-            end_states = ("Aborted", "Idle")
-            return value in end_states and old_value not in end_states
-
-        # Create status that checks the xspress state.
-        state_status = SubscriptionStatus(self.State, _check_value)
+        
+        # Monitor timestamps
+        state_status = None
+        for i in range(1,10):
+            ch = getattr(self, f'Ch{i}', None)
+            if ch:
+                _status = ch._status_done()
+                if state_status:
+                    state_status = AndStatus(state_status, _status)
+                else:
+                    state_status = _status
+            else:
+                break
 
         # Click the Acquire_button
         button_status = super().trigger()
