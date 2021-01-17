@@ -123,7 +123,13 @@ class AutoDichroPlot(AutoPlotter):
         xanes_lines.add_run(run)
         xmcd_lines.add_run(run)
 
-#dichro_model = AutoDichroPlot()
-#dichro_view = QtFigures(dichro_model.figures)
-#dichro_view.show()
-#RE.subscribe(stream_documents_into_runs(dichro_model.add_run))
+# TODO: I would like to have this here (or in the startup), but didn't figure
+# out how to do it.
+# from bluesky_widgets.qt.figures import QtFigures
+# from bluesky_widgets.utils.streaming import stream_documents_into_runs
+# from ..framework import RE
+# __all__ = ["dichro_model", "dichro_view"]
+# dichro_model = AutoDichroPlot()
+# dichro_view = QtFigures(dichro_model.figures)
+# dichro_view.show()
+# RE.subscribe(stream_documents_into_runs(dichro_model.add_run))
