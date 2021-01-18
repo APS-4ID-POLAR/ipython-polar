@@ -6,6 +6,7 @@ logger.info(__file__)
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, DynamicDeviceComponent, FormattedComponent)
 from ophyd.status import AndStatus, Status
+from bluesky.plan_stubs import mv
 from collections import OrderedDict
 
 
@@ -207,7 +208,7 @@ class Xspress3VortexBase(Device):
     Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
                                kind='omitted')
 
-    Erase_button = Component(EpicsSignal, 'det1:Erase', kind='omitted')
+    Erase_button = Component(EpicsSignal, 'det1:ERASE', kind='omitted')
 
     # State
     State = Component(EpicsSignal, 'det1:DetectorState_RBV', string=True,
@@ -297,6 +298,9 @@ class Xspress3VortexBase(Device):
         button_status = super().trigger()
 
         return AndStatus(state_status, button_status)
+
+    def SetCountTimePlan(self, value, **kwargs):
+        yield from mv(self.AcquireTime, value, **kwargs)
 
 
 class Xspress3Vortex4Ch(Xspress3VortexBase):
