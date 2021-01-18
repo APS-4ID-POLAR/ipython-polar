@@ -4,7 +4,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
-                   Component, DynamicDeviceComponent, FormattedComponent)
+                   Component, DynamicDeviceComponent, FormattedComponent, Kind)
 from ophyd.status import AndStatus, Status
 from bluesky.plan_stubs import mv
 from collections import OrderedDict
@@ -60,6 +60,13 @@ class Xspress3ROI(Device):
     # Enable
     enable_flag = Component(EpicsSignal, 'Use', kind='config',
                             put_complete=True, string=True)
+    
+    @enable_flag.sub_value
+    def _change_kind(self, value=None, **kwargs):
+        if value == 'Yes':
+            self.kind = Kind.normal
+        elif value == 'No':
+            self.kind = Kind.omitted
 
     def enable(self):
         return self.enable_flag.set('Yes')
@@ -94,7 +101,7 @@ class Xspress3ROI(Device):
             raise ValueError(f'ev_size cannot be < 0, but {ev_size} was '
                              'entered')
 
-        self.name.put(name)
+        self.roi_name.put(name)
         self.ev_size.put(ev_size)
         self.ev_low.put(ev_low)
 
@@ -114,42 +121,53 @@ def make_rois(rois_rng):
     # e.g., device.rois.num_rois.get() => 16
     return defn
 
+class ROIDevice(Device):
+    
+    for i in range(1,33):
+        locals()['roi{:02d}'.format(i)] = Component(Xspress3ROI, f'{i}:')
+    
+    num_rois = Component(Signal, value=32, kind='config')
+
 
 class Xspress3Channel(Device):
 
     # Make 32 ROIs --> same number as in EPICS support.
-    rois = DynamicDeviceComponent(make_rois(range(1, 33)))
+    
+#    rois = DynamicDeviceComponent(make_rois(range(1, 33)))
+    rois = FormattedComponent(ROIDevice, '{prefix}MCA{_chnum}ROI:')
 
     # Timestamp --> it's used to tell when the ROI plugin is done.
-    timestamp = FormattedComponent(EpicsSignalRO, 'TimeStamp_RBV',
+    timestamp = FormattedComponent(EpicsSignalRO,
+                                   '{prefix}MCA{_chnum}ROI:TimeStamp_RBV',
                                    kind='omitted', auto_monitor=True)
 
     # SCAs
     clock_ticks = FormattedComponent(EpicsSignalRO,
-                                     '{parent.prefix}{_scaprefix}0:Value_RBV')
+                                     '{prefix}C{_chnum}SCA0:Value_RBV')
 
     reset_ticks = FormattedComponent(EpicsSignalRO,
-                                     '{parent.prefix}{_scaprefix}1:Value_RBV')
+                                     '{prefix}C{_chnum}SCA1:Value_RBV')
 
     reset_counts = FormattedComponent(EpicsSignalRO,
-                                      '{parent.prefix}{_scaprefix}2:Value_RBV')
+                                      '{prefix}C{_chnum}SCA2:Value_RBV')
 
     all_events = FormattedComponent(EpicsSignalRO,
-                                    '{parent.prefix}{_scaprefix}3:Value_RBV')
+                                    '{prefix}C{_chnum}SCA3:Value_RBV')
 
     all_good = FormattedComponent(EpicsSignalRO,
-                                  '{parent.prefix}{_scaprefix}4:Value_RBV')
+                                  '{prefix}C{_chnum}SCA4:Value_RBV')
 
     pileup = FormattedComponent(EpicsSignalRO,
-                                '{parent.prefix}{_scaprefix}5:Value_RBV')
+                                '{prefix}C{_chnum}SCA5:Value_RBV')
 
     dt_factor = FormattedComponent(EpicsSignalRO,
-                                   '{parent.prefix}{_scaprefix}6:Value_RBV')
+                                   '{prefix}C{_chnum}SCA6:Value_RBV')
 
     def __init__(self, *args, chnum, **kwargs):
         # TODO: I don't like how this is currently implemented, but it works.
+        self._chnum = chnum
         super().__init__(*args, **kwargs)
-        self._scaprefix = f'C{chnum}SCA'
+#        self._scaprefix = f'{self.parent.prefix}C{chnum}SCA'
 
     def _status_done(self):
 
@@ -197,7 +215,7 @@ class Xspress3Channel(Device):
             roi = rois[ind - 1]
 
             if not name:
-                name = roi.name.get()
+                name = roi.roi_name.get()
 
             roi.configure(name, ev_low, ev_size, enable=enable)
 
@@ -249,26 +267,35 @@ class Xspress3VortexBase(Device):
     def unstage(self, *args, **kwargs):
         pass
 
-    def set_same_rois(self, *args, channels=None, **kwargs):
+    def set_roi(self, index, ev_low, ev_size, name=None, channels=None,
+                **kwargs):
         """
-        Set up the same ROI configuration for all channels
+        Set up the same ROI configuration for selected channels
 
         *args and **kwargs are passed to Xspress3Channel.set_roi function.
 
         Parameters
         ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        ev_low : int
+            low eV setting.
+        ev_size : int
+            size eV setting.
+        name : str, optional
+            ROI name, if nothing is passed it will keep the current name.
         channels : iterable
             List with channel numbers to be changed.
         """
 
-        # For now it will just pass the args and kwargs to the channels
         # make a function Edge2Emission(AbsEdge) --> returns primary emission
         # energy
         # 1st argument for roi1, 2nd for roi2...
         # 'S4QX4:MCA1ROI:1:Total_RBV'  # roi1 of channel 1
         # 'S4QX4:MCA1ROI:2:Total_RBV'  # roi1 of channel 2
 
-        if channels:
+        if not channels:
             channels = [i for i in range(1, 20)]
 
         for ch in channels:
@@ -277,7 +304,20 @@ class Xspress3VortexBase(Device):
             except AttributeError:
                 break
 
-            channel.set_roi(*args, **kwargs)
+            channel.set_roi(index, ev_low, ev_size, name=name)
+    
+    def disable_roi(self, index, channels=None):
+        
+        if not channels:
+            channels = [i for i in range(1, 20)]
+
+        for ch in channels:
+            try:
+                channel = getattr(self, f'Ch{ch}')
+            except AttributeError:
+                break
+            
+            getattr(channel.rois, 'roi{:02d}'.format(index)).disable()
 
     def trigger(self):
 
@@ -306,13 +346,13 @@ class Xspress3VortexBase(Device):
 class Xspress3Vortex4Ch(Xspress3VortexBase):
 
     # Channels
-    Ch1 = Component(Xspress3Channel, 'MCA1ROI:', chnum=1)
-    Ch2 = Component(Xspress3Channel, 'MCA2ROI:', chnum=2)
-    Ch3 = Component(Xspress3Channel, 'MCA3ROI:', chnum=3)
-    Ch4 = Component(Xspress3Channel, 'MCA4ROI:', chnum=4)
+    Ch1 = Component(Xspress3Channel, '', chnum=1)
+    Ch2 = Component(Xspress3Channel, '', chnum=2)
+    Ch3 = Component(Xspress3Channel, '', chnum=3)
+    Ch4 = Component(Xspress3Channel, '', chnum=4)
 
 
 class Xspress3Vortex1Ch(Xspress3VortexBase):
 
     # Channels
-    Ch1 = Component(Xspress3Channel, 'MCA1ROI:')
+    Ch1 = Component(Xspress3Channel, '', chnum=1)
