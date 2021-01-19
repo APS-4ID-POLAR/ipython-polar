@@ -2,16 +2,14 @@
 Monochromator motors
 """
 
-__all__ = [
-    'mono',
-    ]
+__all__ = ['mono']
 
 from ..session_logs import logger
 logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
-from ophyd import Component, FormattedComponent, Device
+from ophyd import Component, Device, FormattedComponent
 from ..framework import sd
 
 

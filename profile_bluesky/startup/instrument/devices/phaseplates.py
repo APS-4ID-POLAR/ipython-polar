@@ -55,12 +55,14 @@ class PRPzt(Device):
                         write_pv='DC_set_microns.VAL', auto_monitor=True,
                         tolerance=0.01, put_complete=True)
 
+
     center = Component(EpicsSignal, 'AC_put_center.A', kind='config')
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
                                kind='config')
 
     offset_microns = Component(MicronsSignal, parent_attr='offset_degrees',
                                kind='config')
+
 
     servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind='omitted')
     servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind='omitted')
@@ -284,7 +286,6 @@ class PRSetup():
                         else:
                             # Get offset signal
                             self.offset = _positioner.parent.offset_degrees
-
                         break
                     elif oscillate.lower() == 'no':
                         break

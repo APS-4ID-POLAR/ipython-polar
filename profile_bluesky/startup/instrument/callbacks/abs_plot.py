@@ -2,11 +2,7 @@
 Callback to plot normalized XANES on the fly
 """
 
-__all__ = ['AbsorptionPlot']
-
 from ..session_logs import logger
-logger.info(__file__)
-
 from bluesky.callbacks.mpl_plotting import QtAwareCallback
 from bluesky.callbacks.core import make_class_safe, get_obj_fields
 import warnings
@@ -14,8 +10,12 @@ from numpy import log
 import threading
 from collections import ChainMap
 
-#TODO: update docstring
+logger.info(__file__)
 
+__all__ = ['AbsorptionPlot']
+
+
+# TODO: update docstring
 @make_class_safe(logger=logger)
 class AbsorptionPlot(QtAwareCallback):
 
@@ -79,8 +79,8 @@ class AbsorptionPlot(QtAwareCallback):
                 self.__setup_event.set()
             if fig is not None:
                 if ax is not None:
-                    raise ValueError("Values were given for both `fig` and `ax`. "
-                                     "Only one can be used; prefer ax.")
+                    raise ValueError("Values were given for both `fig` and \
+                        `ax`. Only one can be used; prefer ax.")
                 warnings.warn("The `fig` keyword arugment of LivePlot is "
                               "deprecated and will be removed in the future. "
                               "Instead, use the new keyword argument `ax` to "
@@ -99,7 +99,7 @@ class AbsorptionPlot(QtAwareCallback):
                 self.x = 'seq_num'
             self.y, *others = get_obj_fields([y])
             self.monitor, *others = get_obj_fields([monitor])
-            self.transmission_mode=transmission_mode
+            self.transmission_mode = transmission_mode
             self.ax.set_ylabel(y)
             self.ax.set_xlabel(x or 'sequence #')
             if xlim is not None:
@@ -110,7 +110,8 @@ class AbsorptionPlot(QtAwareCallback):
             self.kwargs = kwargs
             self.lines = []
             self.legend = None
-            self.legend_title = " :: ".join([name for name in self.legend_keys])
+            self.legend_title = " :: ".join([name for name in
+                                             self.legend_keys])
             self._epoch_offset = None  # used if x == 'time'
             self._epoch = epoch
 
@@ -148,9 +149,9 @@ class AbsorptionPlot(QtAwareCallback):
 
         if descriptor.get('name') == 'primary':
             try:
-                # This inner try/except block handles seq_num and time, which could
-                # be keys in the data or accessing the standard entries in every
-                # event.
+                # This inner try/except block handles seq_num and time, which
+                # could be keys in the data or accessing the standard entries
+                # in every event.
                 try:
                     new_x = doc['data'][self.x]
                 except KeyError:

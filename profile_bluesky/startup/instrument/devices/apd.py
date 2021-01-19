@@ -7,33 +7,26 @@ __all__ = ['apd_parameters']
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsSignal, EpicsSignalRO
+from ophyd import Component, Device, EpicsSignal
 from ..framework import sd
 
 
 class APDDevice(Device):
+    source = Component(EpicsSignal, 'SetCSRC', kind='config')
+    read_scan = Component(EpicsSignal, 'ReadCounts.SCAN', kind='config')
+    count_time = Component(EpicsSignal, 'CountTime.A', kind='config')
 
-    source = Component(EpicsSignal, 'SetCSRC', kind='config', labels=('apd'))
-    read_scan = Component(EpicsSignal, 'ReadCounts.SCAN', kind='config',
-                          labels=('apd'))
-    count_time = Component(EpicsSignal, 'CountTime.A', kind='config',
-                           labels=('apd'))
+    hv = Component(EpicsSignal, 'HV.VAL', write_pv='SetHV.A', kind='config')
+    hv_on = Component(EpicsSignal, 'HVOnOff.VAL', kind='config')
 
-    hv = Component(EpicsSignal, 'HV.VAL', write_pv='SetHV.A',
-                   kind='config', labels=('apd'))
-    hv_on = Component(EpicsSignal, 'HVOnOff.VAL', kind='config',
-                      labels=('apd'))
-
-    sca_mode = Component(EpicsSignal, 'SetSCAMode.VAL', kind='config',
-                         labels=('apd'))
-    sca_outtime = Component(EpicsSignal, 'SetOutTime.VAL', kind='config',
-                            labels=('apd'))
+    sca_mode = Component(EpicsSignal, 'SetSCAMode.VAL', kind='config')
+    sca_outtime = Component(EpicsSignal, 'SetOutTime.VAL', kind='config')
     sca_low = Component(EpicsSignal, 'SCAlow.VAL', write_pv='SetSCALevel.A',
-                        kind='config', labels=('apd'))
+                        kind='config')
     sca_window = Component(EpicsSignal, 'SCAwin.VAL',
-                           write_pv='SetSCALevel.B', kind='config',
-                           labels=('apd'))
+                           write_pv='SetSCALevel.B', kind='config')
 
 
-apd_parameters = APDDevice('4idd:apd:1:', name='apd')
+apd_parameters = APDDevice('4idd:apd:1:', name='apd',
+                           labels=('apd', 'detectors'))
 sd.baseline.append(apd_parameters)

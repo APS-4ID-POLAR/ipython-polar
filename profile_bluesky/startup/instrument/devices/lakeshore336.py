@@ -6,68 +6,66 @@ from instrument.session_logs import logger
 logger.info(__file__)
 
 from apstools.synApps.asyn import AsynRecord
-from ophyd import Component, Device, Signal
+from ophyd import Component, Device
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
-from ophyd import FormattedComponent,PVPositioner
+from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
 from ..utils import DoneSignal
+
 
 class LS336_LoopControl(PVPositioner):
 
     # position
-    readback = FormattedComponent(EpicsSignalRO,
-                                  "{self.prefix}IN{self.loop_number}",
+    readback = FormattedComponent(EpicsSignalRO, "{prefix}IN{loop_number}",
                                   auto_monitor=True, kind=Kind.hinted)
-    setpoint = FormattedComponent(EpicsSignal,
-                                  "{self.prefix}OUT{self.loop_number}:SP",
+    setpoint = FormattedComponent(EpicsSignal, "{prefix}OUT{loop_number}:SP",
                                   auto_monitor=True, put_complete=True,
                                   kind=Kind.omitted)
     setpointRO = FormattedComponent(EpicsSignalRO,
-                                    "{self.prefix}OUT{self.loop_number}:SP_RBV",
-                                    kind=Kind.hinted)
-    heater = FormattedComponent(EpicsSignalRO,
-                                "{self.prefix}HTR{self.loop_number}",
-                                auto_monitor=True)
+                                    "{prefix}OUT{loop_number}:SP_RBV",
+                                    kind=Kind.normal)
+    heater = FormattedComponent(EpicsSignalRO, "{prefix}HTR{loop_number}",
+                                auto_monitor=True, kind=Kind.normal)
 
-    #status
+    # status
     done = Component(DoneSignal, value=0, kind=Kind.omitted)
     done_value = 1
 
     # configuration
     units = FormattedComponent(EpicsSignalWithRBV,
-                               "{self.prefix}IN{self.loop_number}:Units",
+                               "{prefix}IN{loop_number}:Units",
                                kind=Kind.config)
     pid_P = FormattedComponent(EpicsSignalWithRBV,
-                               "{self.prefix}P{self.loop_number}",
+                               "{prefix}P{loop_number}",
                                kind=Kind.config)
     pid_I = FormattedComponent(EpicsSignalWithRBV,
-                               "{self.prefix}I{self.loop_number}",
+                               "{prefix}I{loop_number}",
                                kind=Kind.config)
     pid_D = FormattedComponent(EpicsSignalWithRBV,
-                               "{self.prefix}D{self.loop_number}",
+                               "{prefix}D{loop_number}",
                                kind=Kind.config)
     ramp_rate = FormattedComponent(EpicsSignalWithRBV,
-                                   "{self.prefix}RampR{self.loop_number}",
+                                   "{prefix}RampR{loop_number}",
                                    kind=Kind.config)
     ramp_on = FormattedComponent(EpicsSignalWithRBV,
-                                 "{self.prefix}OnRamp{self.loop_number}",
+                                 "{prefix}OnRamp{loop_number}",
                                  kind=Kind.config)
 
     loop_name = FormattedComponent(EpicsSignalRO,
-                                   "{self.prefix}IN{self.loop_number}:Name_RBV",
+                                   "{prefix}IN{loop_number}:Name_RBV",
                                    kind=Kind.config)
     control = FormattedComponent(EpicsSignalWithRBV,
-                                 "{self.prefix}OUT{self.loop_number}:Cntrl",
+                                 "{prefix}OUT{loop_number}:Cntrl",
                                  kind=Kind.config)
     manual = FormattedComponent(EpicsSignalWithRBV,
-                                "{self.prefix}OUT{self.loop_number}:MOUT",
+                                "{prefix}OUT{loop_number}:MOUT",
                                 kind=Kind.config)
     mode = FormattedComponent(EpicsSignalWithRBV,
-                              "{self.prefix}OUT{self.loop_number}:Mode",
+                              "{prefix}OUT{loop_number}:Mode",
                               kind=Kind.config)
     heater_range = FormattedComponent(EpicsSignalWithRBV,
-                                      "{self.prefix}HTR{self.loop_number}:Range",
-                                      kind=Kind.normal, auto_monitor=True)
+                                      "{prefix}HTR{loop_number}:Range",
+                                      kind=Kind.config, auto_monitor=True)
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
@@ -122,42 +120,45 @@ class LS336_LoopControl(PVPositioner):
         # within self.tolerance.
         # Is it needed? Or is there a better way to do this?
         self.done.put(0)
-        return super().move(*args,**kwargs)
+        return super().move(*args, **kwargs)
+
 
 class LS336_LoopRO(Device):
     """
-    Additional controls for loop1 and loop2: heater and pid
+    Additional controls for loop3 and loop4: heater and pid
     """
+    # Set this to normal because we don't use it.
     readback = FormattedComponent(EpicsSignalRO,
-                                  "{self.prefix}IN{self.loop_number}",
-                                  kind=Kind.hinted)
+                                  "{prefix}IN{loop_number}",
+                                  kind=Kind.normal)
     units = FormattedComponent(EpicsSignalWithRBV,
-                               "{self.prefix}IN{self.loop_number}:Units",
+                               "{prefix}IN{loop_number}:Units",
                                kind=Kind.omitted)
     loop_name = FormattedComponent(EpicsSignalRO,
-                                   "{self.prefix}IN{self.loop_number}:Name_RBV",
+                                   "{prefix}IN{loop_number}:Name_RBV",
                                    kind=Kind.omitted)
 
     def __init__(self, *args, loop_number=None, **kwargs):
         self.loop_number = loop_number
         super().__init__(*args, **kwargs)
 
+
 class LS336Device(Device):
     """
     support for Lakeshore 336 temperature controller
     """
-    loop1 = FormattedComponent(LS336_LoopControl, "{self.prefix}",
+    loop1 = FormattedComponent(LS336_LoopControl, "{prefix}",
                                loop_number=1)
-    loop2 = FormattedComponent(LS336_LoopControl, "{self.prefix}",
+    loop2 = FormattedComponent(LS336_LoopControl, "{prefix}",
                                loop_number=2)
-    loop3 = FormattedComponent(LS336_LoopRO, "{self.prefix}",
+    loop3 = FormattedComponent(LS336_LoopRO, "{prefix}",
                                loop_number=3)
-    loop4 = FormattedComponent(LS336_LoopRO, "{self.prefix}", loop_number=4)
+    loop4 = FormattedComponent(LS336_LoopRO, "{prefix}", loop_number=4)
 
     # same names as apstools.synApps._common.EpicsRecordDeviceCommonAll
     scanning_rate = Component(EpicsSignal, "read.SCAN", kind=Kind.omitted)
     process_record = Component(EpicsSignal, "read.PROC", kind=Kind.omitted)
 
     read_all = Component(EpicsSignal, "readAll.PROC", kind=Kind.omitted)
-# TODO: serial = Component(AsynRecord, "serial")
+    # TODO: serial = Component(AsynRecord, "serial")
     serial = Component(AsynRecord, "serial", kind=Kind.omitted)

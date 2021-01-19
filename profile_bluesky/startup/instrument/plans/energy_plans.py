@@ -2,10 +2,10 @@
 Energy scans
 """
 
-__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
-
 from ..session_logs import logger
 logger.info(__file__)
+
+__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
