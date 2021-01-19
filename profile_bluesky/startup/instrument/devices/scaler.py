@@ -17,6 +17,7 @@ from ..framework import sd
 from ophyd import Kind, Component
 import time
 from bluesky.plan_stubs import mv
+from ..utils import local_rd
 
 
 class PresetMonitorSignal(Signal):
@@ -133,7 +134,6 @@ class LocalScalerCH(ScalerCH):
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
 
-
     def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
 
@@ -217,6 +217,9 @@ class LocalScalerCH(ScalerCH):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.preset_monitor, value, **kwargs)
+
+    def GetCountTimePlan(self):
+        yield from local_rd(self.preset_monitor)
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
