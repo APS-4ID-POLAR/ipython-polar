@@ -2,7 +2,10 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv']
+__all__ = ['lup', 'ascan', 'mv', 'DEFAULT_DETECTORS']
+
+from ..session_logs import logger
+logger.info(__file__)
 
 from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
@@ -11,9 +14,23 @@ from ..devices import scalerd, pr_setup, mag6t
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
+from ..utils import local_rd
 
-# TODO: should I have some default like this?
-# DETECTORS = [scalerd]
+DEFAULT_DETECTORS = [scalerd]
+
+
+def dichro_steps(detectors, motors, take_reading):
+
+    pr_pos = yield from local_rd(pr_setup.positioner)
+    offset = yield from local_rd(pr_setup.offset)
+
+    for sign in pr_setup.dichro_steps:
+        yield from mv(pr_setup.positioner, pr_pos + sign*offset)
+        yield from take_reading(list(detectors) + list(motors) +
+                                [pr_setup.positioner])
+
+    # TODO: This step is unnecessary if the pr motor is used.
+    yield from mv(pr_setup.positioner, pr_pos)
 
 
 def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
@@ -38,21 +55,11 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
     motors = step.keys()
     yield from move_per_step(step, pos_cache)
-
-    offset = pr_setup.positioner.parent.offset.get()
-    pr_pos = pr_setup.positioner.get()
-
-    for sign in [1, -1, -1, 1]:
-        yield from mv(pr_setup.positioner, pr_pos + sign*offset)
-        yield from take_reading(list(detectors) + list(motors) +
-                                [pr_setup.positioner])
-
-    # TODO: This step is unnecessary if the pr motor is used.
-    yield from mv(pr_setup.positioner, pr_pos)
+    yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
-        **kwargs):
+def lup(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
+        dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -109,7 +116,7 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
     return (yield from _inner_lup())
 
 
-def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
+def ascan(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
           dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory.
