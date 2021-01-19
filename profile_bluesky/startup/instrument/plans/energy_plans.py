@@ -62,7 +62,10 @@ def moveE(energy, group=None):
     def _inner_moveE():
         yield from mv(*args, group=group)
 
-    return (yield from _inner_moveE())
+    if len(args) > 0:
+        return (yield from _inner_moveE())
+    else:
+        return None
 
 
 def Escan_list(detectors, energy_list, factor_list=None, md=None,
@@ -134,7 +137,8 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     # Collects current monitor count for each detector
     dets_preset = []
     for detector in detectors:
-        dets_preset.append((yield from detector.GetCountTimePlan()))
+        value = yield from detector.GetCountTimePlan()
+        dets_preset.append(value)
 
     @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
@@ -166,8 +170,8 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     return (yield from _inner_Escan_list())
 
 
-def Escan(detectors=DEFAULT_DETECTORS, *, energy_0, energy_f, steps, md=None,
-          dichro=False, lockin=False):
+def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
+          lockin=False):
     """
     Scan the beamline energy using a fixed step size.
 
@@ -201,6 +205,10 @@ def Escan(detectors=DEFAULT_DETECTORS, *, energy_0, energy_f, steps, md=None,
     :func:`Escan_list`
     :func:`qxscan`
     """
+    
+    if not detectors:
+        detectors = DEFAULT_DETECTORS
+    
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -215,8 +223,7 @@ def Escan(detectors=DEFAULT_DETECTORS, *, energy_0, energy_f, steps, md=None,
                                   dichro=dichro, lockin=lockin))
 
 
-def qxscan(detectors=DEFAULT_DETECTORS, *, edge_energy, md=None, dichro=False,
-           lockin=False):
+def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     """
     Scan the beamline energy using variable step size.
 
@@ -247,6 +254,10 @@ def qxscan(detectors=DEFAULT_DETECTORS, *, edge_energy, md=None, dichro=False,
     :func:`Escan_list`
     :func:`Escan`
     """
+    
+    if not detectors:
+        detectors = DEFAULT_DETECTORS
+
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy),
                          'dichro': dichro,

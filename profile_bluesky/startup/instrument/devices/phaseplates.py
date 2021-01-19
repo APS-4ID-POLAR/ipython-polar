@@ -181,6 +181,8 @@ class PRSetup():
 
             _current = {}
             _current['track'] = "yes" if pr.tracking.get() else "no"
+            for key in ['oscillate', 'method', 'offset', 'center']:
+                _current[key] = None
 
             if self.positioner and not _positioner:
                 _current['oscillate'] = (
@@ -201,7 +203,9 @@ class PRSetup():
             # Track the energy?
             while True:
                 track = input(f"\tTrack? ({_current['track']}): ")
-
+                if track == '':
+                    track = str(_current['track'])
+                    
                 if track.lower() == "yes":
                     pr.tracking.put(True)
                     break
@@ -212,11 +216,15 @@ class PRSetup():
                     print("Only yes or no are acceptable answers.")
 
             # If no positioner has been selected to oscillate, we will ask.
-            if _positioner is None:
+            # This assumes that we only oscillate one PR, which is tracked.
+            if _positioner is None and track == "yes":
                 # Oscillate this PR?
                 while True:
                     oscillate = input(f"\tOscillate? ({_current['oscillate']})"
                                       ": ")
+                    
+                    if oscillate == '':
+                        oscillate = str(_current['oscillate'])
                     # If this will oscillate, need to determine the positioner
                     # to use and its parameters.
                     if oscillate.lower() == "yes":
@@ -228,6 +236,8 @@ class PRSetup():
                             while True:
                                 method = input("\tUse motor or PZT? "
                                                f"({_current['method']}): ")
+                                if method == '':
+                                    method = str(_current['method'])
                                 if method.lower() == 'motor':
                                     _positioner = pr.th
                                     break
@@ -243,8 +253,11 @@ class PRSetup():
                             try:
                                 msg = "\tOffset (in degrees)"
                                 msg += f"({_current['offset']}): "
-                                _offset = float(input(msg))
-                                _positioner.parent.offset_degrees.put(_offset)
+                                offset = float(input(msg))
+                                if offset == '':
+                                    offset = str(_current['offset'])
+                                _positioner.parent.offset_degrees.put(
+                                        float(offset))
                                 break
                             except ValueError:
                                 print('Must be a number.')
@@ -253,21 +266,24 @@ class PRSetup():
                         # if PZT is used, then get the center.
                         if method == "pzt":
                             # Get offset signal
-                            self.offset = self.positioner.parent.offset_microns
+                            self.offset = _positioner.parent.offset_microns
                             # Get the PZT center.
                             while True:
                                 try:
-                                    _center = float(
-                                        input("\tPZT center in microns "
-                                              f"({_current['center']}): "))
-                                    _positioner.parent.center.put(_center)
+                                    center = input(
+                                            "\tPZT center in microns "
+                                            f"({_current['center']}): ")
+                                    if center == '':
+                                        center = str(_current['center'])
+                                    _positioner.parent.center.put(
+                                            float(center))
                                     break
                                 except ValueError:
                                     print('Must be a number.')
                                     pass
                         else:
                             # Get offset signal
-                            self.offset = self.positioner.parent.offset_degrees
+                            self.offset = _positioner.parent.offset_degrees
 
                         break
                     elif oscillate.lower() == 'no':
@@ -276,8 +292,9 @@ class PRSetup():
                         print("Only yes or no are acceptable answers.")
 
             else:
-                print('\tYou already selected {} to oscillate.'.format(
-                    _positioner.name))
+                if _positioner and track == 'yes':
+                    print('\tYou already selected {} to oscillate.'.format(
+                          _positioner.name))
 
         self.positioner = _positioner
 

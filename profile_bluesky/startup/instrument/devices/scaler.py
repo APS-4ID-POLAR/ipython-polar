@@ -216,10 +216,10 @@ class LocalScalerCH(ScalerCH):
                 channel.gate.put(0)
 
     def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.preset_monitor, value, **kwargs)
+        return (yield from mv(self.preset_monitor, value, **kwargs))
 
     def GetCountTimePlan(self):
-        yield from local_rd(self.preset_monitor)
+        return (yield from local_rd(self.preset_monitor))
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
