@@ -52,7 +52,7 @@ class UndulatorEnergy(PVPositioner):
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
 
-    def move(self, position, **kwargs):
+    def move(self, position, wait=True, **kwargs):
 
         # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
@@ -60,7 +60,6 @@ class UndulatorEnergy(PVPositioner):
             status.set_finished()
         # Otherwise -> let's move!
         else:
-            _wait = kwargs.pop('wait', True)
 
             # Applies backlash if needed.
             if position > self.readback.get():
@@ -80,7 +79,7 @@ class UndulatorEnergy(PVPositioner):
             click_status = self.parent.start_button.set(1)
             status = AndStatus(pos_status, click_status)
 
-            if _wait:
+            if wait:
                 status_wait(status)
 
         return status
@@ -94,8 +93,8 @@ class MyUndulator(apstools.devices.ApsUndulator):
     def undulator_setup(self):
         """Interactive setup of usual undulator parameters."""
         while True:
-            _tracking = input("Do you want to track the undulator energy? \
-                (yes/no): ")
+            _tracking = input("Do you want to track the undulator energy? "
+                              "(yes/no): ")
             if _tracking == 'yes':
                 self.tracking.put(True)
                 break
