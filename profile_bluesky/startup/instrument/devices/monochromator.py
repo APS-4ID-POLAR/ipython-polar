@@ -42,7 +42,7 @@ class Monochromator(KohzuSeqCtl_Monochromator):
     table_y = Component(EpicsMotor, 'm8', labels=('motor', 'mono'))
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
-                       kind='hinted', put_complete=True, labels=('mono',))
+                       put_complete=True, labels=('mono',))
 
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
@@ -54,9 +54,9 @@ class Monochromator(KohzuSeqCtl_Monochromator):
         value: float
             New energy for the current monochromator position.
         """
-        self.use_set.put('Set')
+        self.use_set.put('Set', use_complete=True)
         self.energy.put(value)
-        self.use_set.put('Use')
+        self.use_set.put('Use', use_complete=True)
 
 
 mono = Monochromator('4idb:', name='monochromator')
