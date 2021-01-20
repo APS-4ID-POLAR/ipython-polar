@@ -1,4 +1,4 @@
-""" Generate plots """"
+""" Generate plots """
 
 from ..session_logs import logger
 logger.info(__file__)
