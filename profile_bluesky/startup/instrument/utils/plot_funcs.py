@@ -11,13 +11,10 @@ from ..framework import RE
 from ..callbacks import AutoDichroPlot
 
 
+# TODO: Is there a better way to do this?
 def start_dichro_plot():
-
-    global dichro_model
-    global dichro_view
-
     dichro_model = AutoDichroPlot()
     dichro_view = QtFigures(dichro_model.figures)
     dichro_view.show()
     RE.subscribe(stream_documents_into_runs(dichro_model.add_run))
-
+    return dichro_model, dichro_view
