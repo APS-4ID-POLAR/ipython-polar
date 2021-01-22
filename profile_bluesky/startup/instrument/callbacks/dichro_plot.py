@@ -2,61 +2,30 @@
 Processed dichro data for plot.
 """
 
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['AutoDichroPlot']
 
 from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
 from bluesky_widgets.models.plot_specs import AxesSpec, FigureSpec
 from numpy import log, array
 
-__all__ = ['AutoDichroPlot']
-
-
-def _process_channel(device):
-
-    _device = array(device)
-
-    if _device.size < 4:
-        return None
-    else:
-        rng = 4*(_device.size//4)
-        return _device[:rng]
+from ..session_logs import logger
+logger.info(__file__)
 
 
 def xanes(monitor, detector):
-
-    _monitor = _process_channel(monitor)
-
-    if _monitor is None:
-        return 0
-    else:
-        _detector = _process_channel(detector)
-        absorption = log(_monitor / _detector).reshape(-1, 4)
-        return absorption.mean(axis=1)
+    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
+    return absorption.mean(axis=1)
 
 
 def xmcd(monitor, detector):
-
-    _monitor = _process_channel(monitor)
-
-    if _monitor is None:
-        return 0
-    else:
-        _detector = _process_channel(detector)
-        absorption = log(_monitor / _detector).reshape(-1, 4)
-        return (absorption[:, [0, 3]].mean(axis=1) -
-                absorption[:, [1, 2]].mean(axis=1))
+    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
+    return (absorption[:, [0, 3]].mean(axis=1) -
+            absorption[:, [1, 2]].mean(axis=1))
 
 
 def downsampled(x):
-
-    _x = _process_channel(x)
-
-    if _x is None:
-        return 0
-    else:
-        return array(_x).reshape(-1, 4).mean(axis=1)
+    return array(x).reshape(-1, 4).mean(axis=1)
 
 
 class AutoDichroPlot(AutoPlotter):
@@ -80,8 +49,13 @@ class AutoDichroPlot(AutoPlotter):
             return
 
         # Look for the scan_type='dichro' hint
-        scan_type = run.metadata["start"]["hints"].pop('scan_type', None)
+        scan_type = run.metadata["start"]["hints"].get('scan_type', None)
         if scan_type != 'dichro':
+            return
+
+        # Check if number of points is a multiple of 4.
+        data_size = run.primary.to_dask()[self._detector].size
+        if data_size < 4 or data_size % 4 != 0:
             return
 
         # Detect x variable from hints in metadata.
@@ -122,4 +96,3 @@ class AutoDichroPlot(AutoPlotter):
         # Add this Run to the figure.
         xanes_lines.add_run(run)
         xmcd_lines.add_run(run)
-
