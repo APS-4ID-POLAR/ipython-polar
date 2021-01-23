@@ -14,18 +14,36 @@ logger.info(__file__)
 
 
 def xanes(monitor, detector):
-    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
+    
+    if array(detector).size < 4:
+        return array(detector).mean()
+    
+    rng = 4*(array(detector).size//4)
+    absorption = log(array(monitor)[:rng] / array(detector)[:rng]).reshape(-1, 4)
+    
+#    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
     return absorption.mean(axis=1)
 
 
 def xmcd(monitor, detector):
-    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
+    
+    if array(detector).size < 4:
+        return 0
+    
+    rng = 4*(array(detector).size//4)
+    absorption = log(array(monitor)[:rng] / array(detector)[:rng]).reshape(-1, 4)
+    
+#    absorption = log(array(monitor) / array(detector)).reshape(-1, 4)
     return (absorption[:, [0, 3]].mean(axis=1) -
             absorption[:, [1, 2]].mean(axis=1))
 
 
 def downsampled(x):
-    return array(x).reshape(-1, 4).mean(axis=1)
+    if array(x).size < 4:
+        return array(x).mean()
+
+    rng = 4*(array(x).size//4)
+    return array(x[:rng]).reshape(-1, 4).mean(axis=1)
 
 
 class AutoDichroPlot(AutoPlotter):
@@ -52,12 +70,7 @@ class AutoDichroPlot(AutoPlotter):
         scan_type = run.metadata["start"]["hints"].get('scan_type', None)
         if scan_type != 'dichro':
             return
-
-        # Check if number of points is a multiple of 4.
-        data_size = run.primary.to_dask()[self._detector].size
-        if data_size < 4 or data_size % 4 != 0:
-            return
-
+        
         # Detect x variable from hints in metadata.
         first_scan_dimension = run.metadata["start"]["hints"]["dimensions"][0]
         scanning_fields, _ = first_scan_dimension

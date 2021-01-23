@@ -12,8 +12,8 @@ logger.info(__file__)
 
 
 # TODO: Is there a better way to do this?
-def start_dichro_plot():
-    model = AutoDichroPlot()
+def start_dichro_plot(monitor, detector):
+    model = AutoDichroPlot(monitor=monitor, detector=detector)
     view = QtFigures(model.figures)
     view.show()
     RE.subscribe(stream_documents_into_runs(model.add_run))
