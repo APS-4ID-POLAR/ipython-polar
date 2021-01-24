@@ -1,10 +1,29 @@
 """Local decorators."""
 
+from bluesky import Msg
 from bluesky.utils import make_decorator, single_gen
 from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
 from bluesky.plan_stubs import mv, sleep
+from ophyd import Signal
+from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import local_rd
+
+from ..session_logs import logger
+logger.info(__file__)
+
+
+class TriggerSignal(Signal):
+
+    """ Signal that only matters for the trigger function """
+
+    # Try to have func into trigger.
+    # def __init__(self, *args, func, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self._func = func
+
+    def trigger(self, function=lambda: True):
+        return SubscriptionStatus(self, function)
 
 
 def stage_ami_wrapper(plan, magnet):
@@ -34,46 +53,36 @@ def stage_ami_wrapper(plan, magnet):
 
             yield from mv(mag6t.field.ramp_button, 1)
 
-            while True:
-                supply = yield from local_rd(mag6t.field.supply_current)
-                target = yield from local_rd(mag6t.field.current)
-                if abs(supply-target) > 0.01:
-                    yield from sleep(1)
-                else:
-                    break
+            def check_current(tolerance=0.01):
+                supply = mag6t.field.supply_current.get()
+                target = mag6t.field.current.get()
+                return abs(supply-target) < tolerance
+            current_signal = TriggerSignal(name='tmp')
+            yield Msg('trigger', current_signal, function=check_current)
 
             yield from mv(mag6t.field.switch_heater, 'On')
-            yield from sleep(2)
 
-            while True:
-                _status = yield from local_rd(mag6t.field.magnet_status)
-
-                if _status != 3:
-                    yield from sleep(1)
-                else:
-                    break
+            def check_status():
+                return mag6t.field.magnet_status.get() == 3
+            status_signal = TriggerSignal(name='tmp')
+            yield Msg('trigger', status_signal, function=check_status)
 
             yield from mv(mag6t.field.ramp_button, 1)
 
     def _unstage():
 
-        while True:
-            voltage = yield from local_rd(mag6t.field.voltage)
-            if abs(voltage) > 0.01:
-                yield from sleep(1)
-            else:
-                break
+        def check_voltage(tolerance=0.01):
+            return abs(mag6t.field.voltage.get()) < tolerance
+        voltage_signal = TriggerSignal(name='tmp')
+        yield Msg('trigger', voltage_signal, function=check_voltage)
 
         yield from mv(mag6t.field.switch_heater, 'Off')
         yield from sleep(2)
 
-        while True:
-            _status = yield from local_rd(mag6t.field.magnet_status)
-
-            if _status not in [2, 3]:
-                yield from sleep(1)
-            else:
-                break
+        def check_status():
+            return mag6t.field.magnet_status.get() in [2, 3]
+        status_signal = TriggerSignal(name='tmp')
+        yield Msg('trigger', status_signal, function=check_status)
 
         yield from mv(mag6t.field.zero_button, 1)
 
