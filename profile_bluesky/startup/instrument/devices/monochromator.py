@@ -4,13 +4,14 @@ Monochromator motors
 
 __all__ = ['mono']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
 from ophyd import Component, Device, FormattedComponent
 from ..framework import sd
+from ..utils import TrackingSignal
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class MonoFeedback(Device):
@@ -41,6 +42,9 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
                        put_complete=True, labels=('mono',))
+
+    tracking = Component(TrackingSignal, value=True, kind="config",
+                         labels=('mono',))
 
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
