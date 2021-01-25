@@ -1,9 +1,8 @@
 """Local decorators."""
 
-from bluesky import Msg
 from bluesky.utils import make_decorator, single_gen
 from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
-from bluesky.plan_stubs import mv, sleep
+from bluesky.plan_stubs import mv, sleep, abs_set
 from ophyd import Signal
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
@@ -13,17 +12,54 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
-class TriggerSignal(Signal):
+class SetSignal(Signal):
 
-    """ Signal that only matters for the trigger function """
+    """ Signal that only matters for the set function """
 
-    # Try to have func into trigger.
-    # def __init__(self, *args, func, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self._func = func
+    def set(self, device, function):
+        return SubscriptionStatus(device, function)
 
-    def trigger(self, function=lambda: True):
-        return SubscriptionStatus(self, function)
+
+def _difference_check(target, tolerance):
+    """
+    Returns a callback function that checks the distance from target.
+
+    Parameters
+    ----------
+    target : float
+        Final position.
+    tolerance : float
+        Maximum accepted tolerance.
+
+    Returns
+    -------
+    check_pos : function
+        Function that can be used as a callback of SubscriptionStatus.
+    """
+    def check_pos(value=None, **kwargs):
+        return abs(value-target) <= tolerance
+
+    return check_pos
+
+
+def _status_check(target):
+    """
+    Returns a callback function that checks the positioner status.
+
+    Parameters
+    ----------
+    target : list
+        List of acceptable status.
+
+    Returns
+    -------
+    check_pos : function
+        Function that can be used as a callback of SubscriptionStatus.
+    """
+    def check_pos(value=None, **kwargs):
+        return value in target
+
+    return check_pos
 
 
 def stage_ami_wrapper(plan, magnet):
@@ -46,45 +82,51 @@ def stage_ami_wrapper(plan, magnet):
         messages from plan, with 'subscribe' and 'unsubscribe' messages
         inserted and appended
     """
+
+    # This just needs to be set once here.
+    signal = SetSignal(name='tmp')
+
     def _stage():
 
         _heater_status = yield from local_rd(mag6t.field.switch_heater)
-        if _heater_status != 'On':
 
+        if _heater_status != 'On':
+            # Click current ramp button
             yield from mv(mag6t.field.ramp_button, 1)
 
-            def check_current(tolerance=0.01):
-                supply = mag6t.field.supply_current.get()
-                target = mag6t.field.current.get()
-                return abs(supply-target) < tolerance
-            current_signal = TriggerSignal(name='tmp')
-            yield Msg('trigger', current_signal, function=check_current)
+            # Wait for the supply current to match the magnet.
+            target = yield from local_rd(mag6t.field.current)
+            function = _difference_check(target, tolerance=0.01)
+            yield abs_set(signal, mag6t.field.supply_current, function,
+                          wait=True)
 
+            # Turn on persistance switch heater.
             yield from mv(mag6t.field.switch_heater, 'On')
+            yield from sleep(2)
 
-            def check_status():
-                return mag6t.field.magnet_status.get() == 3
-            status_signal = TriggerSignal(name='tmp')
-            yield Msg('trigger', status_signal, function=check_status)
+            # Wait for the heater to be on.
+            function = _status_check(target=[3])
+            yield from abs_set(signal, mag6t.field.magnet_status, function,
+                               wait=True)
 
+            # Click current ramp button
             yield from mv(mag6t.field.ramp_button, 1)
 
     def _unstage():
 
-        def check_voltage(tolerance=0.01):
-            return abs(mag6t.field.voltage.get()) < tolerance
-        voltage_signal = TriggerSignal(name='tmp')
-        yield Msg('trigger', voltage_signal, function=check_voltage)
+        # Wait for the voltage to be zero.
+        function = _difference_check(target=0.0, tolerance=0.01)
+        yield abs_set(signal, mag6t.field.voltage, function,
+                      wait=True)
 
+        # Turn off persistance switch heater
         yield from mv(mag6t.field.switch_heater, 'Off')
         yield from sleep(2)
 
-        def check_status():
-            return mag6t.field.magnet_status.get() in [2, 3]
-        status_signal = TriggerSignal(name='tmp')
-        yield Msg('trigger', status_signal, function=check_status)
-
-        yield from mv(mag6t.field.zero_button, 1)
+        # Wait for the heater to be off.
+        function = _status_check(target=[2, 3])
+        yield from abs_set(signal, mag6t.field.magnet_status, function,
+                           wait=True)
 
     def _inner_plan():
         yield from _stage()
