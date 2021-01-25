@@ -4,9 +4,6 @@ Phase retarders.
 
 __all__ = ['pr1', 'pr2', 'pr3', 'pr_setup']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ..framework import sd
 from ophyd import Device, EpicsMotor, PseudoPositioner, PseudoSingle
 from ophyd import Component, FormattedComponent
@@ -15,11 +12,14 @@ from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi, sin
 from ..utils import TrackingSignal
+from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
 from epics import utils3
 utils3.EPICS_STR_ENCODING = "latin-1"
+
+logger.info(__file__)
 
 
 class MicronsSignal(DerivedSignal):
@@ -55,14 +55,12 @@ class PRPzt(Device):
                         write_pv='DC_set_microns.VAL', auto_monitor=True,
                         tolerance=0.01, put_complete=True)
 
-
     center = Component(EpicsSignal, 'AC_put_center.A', kind='config')
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
                                kind='config')
 
     offset_microns = Component(MicronsSignal, parent_attr='offset_degrees',
                                kind='config')
-
 
     servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind='omitted')
     servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind='omitted')
@@ -207,7 +205,7 @@ class PRSetup():
                 track = input(f"\tTrack? ({_current['track']}): ")
                 if track == '':
                     track = str(_current['track'])
-                    
+
                 if track.lower() == "yes":
                     pr.tracking.put(True)
                     break
@@ -224,7 +222,7 @@ class PRSetup():
                 while True:
                     oscillate = input(f"\tOscillate? ({_current['oscillate']})"
                                       ": ")
-                    
+
                     if oscillate == '':
                         oscillate = str(_current['oscillate'])
                     # If this will oscillate, need to determine the positioner
