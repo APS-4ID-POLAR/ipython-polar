@@ -4,7 +4,6 @@ from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, FormattedComponent, Kind)
 from ophyd.status import AndStatus, Status
 from ophyd.signal import SignalRO
-from ophyd.utils import ReadOnlyError
 from bluesky.plan_stubs import mv
 from ..framework import sd
 
