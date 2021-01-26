@@ -170,7 +170,7 @@ class PRSetup():
     offset = None
     dichro_steps = [1, -1, -1, 1]
 
-    def config(self):
+    def __call__(self):
 
         print('Setup of the phase retarders for dichro scans.')
         print('Note that you can only oscillate one phase retarder stack.')
