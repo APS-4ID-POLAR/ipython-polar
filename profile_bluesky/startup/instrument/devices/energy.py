@@ -4,7 +4,7 @@ Beamline energy
 __all__ = ['energy']
 
 from ophyd import Signal
-from ophyd.status import AndStatus, wait as status_wait
+from ophyd.status import Status, AndStatus, wait as status_wait
 from ..framework import sd
 from .monochromator import mono
 from .aps_source import undulator
@@ -24,19 +24,25 @@ class EnergySignal(Signal):
     """
     # Uses the mono as the standard beamline energy.
     def get(self, **kwargs):
-        return mono.energy.get(**kwargs)
+        self._readback = mono.energy.get(**kwargs)
+        return self._readback
 
     def set(self, position, *, wait=True, timeout=None, settle_time=None,
-            move_cb=None):
+            moved_cb=None):
+        
+        status = Status()
+        status.set_finished()
 
         # Mono
-        status = mono.energy.set(position, timeout=timeout,
-                                 settle_time=settle_time)
+        if abs(self.get()-position) > mono.energy.tolerance:
+            mono_status = mono.energy.set(position, timeout=timeout,
+                                          settle_time=settle_time)
+            status = AndStatus(status, mono_status)
 
         # Undulator
         if undulator.downstream.tracking.get():
             und_status = undulator.downstream.energy.move(
-                position, wait=wait, timeout=timeout, move_cb=move_cb
+                position, wait=wait, timeout=timeout, moved_cb=moved_cb
                 )
             status = AndStatus(status, und_status)
 
@@ -44,7 +50,7 @@ class EnergySignal(Signal):
         for pr in [pr1, pr2, pr3]:
             if pr.tracking.get():
                 pr_status = pr.energy.move(
-                    position, wait=wait, timeout=timeout, move_cb=move_cb
+                    position, wait=wait, timeout=timeout, moved_cb=moved_cb
                     )
                 status = AndStatus(status, pr_status)
 

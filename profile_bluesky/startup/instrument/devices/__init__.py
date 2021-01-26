@@ -25,3 +25,4 @@ from .cyberstar import *
 from .srs_amplifiers import *
 from .srs810 import *
 from .wavefunction_generator import *
+from .energy import *
