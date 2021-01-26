@@ -1,13 +1,14 @@
 """ Vortex with Xspress"""
 
+from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
+                   Component, FormattedComponent, Kind)
+from ophyd.status import AndStatus, Status
+from ophyd.utils import ReadOnlyError
+from bluesky.plan_stubs import mv
+from ..framework import sd
+
 from ..session_logs import logger
 logger.info(__file__)
-
-from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
-                   Component, DynamicDeviceComponent, FormattedComponent, Kind)
-from ophyd.status import AndStatus, Status
-from bluesky.plan_stubs import mv
-from collections import OrderedDict
 
 
 def ev_to_bin(ev):
@@ -40,6 +41,30 @@ class EvSignal(DerivedSignal):
         return desc
 
 
+class DTCorrSignal(DerivedSignal):
+
+    '''A signal that applies DT correction to the total count'''
+
+    def __init__(self, total_attr, *, parent=None, **kwargs):
+        super().__init__(derived_from=total_attr, parent=parent, **kwargs)
+        self._metadata.update(
+            connected=True,
+            write_access=False,
+        )
+
+    def get(self, **kwargs):
+        total = super().get(**kwargs)
+        # TODO: Better way to get the dt_factor?
+        dt = self.parent.parent.parent.dt_factor.get(**kwargs)
+        return total*dt
+
+    def put(self, value, *, timestamp=None, force=False):
+        raise ReadOnlyError("The signal {} is readonly.".format(self.name))
+
+    def set(self, value, *, timestamp=None, force=False):
+        raise ReadOnlyError("The signal {} is readonly.".format(self.name))
+
+
 class Xspress3ROI(Device):
 
     # Bin limits
@@ -50,9 +75,12 @@ class Xspress3ROI(Device):
     ev_low = Component(EvSignal, parent_attr='bin_low', kind='config')
     ev_size = Component(EvSignal, parent_attr='bin_size', kind='config')
 
-    # Value
-    total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='hinted',
-                          auto_monitor=True)
+    # Raw total
+    total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='normal')
+
+    # Deadtime corrected total -> Is this the best way?
+    # total_corrected = Component(DTCorrSignal, total_attr='Total_RBV',
+    #                             kind='normal')
 
     # Name
     roi_name = Component(EpicsSignal, 'Name', kind='config')
@@ -60,7 +88,7 @@ class Xspress3ROI(Device):
     # Enable
     enable_flag = Component(EpicsSignal, 'Use', kind='config',
                             put_complete=True, string=True)
-    
+
     @enable_flag.sub_value
     def _change_kind(self, value=None, **kwargs):
         if value == 'Yes':
@@ -111,29 +139,17 @@ class Xspress3ROI(Device):
             self.disable()
 
 
-def make_rois(rois_rng):
-    defn = OrderedDict()
-    for roi in rois_rng:
-        attr = 'roi{:02d}'.format(roi)
-        defn[attr] = (Xspress3ROI, f'{roi}:', dict(kind='normal'))
-
-    defn['num_rois'] = (Signal, None, dict(value=len(rois_rng)))
-    # e.g., device.rois.num_rois.get() => 16
-    return defn
-
 class ROIDevice(Device):
-    
-    for i in range(1,33):
+    # TODO: Using locals() feels like cheating...
+    # Make 32 ROIs --> same number as in EPICS support.
+    for i in range(1, 33):
         locals()['roi{:02d}'.format(i)] = Component(Xspress3ROI, f'{i}:')
-    
+
     num_rois = Component(Signal, value=32, kind='config')
 
 
 class Xspress3Channel(Device):
 
-    # Make 32 ROIs --> same number as in EPICS support.
-    
-#    rois = DynamicDeviceComponent(make_rois(range(1, 33)))
     rois = FormattedComponent(ROIDevice, '{prefix}MCA{_chnum}ROI:')
 
     # Timestamp --> it's used to tell when the ROI plugin is done.
@@ -167,7 +183,6 @@ class Xspress3Channel(Device):
         # TODO: I don't like how this is currently implemented, but it works.
         self._chnum = chnum
         super().__init__(*args, **kwargs)
-#        self._scaprefix = f'{self.parent.prefix}C{chnum}SCA'
 
     def _status_done(self):
 
@@ -267,12 +282,9 @@ class Xspress3VortexBase(Device):
     def unstage(self, *args, **kwargs):
         pass
 
-    def set_roi(self, index, ev_low, ev_size, name=None, channels=None,
-                **kwargs):
+    def set_roi(self, index, ev_low, ev_size, name=None, channels=None):
         """
         Set up the same ROI configuration for selected channels
-
-        *args and **kwargs are passed to Xspress3Channel.set_roi function.
 
         Parameters
         ----------
@@ -305,9 +317,9 @@ class Xspress3VortexBase(Device):
                 break
 
             channel.set_roi(index, ev_low, ev_size, name=name)
-    
+
     def disable_roi(self, index, channels=None):
-        
+
         if not channels:
             channels = [i for i in range(1, 20)]
 
@@ -316,7 +328,7 @@ class Xspress3VortexBase(Device):
                 channel = getattr(self, f'Ch{ch}')
             except AttributeError:
                 break
-            
+
             getattr(channel.rois, 'roi{:02d}'.format(index)).disable()
 
     def trigger(self):
@@ -341,6 +353,13 @@ class Xspress3VortexBase(Device):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.AcquireTime, value, **kwargs)
+
+    def unload(self):
+        """
+        Remove detectro from baseline and run .destroy()
+        """
+        sd.baseline.remove(self)
+        self.destroy()
 
 
 class Xspress3Vortex4Ch(Xspress3VortexBase):
