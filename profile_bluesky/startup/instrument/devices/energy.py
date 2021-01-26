@@ -16,17 +16,22 @@ logger.info(__file__)
 
 class EnergySignal(Signal):
 
+    """
+    Beamline energy.
+
+    Here it is setup so that the monochromator is the beamline energy, but note
+    that this can be changed.
+    """
+    # Uses the mono as the standard beamline energy.
+    def get(self, **kwargs):
+        return mono.energy.get(**kwargs)
+
     def set(self, position, *, wait=True, timeout=None, settle_time=None,
             move_cb=None):
 
-        status = super().set(position)
-
         # Mono
-        if mono.tracking.get():
-            mono_status = mono.energy.set(
-                position, timeout=timeout, settle_time=settle_time
-                )
-            status = AndStatus(status, mono_status)
+        status = mono.energy.set(position, timeout=timeout,
+                                 settle_time=settle_time)
 
         # Undulator
         if undulator.downstream.tracking.get():
