@@ -4,9 +4,6 @@ Modifed bluesky scans
 
 __all__ = ['lup', 'ascan', 'mv', 'DEFAULT_DETECTORS']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv
@@ -15,6 +12,9 @@ from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
 from ..utils import local_rd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 DEFAULT_DETECTORS = [scalerd]
 
@@ -58,7 +58,7 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
+def lup(*args, monitor=None, detectors=None, lockin=False,
         dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
@@ -97,6 +97,10 @@ def lup(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
     """
+
+    if not detectors:
+        detectors = DEFAULT_DETECTORS
+
     if dichro:
         per_step = one_dichro_step
     else:
@@ -116,7 +120,7 @@ def lup(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
     return (yield from _inner_lup())
 
 
-def ascan(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
+def ascan(*args, monitor=None, detectors=None, lockin=False,
           dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory.
@@ -154,6 +158,10 @@ def ascan(*args, monitor=None, detectors=DEFAULT_DETECTORS, lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
+
+    if not detectors:
+        detectors = DEFAULT_DETECTORS
+
     if dichro:
         per_step = one_dichro_step
     else:

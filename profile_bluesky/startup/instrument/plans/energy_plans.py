@@ -2,9 +2,6 @@
 Energy scans
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
@@ -15,6 +12,9 @@ from numpy import linspace, array
 from .local_preprocessors import stage_dichro_decorator
 from ..utils import local_rd
 from .local_scans import dichro_steps, DEFAULT_DETECTORS
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 def moveE(energy, group=None):
@@ -205,10 +205,10 @@ def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
     :func:`Escan_list`
     :func:`qxscan`
     """
-    
+
     if not detectors:
         detectors = DEFAULT_DETECTORS
-    
+
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -254,7 +254,7 @@ def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     :func:`Escan_list`
     :func:`Escan`
     """
-    
+
     if not detectors:
         detectors = DEFAULT_DETECTORS
 

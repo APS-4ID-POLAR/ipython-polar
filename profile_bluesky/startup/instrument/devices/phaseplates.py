@@ -62,9 +62,9 @@ class PRPzt(Device):
     offset_microns = Component(MicronsSignal, parent_attr='offset_degrees',
                                kind='config')
 
-    servoOn = Component(EpicsSignal, 'servo_ON.PROC', kind='omitted')
-    servoOff = Component(EpicsSignal, 'servo_OFF.PROC', kind='omitted')
-    servoStatus = Component(EpicsSignalRO, 'svo', kind='config')
+    servoon = Component(EpicsSignal, 'servo_ON.PROC', kind='omitted')
+    servooff = Component(EpicsSignal, 'servo_OFF.PROC', kind='omitted')
+    servostatus = Component(EpicsSignalRO, 'svo', kind='config')
 
     selectDC = FormattedComponent(EpicsSignal,
                                   '4idb:232DRIO:1:OFF_ch{_prnum}.PROC',
@@ -261,7 +261,6 @@ class PRSetup():
                                 break
                             except ValueError:
                                 print('Must be a number.')
-                                pass
 
                         # if PZT is used, then get the center.
                         if method == "pzt":
@@ -280,7 +279,6 @@ class PRSetup():
                                     break
                                 except ValueError:
                                     print('Must be a number.')
-                                    pass
                         else:
                             # Get offset signal
                             self.offset = _positioner.parent.offset_degrees
