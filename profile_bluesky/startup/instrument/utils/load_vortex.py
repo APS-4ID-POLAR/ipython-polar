@@ -35,15 +35,8 @@ def load_vortex(electronic, num_channels, num_rois=2):
         else:
             raise ValueError('num_channels must be 1 or 4.')
         # Disable all but ROI 1 and 2
-        for i in range(num_channels):
-            ch = getattr(vortex, f'Ch{i+1}')
-
-            for j in range(ch.rois.num_rois.get()):
-                roi = getattr(ch.rois, 'roi{:02d}'.format(j+1))
-                if j < num_rois:
-                    roi.enable()
-                else:
-                    roi.disable()
+        vortex.enable_roi([1, 2])
+        vortex.disable_roi([i for i in range(1, 50)])
     else:
         raise ValueError('electronic must be "xspress"')
 

@@ -65,6 +65,12 @@ class DTCorrSignal(DerivedSignal):
         raise ReadOnlyError("The signal {} is readonly.".format(self.name))
 
 
+# class TotalCorrectedSignal(Signal):
+#     def get(self, **kwargs):
+
+#         for i i
+
+
 class Xspress3ROI(Device):
 
     # Bin limits
@@ -261,6 +267,7 @@ class Xspress3VortexBase(Device):
         super().__init__(prefix, configuration_attrs=None, read_attrs=None,
                          **kwargs)
 
+        self._enabled_rois = []
         # initialize hdf5 folers
         # set 4 or 1 xsp channels,  Xspress3Channel
         # xspCh1 = Xspress3Channel(channel_num=1)
@@ -318,10 +325,12 @@ class Xspress3VortexBase(Device):
 
             channel.set_roi(index, ev_low, ev_size, name=name)
 
-    def disable_roi(self, index, channels=None):
-
+    def _toggle_roi(self, index, channels=None, enable=True):
         if not channels:
             channels = [i for i in range(1, 20)]
+
+        if isinstance(index, (int, float)):
+            index = (int(index), )
 
         for ch in channels:
             try:
@@ -329,7 +338,21 @@ class Xspress3VortexBase(Device):
             except AttributeError:
                 break
 
-            getattr(channel.rois, 'roi{:02d}'.format(index)).disable()
+            for ind in index:
+                if enable:
+                    getattr(channel.rois, 'roi{:02d}'.format(ind)).enable()
+                    if ind not in self._enabled_rois:
+                        self._enabled_rois.append(ind)
+                else:
+                    getattr(channel.rois, 'roi{:02d}'.format(ind)).disable()
+                    if ind in self._enabled_rois:
+                        self._enabled_rois.remove(ind)
+
+    def enable_roi(self, index, channels=None):
+        self._toggle_roi(index, channels=channels, enable=True)
+
+    def disable_roi(self, index, channels=None):
+        self._toggle_roi(index, channels=channels, enable=False)
 
     def trigger(self):
 
@@ -356,7 +379,7 @@ class Xspress3VortexBase(Device):
 
     def unload(self):
         """
-        Remove detectro from baseline and run .destroy()
+        Remove detector from baseline and run .destroy()
         """
         sd.baseline.remove(self)
         self.destroy()
