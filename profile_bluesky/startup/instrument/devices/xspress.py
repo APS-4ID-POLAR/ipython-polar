@@ -42,30 +42,6 @@ class EvSignal(DerivedSignal):
         return desc
 
 
-class DTCorrSignal(DerivedSignal):
-
-    '''A signal that applies DT correction to the total count'''
-
-    def __init__(self, total_attr, *, parent=None, **kwargs):
-        super().__init__(derived_from=total_attr, parent=parent, **kwargs)
-        self._metadata.update(
-            connected=True,
-            write_access=False,
-        )
-
-    def get(self, **kwargs):
-        total = super().get(**kwargs)
-        # TODO: Better way to get the dt_factor?
-        dt = self.parent.parent.parent.dt_factor.get(**kwargs)
-        return total*dt
-
-    def put(self, value, *, timestamp=None, force=False):
-        raise ReadOnlyError("The signal {} is readonly.".format(self.name))
-
-    def set(self, value, *, timestamp=None, force=False):
-        raise ReadOnlyError("The signal {} is readonly.".format(self.name))
-
-
 class TotalCorrectedSignal(SignalRO):
     def get(self, **kwargs):
         value = 0
@@ -91,10 +67,6 @@ class Xspress3ROI(Device):
 
     # Raw total
     total_rbv = Component(EpicsSignalRO, 'Total_RBV', kind='normal')
-
-    # Deadtime corrected total -> Is this the best way?
-    # total_corrected = Component(DTCorrSignal, total_attr='Total_RBV',
-    #                             kind='normal')
 
     # Name
     roi_name = Component(EpicsSignal, 'Name', kind='config')
@@ -188,10 +160,10 @@ class Xspress3Channel(Device):
                                   '{prefix}C{_chnum}SCA4:Value_RBV')
 
     pileup = FormattedComponent(EpicsSignalRO,
-                                '{prefix}C{_chnum}SCA5:Value_RBV')
+                                '{prefix}C{_chnum}SCA7:Value_RBV')
 
     dt_factor = FormattedComponent(EpicsSignalRO,
-                                   '{prefix}C{_chnum}SCA6:Value_RBV')
+                                   '{prefix}C{_chnum}SCA8:Value_RBV')
 
     def __init__(self, *args, chnum, **kwargs):
         # TODO: I don't like how this is currently implemented, but it works.
