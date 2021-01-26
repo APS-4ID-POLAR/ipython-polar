@@ -332,6 +332,8 @@ class Xspress3VortexBase(Device):
         if isinstance(index, (int, float)):
             index = (int(index), )
 
+        action = 'enable' if enable else 'disable'
+
         for ch in channels:
             try:
                 channel = getattr(self, f'Ch{ch}')
@@ -339,14 +341,16 @@ class Xspress3VortexBase(Device):
                 break
 
             for ind in index:
-                if enable:
-                    getattr(channel.rois, 'roi{:02d}'.format(ind)).enable()
-                    if ind not in self._enabled_rois:
+                try:
+                    getattr(channel.rois, 'roi{:02d}.{}'.format(ind, action))()
+
+                    if enable and ind not in self._enabled_rois:
                         self._enabled_rois.append(ind)
-                else:
-                    getattr(channel.rois, 'roi{:02d}'.format(ind)).disable()
-                    if ind in self._enabled_rois:
+
+                    if not enable and ind in self._enabled_rois:
                         self._enabled_rois.remove(ind)
+                except AttributeError:
+                    break
 
     def enable_roi(self, index, channels=None):
         self._toggle_roi(index, channels=channels, enable=True)
