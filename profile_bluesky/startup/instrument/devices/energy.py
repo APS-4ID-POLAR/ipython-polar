@@ -29,7 +29,7 @@ class EnergySignal(Signal):
 
     def set(self, position, *, wait=True, timeout=None, settle_time=None,
             moved_cb=None):
-        
+
         status = Status()
         status.set_finished()
 
