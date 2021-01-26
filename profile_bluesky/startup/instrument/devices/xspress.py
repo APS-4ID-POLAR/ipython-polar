@@ -3,6 +3,7 @@
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, FormattedComponent, Kind)
 from ophyd.status import AndStatus, Status
+from ophyd.signal import SignalRO
 from ophyd.utils import ReadOnlyError
 from bluesky.plan_stubs import mv
 from ..framework import sd
@@ -65,10 +66,17 @@ class DTCorrSignal(DerivedSignal):
         raise ReadOnlyError("The signal {} is readonly.".format(self.name))
 
 
-# class TotalCorrectedSignal(Signal):
-#     def get(self, **kwargs):
+class TotalCorrectedSignal(SignalRO):
+    def get(self, **kwargs):
+        value = 0
+        for ch_num in range(1, self.parent._num_channels+1):
+            channel = getattr(self.parent, f'Ch{ch_num}')
+            _dt_factor = channel.dt_factor.get(**kwargs)
+            for roi_num in self.parent._enabled_rois:
+                roi = getattr(channel.rois, 'roi{:02d}'.format(roi_num))
+                value += _dt_factor * roi.total_rbv.get(**kwargs)
 
-#         for i i
+        return value
 
 
 class Xspress3ROI(Device):
@@ -243,6 +251,9 @@ class Xspress3Channel(Device):
 
 class Xspress3VortexBase(Device):
 
+    # Total corrected counts
+    total_corrected = Component(TotalCorrectedSignal, kind='hinted')
+
     # Buttons
     Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
                                kind='omitted')
@@ -315,19 +326,14 @@ class Xspress3VortexBase(Device):
         # 'S4QX4:MCA1ROI:2:Total_RBV'  # roi1 of channel 2
 
         if not channels:
-            channels = [i for i in range(1, 20)]
+            channels = range(1, self._num_channels+1)
 
         for ch in channels:
-            try:
-                channel = getattr(self, f'Ch{ch}')
-            except AttributeError:
-                break
-
-            channel.set_roi(index, ev_low, ev_size, name=name)
+            getattr(self, f'Ch{ch}').set_roi(index, ev_low, ev_size, name=name)
 
     def _toggle_roi(self, index, channels=None, enable=True):
         if not channels:
-            channels = [i for i in range(1, 20)]
+            channels = range(1, self._num_channels+1)
 
         if isinstance(index, (int, float)):
             index = (int(index), )
@@ -335,10 +341,7 @@ class Xspress3VortexBase(Device):
         action = 'enable' if enable else 'disable'
 
         for ch in channels:
-            try:
-                channel = getattr(self, f'Ch{ch}')
-            except AttributeError:
-                break
+            channel = getattr(self, f'Ch{ch}')
 
             for ind in index:
                 try:
@@ -362,16 +365,12 @@ class Xspress3VortexBase(Device):
 
         # Monitor timestamps
         state_status = None
-        for i in range(1, 10):
-            ch = getattr(self, f'Ch{i}', None)
-            if ch:
-                _status = ch._status_done()
-                if state_status:
-                    state_status = AndStatus(state_status, _status)
-                else:
-                    state_status = _status
+        for i in range(1, self._num_channels+1):
+            _status = getattr(self, f'Ch{i}')._status_done()
+            if state_status:
+                state_status = AndStatus(state_status, _status)
             else:
-                break
+                state_status = _status
 
         # Click the Acquire_button
         button_status = super().trigger()
@@ -397,8 +396,12 @@ class Xspress3Vortex4Ch(Xspress3VortexBase):
     Ch3 = Component(Xspress3Channel, '', chnum=3)
     Ch4 = Component(Xspress3Channel, '', chnum=4)
 
+    _num_channels = 4
+
 
 class Xspress3Vortex1Ch(Xspress3VortexBase):
 
     # Channels
     Ch1 = Component(Xspress3Channel, '', chnum=1)
+
+    _num_channels = 1
