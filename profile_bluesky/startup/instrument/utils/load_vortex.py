@@ -36,7 +36,7 @@ def load_vortex(electronic, num_channels, num_rois=2):
             raise ValueError('num_channels must be 1 or 4.')
         # Disable all but ROI 1 and 2
         vortex.enable_roi([1, 2])
-        vortex.disable_roi([i for i in range(1, 50)])
+        vortex.disable_roi([i for i in range(3, 50)])
     else:
         raise ValueError('electronic must be "xspress"')
 
