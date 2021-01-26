@@ -1,3 +1,5 @@
+""" Loads a new vortex device """
+
 from ..devices.xspress import Xspress3Vortex1Ch, Xspress3Vortex4Ch
 from ..framework import sd
 from ..session_logs import logger
@@ -35,7 +37,7 @@ def load_vortex(electronic, num_channels, num_rois=2):
         # Disable all but ROI 1 and 2
         for i in range(num_channels):
             ch = getattr(vortex, f'Ch{i+1}')
-            
+
             for j in range(ch.rois.num_rois.get()):
                 roi = getattr(ch.rois, 'roi{:02d}'.format(j+1))
                 if j < num_rois:
@@ -44,7 +46,6 @@ def load_vortex(electronic, num_channels, num_rois=2):
                     roi.disable()
     else:
         raise ValueError('electronic must be "xspress"')
-        
 
     sd.baseline.append(vortex)
     return vortex
