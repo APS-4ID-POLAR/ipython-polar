@@ -11,7 +11,7 @@ from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
 from numpy import linspace, array
 from .local_preprocessors import stage_dichro_decorator
 from ..utils import local_rd
-from .local_scans import dichro_steps, DEFAULT_DETECTORS
+from .local_scans import dichro_steps
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -206,9 +206,6 @@ def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
     :func:`qxscan`
     """
 
-    if not detectors:
-        detectors = DEFAULT_DETECTORS
-
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -254,9 +251,6 @@ def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     :func:`Escan_list`
     :func:`Escan`
     """
-
-    if not detectors:
-        detectors = DEFAULT_DETECTORS
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy),

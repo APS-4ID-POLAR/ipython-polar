@@ -2,12 +2,12 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv', 'DEFAULT_DETECTORS']
+__all__ = ['lup', 'ascan', 'mv']
 
 from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv
-from ..devices import scalerd, pr_setup, mag6t
+from ..devices import pr_setup, mag6t
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
@@ -16,7 +16,9 @@ from ..utils import local_rd
 from ..session_logs import logger
 logger.info(__file__)
 
-DEFAULT_DETECTORS = [scalerd]
+# TODO: I would like to have something like this, but it cannot just be a list.
+# Something like an imutable list might work.
+# DEFAULT_DETECTORS = [scalerd]
 
 
 def dichro_steps(detectors, motors, take_reading):
@@ -98,9 +100,6 @@ def lup(*args, monitor=None, detectors=None, lockin=False,
     :func:`ascan`
     """
 
-    if not detectors:
-        detectors = DEFAULT_DETECTORS
-
     if dichro:
         per_step = one_dichro_step
     else:
@@ -158,9 +157,6 @@ def ascan(*args, monitor=None, detectors=None, lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
-
-    if not detectors:
-        detectors = DEFAULT_DETECTORS
 
     if dichro:
         per_step = one_dichro_step
