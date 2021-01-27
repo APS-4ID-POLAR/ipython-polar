@@ -358,6 +358,12 @@ class Xspress3VortexBase(Device):
         sd.baseline.remove(self)
         self.destroy()
 
+    def select_plot_channels(self, value=True):
+        if value:
+            self.total_corrected.kind = Kind.hinted
+        else:
+            self.total.corrected.kind = Kind.normal
+
 
 class Xspress3Vortex4Ch(Xspress3VortexBase):
 
