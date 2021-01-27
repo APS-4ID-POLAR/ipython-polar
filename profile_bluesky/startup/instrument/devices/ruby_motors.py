@@ -1,9 +1,8 @@
 """
 Ruby spectrometer motors.
 """
-__all__ = [
-    'ruby'
-    ]
+
+__all__ = ['ruby']
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -21,6 +20,7 @@ class DAC(PVPositioner):
                          kind='hinted')
 
     done = Component(DoneSignal, value=1)
+    done_value = 1
 
     low_limit = Component(EpicsSignal, '.DRVL', kind='config')
     high_limit = Component(EpicsSignal, '.DRVH', kind='config')
@@ -56,8 +56,8 @@ class RubyDevice(Device):
     z = Component(EpicsMotor, 'm39', labels=('motor', 'ruby'))
     zoom = Component(EpicsMotor, 'm40', labels=('motor', 'ruby'))
 
-    led = FormattedComponent(DAC, '4idd:DAC1_1', labels=('ruby'))
-    laser = FormattedComponent(DAC, '4idd:DAC1_2', labels=('ruby'))
+    led = FormattedComponent(DAC, '4idd:DAC1_1', labels=('ruby',))
+    laser = FormattedComponent(DAC, '4idd:DAC1_2', labels=('ruby',))
 
 
 ruby = RubyDevice('4iddx:', name='ruby_system')

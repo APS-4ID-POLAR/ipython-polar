@@ -28,9 +28,9 @@ _ipython = get_ipython()
 _ipython.magic(f"logstart -o -t {CONSOLE_IO_FILE} rotate")
 
 logger = stdlogpj.standard_logging_setup(
-    SESSION_NAME, 
+    SESSION_NAME,
     IPYTHON_LOGGER,
-    maxBytes=1*MB, 
+    maxBytes=1*MB,
     backupCount=9)
 logger.setLevel(logging.DEBUG)
 

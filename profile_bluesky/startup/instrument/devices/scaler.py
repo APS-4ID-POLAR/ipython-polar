@@ -1,12 +1,9 @@
 
 """
-our diffractometer
+Scalers
 """
 
-__all__ = [
-    'scalerd',
-    'scalerb',
-    ]
+__all__ = ['scalerd', 'scalerb']
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -17,6 +14,7 @@ from ..framework import sd
 from ophyd import Kind, Component
 import time
 from bluesky.plan_stubs import mv
+from ..utils import local_rd
 
 
 class PresetMonitorSignal(Signal):
@@ -106,7 +104,7 @@ class LocalScalerCH(ScalerCH):
                     fields.append(channel.s.name)
         return {'fields': fields}
 
-    def select_plot_channels(self, chan_names):
+    def select_plot_channels(self, chan_names=None):
 
         self.match_names()
         name_map = {}
@@ -127,12 +125,12 @@ class LocalScalerCH(ScalerCH):
                     if getattr(self.channels, name_map[ch]).kind.value != 0:
                         getattr(self.channels, name_map[ch]).kind = Kind.normal
                     else:
-                        getattr(self.channels, name_map[ch]).kind = Kind.omitted
+                        getattr(self.channels, name_map[ch]).kind = \
+                            Kind.omitted
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
-
 
     def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
@@ -204,7 +202,7 @@ class LocalScalerCH(ScalerCH):
 
         if value is None:
             value = name_map.keys()
-            
+
         self.monitor = name_map[value]
 
         # Adjust gates
@@ -216,7 +214,10 @@ class LocalScalerCH(ScalerCH):
                 channel.gate.put(0)
 
     def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.preset_monitor, value, **kwargs)
+        return (yield from mv(self.preset_monitor, value, **kwargs))
+
+    def GetCountTimePlan(self):
+        return (yield from local_rd(self.preset_monitor))
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
