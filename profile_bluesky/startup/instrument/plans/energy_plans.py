@@ -119,7 +119,8 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None):
     # Collects current monitor count for each detector
     dets_preset = []
     for detector in detectors:
-        dets_preset.append(detector.preset_monitor.get())
+        _preset = yield from detector.GetCountTimePlan()
+        dets_preset.append(_preset)
 
     @run_decorator(md=_md)
     def _inner_Escan_list():
