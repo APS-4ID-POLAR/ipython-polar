@@ -350,7 +350,7 @@ class Xspress3VortexBase(Device):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.AcquireTime, value, **kwargs)
-        
+
     def GetCountTimePlan(self):
         return (yield from rd(self.AcquireTime))
 

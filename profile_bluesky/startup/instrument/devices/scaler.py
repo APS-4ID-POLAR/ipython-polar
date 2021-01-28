@@ -8,15 +8,15 @@ __all__ = [
     'scalerb',
     ]
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
 from bluesky.plan_stubs import mv, rd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class PresetMonitorSignal(Signal):
@@ -127,12 +127,12 @@ class LocalScalerCH(ScalerCH):
                     if getattr(self.channels, name_map[ch]).kind.value != 0:
                         getattr(self.channels, name_map[ch]).kind = Kind.normal
                     else:
-                        getattr(self.channels, name_map[ch]).kind = Kind.omitted
+                        getattr(self.channels, name_map[ch]).kind =\
+                            Kind.omitted
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
-
 
     def select_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
@@ -204,7 +204,7 @@ class LocalScalerCH(ScalerCH):
 
         if value is None:
             value = name_map.keys()
-            
+
         self.monitor = name_map[value]
 
         # Adjust gates
@@ -217,7 +217,7 @@ class LocalScalerCH(ScalerCH):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.preset_monitor, value, **kwargs)
-        
+
     def GetCountTimePlan(self):
         return (yield from rd(self.preset_monitor))
 
