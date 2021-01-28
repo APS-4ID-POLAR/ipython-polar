@@ -43,17 +43,17 @@ class EvSignal(DerivedSignal):
 
 
 class TotalCorrectedSignal(SignalRO):
-    def __init__(self, *args, roi_index=None, **kwargs):
+    def __init__(self, prefix, roi_index, **kwargs):
         if not roi_index:
             raise ValueError('chnum must be the channel number, but '
                              'f{roi_index} was passed.')
         self.roi_index = roi_index
-        super().__init__(*args, kwargs)
+        super().__init__(**kwargs)
 
     def get(self, **kwargs):
         value = 0
-        for ch_num in range(1, self.parent._num_channels+1):
-            channel = getattr(self.parent, f'Ch{ch_num}')
+        for ch_num in range(1, self.root._num_channels+1):
+            channel = getattr(self.root, f'Ch{ch_num}')
             roi = getattr(channel.rois, 'roi{:02d}'.format(self.roi_index))
             value += channel.dt_factor.get(**kwargs) * \
                 roi.total_rbv.get(**kwargs)
@@ -227,7 +227,7 @@ class Xspress3Channel(Device):
             roi.configure(name, ev_low, ev_size, enable=enable)
 
 
-def _sc_chans(attr_fix, id_range):
+def _totals(attr_fix, id_range):
     defn = OrderedDict()
     for k in id_range:
         defn['{}{:02d}'.format(attr_fix, k)] = (TotalCorrectedSignal, '',
@@ -238,10 +238,8 @@ def _sc_chans(attr_fix, id_range):
 
 class Xspress3VortexBase(Device):
 
-    corrected_counts = DynamicDeviceComponent(_sc_chans('roi', range(1, 33)))
-
-    # Total corrected counts
-    total_corrected = Component(TotalCorrectedSignal, kind='hinted')
+    # Total corrected counts of each ROI
+    corrected_counts = DynamicDeviceComponent(_totals('roi', range(1, 33)))
 
     # Buttons
     Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
