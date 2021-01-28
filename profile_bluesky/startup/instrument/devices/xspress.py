@@ -327,9 +327,33 @@ class Xspress3VortexBase(Device):
                     break
 
     def enable_roi(self, index, channels=None):
+        """
+        Enable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
         self._toggle_roi(index, channels=channels, enable=True)
 
     def disable_roi(self, index, channels=None):
+        """
+        Disable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
         self._toggle_roi(index, channels=channels, enable=False)
 
     def trigger(self):
