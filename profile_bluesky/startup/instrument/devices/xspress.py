@@ -338,7 +338,8 @@ class Xspress3VortexBase(Device):
                     getattr(channel.rois, 'roi{:02d}.{}'.format(ind, action))()
                     roi_cnt = getattr(self.corrected_counts,
                                       'roi{:02d}'.format(ind))
-                    roi_cnt.kind = Kind.hinted if enable else Kind.omitted
+                    if len(channels) == self._num_channels:
+                        roi_cnt.kind = Kind.hinted if enable else Kind.omitted
                 except AttributeError:
                     break
 
