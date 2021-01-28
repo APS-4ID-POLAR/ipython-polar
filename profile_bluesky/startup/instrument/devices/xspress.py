@@ -1,10 +1,11 @@
 """ Vortex with Xspress"""
 
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
-                   Component, FormattedComponent, Kind)
+                   Component, FormattedComponent, Kind, DynamicDeviceComponent)
 from ophyd.status import AndStatus, Status
 from ophyd.signal import SignalRO
 from bluesky.plan_stubs import mv, rd
+from collections import OrderedDict
 from ..framework import sd
 
 from ..session_logs import logger
@@ -42,14 +43,20 @@ class EvSignal(DerivedSignal):
 
 
 class TotalCorrectedSignal(SignalRO):
+    def __init__(self, *args, roi_index=None, **kwargs):
+        if not roi_index:
+            raise ValueError('chnum must be the channel number, but '
+                             'f{roi_index} was passed.')
+        self.roi_index = roi_index
+        super().__init__(*args, kwargs)
+
     def get(self, **kwargs):
         value = 0
         for ch_num in range(1, self.parent._num_channels+1):
             channel = getattr(self.parent, f'Ch{ch_num}')
-            _dt_factor = channel.dt_factor.get(**kwargs)
-            for roi_num in self.parent._enabled_rois:
-                roi = getattr(channel.rois, 'roi{:02d}'.format(roi_num))
-                value += _dt_factor * roi.total_rbv.get(**kwargs)
+            roi = getattr(channel.rois, 'roi{:02d}'.format(self.roi_index))
+            value += channel.dt_factor.get(**kwargs) * \
+                roi.total_rbv.get(**kwargs)
 
         return value
 
@@ -220,7 +227,18 @@ class Xspress3Channel(Device):
             roi.configure(name, ev_low, ev_size, enable=enable)
 
 
+def _sc_chans(attr_fix, id_range):
+    defn = OrderedDict()
+    for k in id_range:
+        defn['{}{:02d}'.format(attr_fix, k)] = (TotalCorrectedSignal, '',
+                                                {'roi_index': k,
+                                                 'kind': Kind.normal})
+    return defn
+
+
 class Xspress3VortexBase(Device):
+
+    corrected_counts = DynamicDeviceComponent(_sc_chans('roi', range(1, 33)))
 
     # Total corrected counts
     total_corrected = Component(TotalCorrectedSignal, kind='hinted')
@@ -298,6 +316,9 @@ class Xspress3VortexBase(Device):
 
         if not channels:
             channels = range(1, self._num_channels+1)
+            # TODO: There is some redundancy here, but for now this is needed
+            # to activate the corrected_counts.roi{index}
+            self._toggle_roi(index, channels=channels)
 
         for ch in channels:
             getattr(self, f'Ch{ch}').set_roi(index, ev_low, ev_size, name=name)
@@ -317,12 +338,9 @@ class Xspress3VortexBase(Device):
             for ind in index:
                 try:
                     getattr(channel.rois, 'roi{:02d}.{}'.format(ind, action))()
-
-                    if enable and ind not in self._enabled_rois:
-                        self._enabled_rois.append(ind)
-
-                    if not enable and ind in self._enabled_rois:
-                        self._enabled_rois.remove(ind)
+                    roi_cnt = getattr(self.corrected_counts,
+                                      'roi{:02d}'.format(ind))
+                    roi_cnt.kind = Kind.hinted if enable else Kind.omitted
                 except AttributeError:
                     break
 
