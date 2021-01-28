@@ -4,17 +4,16 @@ Define qxscan_setup device.
 This device will holds the parameters and energy list used in a qxscan plan.
 """
 
-from ..session_logs import logger
-import json
-from ophyd import Signal, Device, Kind
-from ophyd import Component
-from ..framework import sd
-from collections import OrderedDict
-from numpy import sqrt, arange
-
 __all__ = ['qxscan_params']
 
+from ..session_logs import logger
 logger.info(__file__)
+
+import json
+from ophyd import Signal, Device
+from ophyd import Component
+from ..framework import sd
+from numpy import sqrt, arange
 
 hbar = 6.582119569E-16  # eV.s
 speed_of_light = 299792458e10  # A/s
@@ -78,7 +77,8 @@ class QxscanParams(Device):
                 self.pre_edge.num_regions.put(value)
                 break
             else:
-                print('WARNING: number of pre-edge regions need to be >=1 and <= 5!')
+                print('WARNING: number of pre-edge regions need to be >=1 and \
+                    <= 5!')
 
         for i in range(self.pre_edge.num_regions.get()):
             print('\n Defining pre-edge #{}'.format(i+1))
@@ -111,7 +111,8 @@ class QxscanParams(Device):
                 self.post_edge.num_regions.put(value)
                 break
             else:
-                print('WARNING: number of post-edge regions need to be >= 1 and <= 5!')
+                print('WARNING: number of post-edge regions need to be >= 1 \
+                    and <= 5!')
 
         for i in range(self.post_edge.num_regions.get()):
             print('\n Defining post-edge #{}'.format(i+1))
@@ -144,7 +145,8 @@ class QxscanParams(Device):
 
             energies = arange(start, end, step)/1000.
 
-            factorlist += [region.TimeFactor.get() for j in range(energies.size)]
+            factorlist += [region.TimeFactor.get() for j in
+                           range(energies.size)]
             elist += list(energies)
 
         # Edge region
@@ -154,7 +156,8 @@ class QxscanParams(Device):
 
         energies = arange(start, end, step)/1000.
 
-        factorlist += [self.edge.TimeFactor.get() for j in range(energies.size)]
+        factorlist += [self.edge.TimeFactor.get() for j in
+                       range(energies.size)]
         elist += list(energies)
 
         # Post-edge region
@@ -171,7 +174,8 @@ class QxscanParams(Device):
 
             energies = arange(start, end, step)**2/constant/1000.
 
-            factorlist += [region.TimeFactor.get() for j in range(energies.size)]
+            factorlist += [region.TimeFactor.get() for j in
+                           range(energies.size)]
             elist += list(energies)
 
         elist += [end**2/constant/1000.]
@@ -271,7 +275,8 @@ class QxscanParams(Device):
             output['post_edge'][reg_key] = {}
             output['post_edge'][reg_key]['Kend'] = region.Kend.get()
             output['post_edge'][reg_key]['Kstep'] = region.Kstep.get()
-            output['post_edge'][reg_key]['TimeFactor'] = region.TimeFactor.get()
+            output['post_edge'][reg_key]['TimeFactor'] = \
+                region.TimeFactor.get()
 
         return output
 

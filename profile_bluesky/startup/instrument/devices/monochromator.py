@@ -2,16 +2,14 @@
 Monochromator motors
 """
 
-__all__ = [
-    'mono',
-    ]
+__all__ = ['mono']
 
 from ..session_logs import logger
 logger.info(__file__)
 
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
-from ophyd import Component, FormattedComponent, Device
+from ophyd import Component, Device, FormattedComponent
 from ..framework import sd
 
 
@@ -20,15 +18,15 @@ class MonoFeedback(Device):
     readback = Component(EpicsSignalRO, 'mono_pid2.CVAL', kind='normal',
                          labels=('mono'))
     setpoint = Component(EpicsSignal, 'mono_pid2.VAL', kind='config',
-                         labels=('mono'))
+                         put_complete=True, labels=('mono'))
     onoff = Component(EpicsSignal, 'mono_pid2.FBON', kind='config',
-                      labels=('mono'))
+                      labels=('mono'), put_complete=True)
 
- 
+
 class Monochromator(KohzuSeqCtl_Monochromator):
 
     y1 = None
-    
+
     x2 = Component(EpicsMotor, 'm6', labels=('motor', 'monochromator'))
     y2 = Component(EpicsSignalRO, 'KohzuYRdbkAI',
                    labels=('motor', 'monochromator'))
@@ -43,6 +41,8 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
                        kind='hinted', put_complete=True)
+
+    feedback = FormattedComponent(MonoFeedback, '4id:')
 
     def calibrate_energy(self, value):
         """Calibrate the mono energy.
