@@ -1,12 +1,9 @@
 
 """
-our diffractometer
+Scalers
 """
 
-__all__ = [
-    'scalerd',
-    'scalerb',
-    ]
+__all__ = ['scalerd', 'scalerb']
 
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
@@ -106,7 +103,7 @@ class LocalScalerCH(ScalerCH):
                     fields.append(channel.s.name)
         return {'fields': fields}
 
-    def select_plot_channels(self, chan_names):
+    def select_plot_channels(self, chan_names=None):
 
         self.match_names()
         name_map = {}
@@ -127,7 +124,7 @@ class LocalScalerCH(ScalerCH):
                     if getattr(self.channels, name_map[ch]).kind.value != 0:
                         getattr(self.channels, name_map[ch]).kind = Kind.normal
                     else:
-                        getattr(self.channels, name_map[ch]).kind =\
+                        getattr(self.channels, name_map[ch]).kind = \
                             Kind.omitted
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
