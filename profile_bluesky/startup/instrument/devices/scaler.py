@@ -219,6 +219,9 @@ class LocalScalerCH(ScalerCH):
     def GetCountTimePlan(self):
         return (yield from local_rd(self.preset_monitor))
 
+    def GetCountTimePlan(self):
+        return (yield from rd(self.preset_monitor))
+
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
                         labels=('detectors', 'counters'))

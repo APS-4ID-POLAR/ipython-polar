@@ -99,7 +99,6 @@ def lup(*args, monitor=None, detectors=None, lockin=False,
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
     """
-
     if dichro:
         per_step = one_dichro_step
     else:
@@ -157,7 +156,6 @@ def ascan(*args, monitor=None, detectors=None, lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
-
     if dichro:
         per_step = one_dichro_step
     else:

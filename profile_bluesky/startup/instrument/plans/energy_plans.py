@@ -102,11 +102,13 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     :func:`Escan`
     :func:`qxscan`
     """
-    # Create positioners list
     _positioners = [mono.energy]
 
     if (yield from local_rd(undulator.downstream.tracking)):
         _positioners.append(undulator.downstream.energy)
+    for pr in [pr1, pr2, pr3]:
+        if pr.tracking.get():
+            _positioners.append(pr.th)
 
     for pr in [pr1, pr2, pr3]:
         if (yield from local_rd(pr.tracking)):
@@ -205,7 +207,6 @@ def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
     :func:`Escan_list`
     :func:`qxscan`
     """
-
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
@@ -251,7 +252,6 @@ def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     :func:`Escan_list`
     :func:`Escan`
     """
-
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy),
                          'dichro': dichro,

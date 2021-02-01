@@ -1,10 +1,11 @@
 """ Vortex with Xspress"""
 
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
-                   Component, FormattedComponent, Kind)
+                   Component, FormattedComponent, Kind, DynamicDeviceComponent)
 from ophyd.status import AndStatus, Status
 from ophyd.signal import SignalRO
-from bluesky.plan_stubs import mv
+from bluesky.plan_stubs import mv, rd
+from collections import OrderedDict
 from ..framework import sd
 
 from ..session_logs import logger
@@ -42,14 +43,20 @@ class EvSignal(DerivedSignal):
 
 
 class TotalCorrectedSignal(SignalRO):
+    def __init__(self, prefix, roi_index, **kwargs):
+        if not roi_index:
+            raise ValueError('chnum must be the channel number, but '
+                             'f{roi_index} was passed.')
+        self.roi_index = roi_index
+        super().__init__(**kwargs)
+
     def get(self, **kwargs):
         value = 0
-        for ch_num in range(1, self.parent._num_channels+1):
-            channel = getattr(self.parent, f'Ch{ch_num}')
-            _dt_factor = channel.dt_factor.get(**kwargs)
-            for roi_num in self.parent._enabled_rois:
-                roi = getattr(channel.rois, 'roi{:02d}'.format(roi_num))
-                value += _dt_factor * roi.total_rbv.get(**kwargs)
+        for ch_num in range(1, self.root._num_channels+1):
+            channel = getattr(self.root, f'Ch{ch_num}')
+            roi = getattr(channel.rois, 'roi{:02d}'.format(self.roi_index))
+            value += channel.dt_factor.get(**kwargs) * \
+                roi.total_rbv.get(**kwargs)
 
         return value
 
@@ -220,10 +227,19 @@ class Xspress3Channel(Device):
             roi.configure(name, ev_low, ev_size, enable=enable)
 
 
+def _totals(attr_fix, id_range):
+    defn = OrderedDict()
+    for k in id_range:
+        defn['{}{:02d}'.format(attr_fix, k)] = (TotalCorrectedSignal, '',
+                                                {'roi_index': k,
+                                                 'kind': Kind.normal})
+    return defn
+
+
 class Xspress3VortexBase(Device):
 
-    # Total corrected counts
-    total_corrected = Component(TotalCorrectedSignal, kind='hinted')
+    # Total corrected counts of each ROI
+    corrected_counts = DynamicDeviceComponent(_totals('roi', range(1, 33)))
 
     # Buttons
     Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
@@ -271,7 +287,7 @@ class Xspress3VortexBase(Device):
     def unstage(self, *args, **kwargs):
         pass
 
-    def set_roi(self, index, ev_low, ev_size, name=None, channels=None):
+    def set_roi(self, index, ev_low, ev_size, name='', channels=None):
         """
         Set up the same ROI configuration for selected channels
 
@@ -298,6 +314,9 @@ class Xspress3VortexBase(Device):
 
         if not channels:
             channels = range(1, self._num_channels+1)
+            # TODO: There is some redundancy here, but for now this is needed
+            # to activate the corrected_counts.roi{index}
+            self._toggle_roi(index, channels=channels)
 
         for ch in channels:
             getattr(self, f'Ch{ch}').set_roi(index, ev_low, ev_size, name=name)
@@ -317,19 +336,41 @@ class Xspress3VortexBase(Device):
             for ind in index:
                 try:
                     getattr(channel.rois, 'roi{:02d}.{}'.format(ind, action))()
-
-                    if enable and ind not in self._enabled_rois:
-                        self._enabled_rois.append(ind)
-
-                    if not enable and ind in self._enabled_rois:
-                        self._enabled_rois.remove(ind)
+                    roi_cnt = getattr(self.corrected_counts,
+                                      'roi{:02d}'.format(ind))
+                    if len(channels) == self._num_channels:
+                        roi_cnt.kind = Kind.hinted if enable else Kind.omitted
                 except AttributeError:
                     break
 
     def enable_roi(self, index, channels=None):
+        """
+        Enable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
         self._toggle_roi(index, channels=channels, enable=True)
 
     def disable_roi(self, index, channels=None):
+        """
+        Disable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
         self._toggle_roi(index, channels=channels, enable=False)
 
     def trigger(self):
@@ -350,6 +391,9 @@ class Xspress3VortexBase(Device):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.AcquireTime, value, **kwargs)
+
+    def GetCountTimePlan(self):
+        return (yield from rd(self.AcquireTime))
 
     def unload(self):
         """
