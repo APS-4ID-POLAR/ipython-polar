@@ -5,15 +5,15 @@ Scalers
 
 __all__ = ['scalerd', 'scalerb']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
-from bluesky.plan_stubs import mv
+from bluesky.plan_stubs import mv, rd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class PresetMonitorSignal(Signal):
@@ -214,6 +214,9 @@ class LocalScalerCH(ScalerCH):
 
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.preset_monitor, value, **kwargs)
+
+    def GetCountTimePlan(self):
+        return (yield from rd(self.preset_monitor))
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
