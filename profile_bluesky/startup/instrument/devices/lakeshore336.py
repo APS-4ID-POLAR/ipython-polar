@@ -162,7 +162,7 @@ class LS336_LoopControl(PVPositioner):
         if not isinstance(value, dict):
             raise TypeError('auto_ranges must be a dictionary.')
 
-        for _heater_range, _temp_range in value:
+        for _heater_range, _temp_range in value.items():
             if _heater_range not in self.heater_range.enum_strs:
                 raise ValueError("The input dictionary keys must be one of "
                                  f"these: {self.heater_range.enum_strs}, but "

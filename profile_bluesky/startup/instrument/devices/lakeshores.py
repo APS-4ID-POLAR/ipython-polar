@@ -24,9 +24,9 @@ lakeshore_336.loop2._auto_ranges = {'LOW': (0, 6), 'MEDIUM': (6, 20),
 lakeshore_340lt = LS340Device('4idd:LS340:TC1:', name="lakeshore340lt",
                               labels=("lakeshore",))
 lakeshore_340lt.control.readback.kind = "normal"
-lakeshore_340lt._auto_ranges = {'10 mA': (0, 10), '33 mA': None,
-                                '100 mA': (10, 30), '333 mA': None,
-                                '1 A': (30, 305)}
+lakeshore_340lt._auto_ranges = {'10 mA': None, '33 mA': None,
+                                '100 mA': (0, 8), '333 mA': (8, 20),
+                                '1 A': (20, 305)}
 
 # Lakeshore 340 - High temperature
 lakeshore_340ht = LS340Device('4idd:LS340:TC2:', name="lakeshore340ht",

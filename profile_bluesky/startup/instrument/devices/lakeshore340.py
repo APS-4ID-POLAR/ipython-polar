@@ -140,7 +140,7 @@ class LS340Device(Device):
                                 loop_number=2)
 
     heater = Component(EpicsSignalRO, "Heater")
-    heater_range = Component(EpicsSignal, "HeatRg", write_pv="Rg_rdbk",
+    heater_range = Component(EpicsSignal, "Rg_rdbk", write_pv="HeatRg",
                              kind="normal", put_complete=True)
 
     auto_heater = Component(TrackingSignal, value=False, kind="config")
@@ -185,7 +185,7 @@ class LS340Device(Device):
         if not isinstance(value, dict):
             raise TypeError('auto_ranges must be a dictionary.')
 
-        for _heater_range, _temp_range in value:
+        for _heater_range, _temp_range in value.items():
             if _heater_range not in self.heater_range.enum_strs:
                 raise ValueError("The input dictionary keys must be one of "
                                  f"these: {self.heater_range.enum_strs}, but "
