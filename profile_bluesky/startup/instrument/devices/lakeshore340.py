@@ -7,24 +7,53 @@ from ophyd import Component, Device, Signal, Staged
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent, PVPositioner
 from ..utils import DoneSignal, TrackingSignal
+from time import sleep
 
 from instrument.session_logs import logger
 logger.info(__file__)
+
+
+class SetpointSignal(EpicsSignal):
+    
+    def __init__(self, *args, max_iteractions=5, sleep_default=0.02, 
+                 ramp_attr='ramp_on', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_iteractions = max_iteractions
+        self.sleep_default = sleep_default
+        self.ramp_attr = ramp_attr
+    
+    def put(self, value, **kwargs):
+        super().put(value, **kwargs)
+        ramp = getattr(self.parent, self.ramp_attr).get()
+        counter = 0
+        while abs(value - self._readback) > self.tolerance:
+            if counter == self.max_iteractions:
+                # Checks that it is not ramping.
+                if ramp == 0:
+                    raise RuntimeError('Setpoint was not updated after '
+                                       f'{self.max_iteractions} attempts.')
+                else:
+                    break
+            sleep(self.sleep_default)
+            super().put(value, **kwargs)
+            counter += 1
 
 
 class LS340_LoopBase(PVPositioner):
 
     # position
     readback = Component(Signal, value=0)
-    setpoint = FormattedComponent(EpicsSignal,
-                                  '{prefix}wr_SP{loop_number}',
-                                  kind="omitted", put_complete=True)
-    setpointRO = FormattedComponent(EpicsSignal,
-                                    "{prefix}SP{loop_number}",
-                                    kind="normal")
+    setpoint = FormattedComponent(SetpointSignal, "{prefix}SP{loop_number}",
+                                  write_pv="{prefix}wr_SP{loop_number}",
+                                  kind="normal", put_complete=True)
+
+    # This is here only because of ramping, because then setpoint will change
+    # slowly.
+    target = Component(Signal, value=0, kind="omitted")
 
     # status
-    done = Component(DoneSignal, value=0, kind="omitted")
+    done = Component(DoneSignal, value=0, setpoint_attr='target',
+                     kind="omitted")
     done_value = 1
 
     # configuration
@@ -80,11 +109,6 @@ class LS340_LoopBase(PVPositioner):
     def egu(self):
         return self.units.get(as_string=True)
 
-    def stop(self, *, success=False):
-        if success is False:
-            self.setpoint.put(self._position, wait=True)
-        super().stop(success=success)
-
     def pause(self):
         self.setpoint.put(self._position, wait=True)
 
@@ -92,7 +116,7 @@ class LS340_LoopBase(PVPositioner):
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
 
-    def move(self, *args, **kwargs):
+    def move(self, position, **kwargs):
 
         # TODO: This is an area that may be problematic. Need to test at
         # beamline when doing scan and when just moving.
@@ -103,7 +127,8 @@ class LS340_LoopBase(PVPositioner):
             self.stage()
             self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
         self.done.put(0)
-        return super().move(*args, **kwargs)
+        self.target.put(position)
+        return super().move(position, **kwargs)
 
     def stage(self):
         self.readback.subscribe(self.done.get, event_type='value')
