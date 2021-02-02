@@ -16,15 +16,16 @@ class LS340_LoopBase(PVPositioner):
 
     # position
     readback = Component(Signal, value=0)
-    setpoint = FormattedComponent(EpicsSignal,
-                                  '{prefix}wr_SP{loop_number}',
-                                  kind="omitted", put_complete=True)
-    setpointRO = FormattedComponent(EpicsSignal,
-                                    "{prefix}SP{loop_number}",
-                                    kind="normal")
+    setpoint = FormattedComponent(EpicsSignal, "{prefix}SP{loop_number}",
+                                  write_pv="{prefix}wr_SP{loop_number}",
+                                  kind="normal", put_complete=True)
+
+    # This is here only because of ramping, because then setpoint will change
+    # slowly.
+    target = Component(Signal, value=0, kind="omitted")
 
     # status
-    done = Component(DoneSignal, value=0, kind="omitted")
+    done = Component(DoneSignal, value=0, setpoint=target, kind="omitted")
     done_value = 1
 
     # configuration
@@ -92,7 +93,7 @@ class LS340_LoopBase(PVPositioner):
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
 
-    def move(self, *args, **kwargs):
+    def move(self, position, **kwargs):
 
         # TODO: This is an area that may be problematic. Need to test at
         # beamline when doing scan and when just moving.
@@ -103,7 +104,8 @@ class LS340_LoopBase(PVPositioner):
             self.stage()
             self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
         self.done.put(0)
-        return super().move(*args, **kwargs)
+        self.target.put(position)
+        return super().move(position, **kwargs)
 
     def stage(self):
         self.readback.subscribe(self.done.get, event_type='value')
