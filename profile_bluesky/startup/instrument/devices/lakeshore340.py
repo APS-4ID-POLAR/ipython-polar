@@ -25,7 +25,8 @@ class LS340_LoopBase(PVPositioner):
     target = Component(Signal, value=0, kind="omitted")
 
     # status
-    done = Component(DoneSignal, value=0, setpoint=target, kind="omitted")
+    done = Component(DoneSignal, value=0, setpoint_attr='target',
+                     kind="omitted")
     done_value = 1
 
     # configuration
@@ -80,11 +81,6 @@ class LS340_LoopBase(PVPositioner):
     @property
     def egu(self):
         return self.units.get(as_string=True)
-
-    def stop(self, *, success=False):
-        if success is False:
-            self.setpoint.put(self._position, wait=True)
-        super().stop(success=success)
 
     def pause(self):
         self.setpoint.put(self._position, wait=True)

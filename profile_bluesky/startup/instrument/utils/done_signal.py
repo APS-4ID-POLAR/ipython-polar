@@ -7,16 +7,19 @@ logger.info(__file__)
 
 
 class DoneSignal(Signal):
-    def __init__(self, *args, readback=None, setpoint=None, tolerance=None,
+    def __init__(self, *args, readback_attr='readback',
+                 setpoint_attr='setpoint', tolerance_attr='tolerance',
                  **kwargs):
         super().__init__(*args, **kwargs)
-        self._readback_signal = readback if readback else self.parent.readback
-        self._setpoint_signal = setpoint if setpoint else self.parent.setpoint
-        self._tolerance = tolerance if tolerance else self.parent.tolerance
+        self._readback_attr = readback_attr
+        self._setpoint_attr = setpoint_attr
+        self._tolerance_attr = tolerance_attr
 
     def get(self, **kwargs):
-        if abs(self._readback_signal.get()-self._setpoint_signal.get()) <= \
-                self._tolerance:
+        readback = getattr(self.parent, self._readback_attr)
+        setpoint = getattr(self.parent, self._setpoint_attr)
+        tolerance = getattr(self.parent, self._tolerance_attr)
+        if abs(readback.get()-setpoint.get()) <= tolerance:
             self.put(1)
         else:
             self.put(0)
