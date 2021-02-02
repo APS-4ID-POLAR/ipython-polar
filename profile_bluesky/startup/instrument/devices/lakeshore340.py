@@ -7,16 +7,37 @@ from ophyd import Component, Device, Signal, Staged
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent, PVPositioner
 from ..utils import DoneSignal, TrackingSignal
+from time import sleep
 
 from instrument.session_logs import logger
 logger.info(__file__)
+
+
+class SetpointSignal(EpicsSignal):
+    
+    def __init__(self, *args, max_iteractions=10, sleep_default=0.01,
+                 **kwargs):
+        super().__init__(*args, **kwargs)
+        self.max_iteractions = max_iteractions
+        self.sleep_default = sleep_default
+    
+    def put(self, value, **kwargs):
+        super().put(value, **kwargs)
+        counter = 0
+        while abs(value - self._readback) > self.tolerance:
+            if counter == self.max_iteractions:
+                raise RuntimeError('Setpoint was not updated after '
+                                   f'{self.max_iteractions} attempts.')
+            sleep(self.sleep_default)
+            super().put(value, **kwargs)
+            counter += 1
 
 
 class LS340_LoopBase(PVPositioner):
 
     # position
     readback = Component(Signal, value=0)
-    setpoint = FormattedComponent(EpicsSignal, "{prefix}SP{loop_number}",
+    setpoint = FormattedComponent(SetpointSignal, "{prefix}SP{loop_number}",
                                   write_pv="{prefix}wr_SP{loop_number}",
                                   kind="normal", put_complete=True)
 
