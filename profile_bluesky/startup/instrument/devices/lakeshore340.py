@@ -15,19 +15,25 @@ logger.info(__file__)
 
 class SetpointSignal(EpicsSignal):
     
-    def __init__(self, *args, max_iteractions=10, sleep_default=0.01,
-                 **kwargs):
+    def __init__(self, *args, max_iteractions=5, sleep_default=0.02, 
+                 ramp_attr='ramp_on', **kwargs):
         super().__init__(*args, **kwargs)
         self.max_iteractions = max_iteractions
         self.sleep_default = sleep_default
+        self.ramp_attr = ramp_attr
     
     def put(self, value, **kwargs):
         super().put(value, **kwargs)
+        ramp = getattr(self.parent, self.ramp_attr).get()
         counter = 0
         while abs(value - self._readback) > self.tolerance:
             if counter == self.max_iteractions:
-                raise RuntimeError('Setpoint was not updated after '
-                                   f'{self.max_iteractions} attempts.')
+                # Checks that it is not ramping.
+                if ramp == 0:
+                    raise RuntimeError('Setpoint was not updated after '
+                                       f'{self.max_iteractions} attempts.')
+                else:
+                    break
             sleep(self.sleep_default)
             super().put(value, **kwargs)
             counter += 1
