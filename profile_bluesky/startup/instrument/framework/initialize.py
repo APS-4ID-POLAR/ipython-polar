@@ -2,9 +2,6 @@
 initialize the bluesky framework
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
 __all__ = [
     "bec",
     "bp",
@@ -34,13 +31,14 @@ import databroker
 import os
 import warnings
 
-
 # convenience imports
 import bluesky.plans as bp
 import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
+from ..session_logs import logger
+logger.info(__file__)
 
 # Set up a RunEngine and use metadata-backed PersistentDict
 RE = RunEngine({})
@@ -56,7 +54,7 @@ db = databroker.catalog["mongodb_config"]
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
-callback_db["db"] = RE.subscribe(db.insert)
+callback_db["db"] = RE.subscribe(db.v1.insert)
 
 # Set up SupplementalData.
 sd = SupplementalData()
