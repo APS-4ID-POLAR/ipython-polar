@@ -1,11 +1,11 @@
-from ..devices import scalerd
+from .scaler import scalerd
 from ..session_logs import logger
 logger.info(__file__)
 
 __all__ = ['counters']
 
 
-class counters:
+class CountersClass:
 
     monitor = 'Ion Ch 4'
     detectors = [scalerd]
@@ -35,3 +35,6 @@ class counters:
                     self.detectors.append(det)
 
             scalerd.select_plot_channels(_plot_channels)
+
+
+counters = CountersClass()
