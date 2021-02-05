@@ -7,11 +7,11 @@ __all__ = ['lup', 'ascan', 'mv']
 from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv
-from ..devices import scalerd, pr_setup, mag6t
+from ..devices import scalerd, pr_setup, mag6t, counters
 from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
-from ..utils import local_rd, counters
+from ..utils import local_rd
 
 from ..session_logs import logger
 logger.info(__file__)
