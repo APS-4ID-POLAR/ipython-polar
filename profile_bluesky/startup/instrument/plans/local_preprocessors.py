@@ -1,10 +1,13 @@
 """Local decorators."""
 
-from bluesky.utils import make_decorator, single_gen
-from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
+from bluesky.utils import make_decorator
+from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import mv, sleep
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import local_rd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 def stage_ami_wrapper(plan, magnet):
@@ -87,7 +90,7 @@ def stage_ami_wrapper(plan, magnet):
         return (yield from plan)
 
 
-def configure_monitor_wrapper(plan, monitor):
+def configure_counts_wrapper(plan, detectors, count_time):
     """
     Set all devices with a `preset_monitor` to the same value.
 
@@ -105,28 +108,40 @@ def configure_monitor_wrapper(plan, monitor):
     msg : Msg
         messages from plan, with 'set' messages inserted
     """
-    devices_seen = set()
     original_times = {}
+    original_monitor = []
 
-    def insert_set(msg):
-        obj = msg.obj
-        if obj is not None and obj not in devices_seen:
-            devices_seen.add(obj)
-            if hasattr(obj, 'preset_monitor'):
-                original_times[obj] = obj.preset_monitor.get()
-                return pchain(mv(obj.preset_monitor, monitor),
-                              single_gen(msg)), None
-        return None, None
+    def setup():
+        if count_time < 0:
+            if detectors != [scalerd]:
+                raise ValueError('count_time can be < 0 only if the scalerd '
+                                 'is only detector used.')
+            else:
+                original_times[scalerd] = yield from scalerd.GetCountTimePlan()
+                yield from scalerd.SetCountTimePlan(abs(count_time))
+
+        elif count_time > 0:
+            for det in detectors:
+                if det == scalerd:
+                    original_monitor.append(scalerd.monitor.s.name)
+                    det.select_monitor('Time')
+
+                original_times[det] = yield from det.GetCountTimePlan()
+                yield from det.SetCountTimePlan(count_time)
+        else:
+            raise ValueError('count_time cannot be zero.')
 
     def reset():
-        for obj, time in original_times.items():
-            yield from mv(obj.preset_monitor, time)
+        for det, time in original_times.items():
+            if det == scalerd and len(original_monitor) == 1:
+                det.select_monitor(original_monitor)
 
-    if monitor is None:
+            yield from det.SetCountTimePlan(time)
+
+    if count_time is None:
         return (yield from plan)
     else:
-        return (yield from finalize_wrapper(plan_mutator(plan, insert_set),
-                                            reset()))
+        return (yield from finalize_wrapper(setup(), reset()))
 
 
 def stage_dichro_wrapper(plan, dichro, lockin):
@@ -191,6 +206,6 @@ def stage_dichro_wrapper(plan, dichro, lockin):
     return (yield from finalize_wrapper(_inner_plan(), _unstage()))
 
 
-configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
+configure_counts_decorator = make_decorator(configure_counts_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)
