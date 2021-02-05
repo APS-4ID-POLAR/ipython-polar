@@ -123,8 +123,8 @@ def configure_counts_wrapper(plan, detectors, count_time):
         elif count_time > 0:
             for det in detectors:
                 if det == scalerd:
-                    original_monitor.append(scalerd.monitor.s.name)
-                    det.select_monitor('Time')
+                    original_monitor.append(scalerd.monitor)
+                    det.monitor = 'Time'
 
                 original_times[det] = yield from det.GetCountTimePlan()
                 yield from det.SetCountTimePlan(count_time)
@@ -134,7 +134,7 @@ def configure_counts_wrapper(plan, detectors, count_time):
     def reset():
         for det, time in original_times.items():
             if det == scalerd and len(original_monitor) == 1:
-                det.select_monitor(original_monitor)
+                det.monitor = original_monitor[0]
 
             yield from det.SetCountTimePlan(time)
 

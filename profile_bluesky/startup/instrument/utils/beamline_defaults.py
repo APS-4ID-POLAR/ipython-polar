@@ -16,7 +16,7 @@ class counters:
             if monitor not in scalerd.channels_name_map.keys():
                 raise ValueError(f'{monitor} is not a scalerd channel.')
             else:
-                scalerd.select_monitor(monitor)
+                scalerd.monitor = monitor
                 self.monitor = monitor
 
         if detectors:
