@@ -8,7 +8,7 @@ from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv
 from ..devices import scalerd, pr_setup, mag6t
-from .local_preprocessors import (configure_monitor_decorator,
+from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
 from ..utils import local_rd, counters
@@ -56,8 +56,8 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, count_time=None, *, detectors=None, lockin=False,
-        dichro=False, **kwargs):
+def lup(*args, count_time=None, detectors=None, lockin=False, dichro=False,
+        **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -117,7 +117,7 @@ def lup(*args, count_time=None, *, detectors=None, lockin=False,
     return (yield from _inner_lup())
 
 
-def ascan(*args, count_time=None, *, detectors=None, lockin=False,
+def ascan(*args, count_time=None, detectors=None, lockin=False,
           dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory.
@@ -201,9 +201,7 @@ def mv(*args, **kwargs):
     --------
     :func:`bluesky.plan_stubs.mv`
     """
-    stage_magnet = mag6t.field in args
-
-    @stage_ami_decorator(stage_magnet)
+    @stage_ami_decorator(mag6t.field in args)
     def _inner_mv():
         yield from bps_mv(*args, **kwargs)
 

@@ -87,7 +87,7 @@ class UndulatorEnergy(PVPositioner):
 
 class MyUndulator(apstools.devices.ApsUndulator):
 
-    energy = Component(UndulatorEnergy, '')
+    energy = Component(UndulatorEnergy, '', kind='normal')
     tracking = Component(TrackingSignal, value=False, kind='config')
 
     def undulator_setup(self):

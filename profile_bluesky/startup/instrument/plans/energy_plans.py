@@ -7,11 +7,12 @@ __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
-from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
+from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3, scalerd
 from numpy import linspace, array
-from .local_preprocessors import stage_dichro_decorator
-from ..utils import local_rd
-from .local_scans import dichro_steps, DEFAULT_DETECTORS
+from .local_preprocessors import (stage_dichro_decorator,
+                                  configure_counts_decorator)
+from ..utils import local_rd, counters
+from .local_scans import dichro_steps
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -68,8 +69,8 @@ def moveE(energy, group=None):
         return None
 
 
-def Escan_list(detectors, energy_list, factor_list=None, md=None,
-               dichro=False, lockin=False):
+def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
+               md=None, dichro=False, lockin=False):
     """
     Scan the beamline energy using a list of energies.
 
@@ -137,24 +138,26 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     # Collects current monitor count for each detector
     dets_preset = []
     for detector in detectors:
-        value = yield from detector.GetCountTimePlan()
+        if count_time:
+            value = abs(count_time)
+        else:
+            value = yield from detector.GetCountTimePlan()
         dets_preset.append(value)
 
     @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
+    @configure_counts_decorator(detectors, count_time)
     def _inner_Escan_list():
         yield from moveE(energy_list[0]+0.001)
         for energy, factor in zip(energy_list, factor_list):
 
-            grp = short_uid('set')
-            yield Msg('checkpoint')
-
             # Change counting time
             for detector, original_preset in zip(detectors, dets_preset):
-                yield from detector.SetCountTimePlan(factor*original_preset,
-                                                     group=grp)
+                yield from detector.SetCountTimePlan(factor*original_preset)
 
             # Move and scan
+            grp = short_uid('set')
+            yield Msg('checkpoint')
             yield from moveE(energy, group=grp)
 
             if dichro:
@@ -163,15 +166,11 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
             else:
                 yield from trigger_and_read(list(detectors)+_positioners)
 
-        # Put counting time back to original
-        for detector, original_preset in zip(detectors, dets_preset):
-            yield from detector.SetCountTimePlan(original_preset)
-
     return (yield from _inner_Escan_list())
 
 
-def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
-          lockin=False):
+def Escan(energy_0, energy_f, steps, count_time=None, *, detectors=None,
+          md=None, dichro=False, lockin=False):
     """
     Scan the beamline energy using a fixed step size.
 
@@ -207,23 +206,28 @@ def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
     """
 
     if not detectors:
-        detectors = DEFAULT_DETECTORS
+        detectors = counters.detectors
+
+    # Scalerd is always selected.
+    if scalerd not in detectors:
+        scalerd.select_plot_channels([])
+        detectors += [scalerd]
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'initial_energy': repr(energy_0),
                          'final_energy': repr(energy_f),
                          'steps': repr(steps)},
            'plan_name': 'Escan',
-           'hints': {'x': ['mono_energy']},
            }
 
     _md.update(md or {})
     energy_list = linspace(energy_0, energy_f, steps)
-    return (yield from Escan_list(detectors, energy_list, md=_md,
+    return (yield from Escan_list(detectors, energy_list, count_time, md=_md,
                                   dichro=dichro, lockin=lockin))
 
 
-def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
+def qxscan(edge_energy, count_time=None, *, detectors=None, md=None,
+           dichro=False, lockin=False):
     """
     Scan the beamline energy using variable step size.
 
@@ -256,14 +260,18 @@ def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     """
 
     if not detectors:
-        detectors = DEFAULT_DETECTORS
+        detectors = counters.detectors
+
+    # Scalerd is always selected.
+    if scalerd not in detectors:
+        scalerd.select_plot_channels([])
+        detectors += [scalerd]
 
     _md = {'plan_args': {'detectors': list(map(repr, detectors)),
                          'edge_energy': repr(edge_energy),
                          'dichro': dichro,
                          'lockin': lockin},
-           'plan_name': 'qxscan',
-           'hints': {'x': ['mono_energy']},
+           'plan_name': 'qxscan'
            }
 
     _md.update(md or {})
@@ -273,6 +281,6 @@ def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
 
     _factor_list = yield from local_rd(qxscan_params.factor_list)
 
-    return (yield from Escan_list(detectors, energy_list,
+    return (yield from Escan_list(detectors, energy_list, count_time,
                                   factor_list=_factor_list, md=_md,
                                   dichro=dichro, lockin=lockin))
