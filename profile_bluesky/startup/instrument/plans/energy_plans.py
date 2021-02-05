@@ -146,8 +146,8 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
         dets_preset.append(value)
 
     @stage_dichro_decorator(dichro, lockin)
-    @run_decorator(md=_md)
     @configure_counts_decorator(detectors, count_time)
+    @run_decorator(md=_md)
     def _inner_Escan_list():
         yield from moveE(energy_list[0]+0.001)
         for energy, factor in zip(energy_list, factor_list):
@@ -170,7 +170,7 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
     return (yield from _inner_Escan_list())
 
 
-def Escan(energy_0, energy_f, steps, count_time=None, *, detectors=None,
+def Escan(energy_0, energy_f, steps, time=None, *, detectors=None,
           md=None, dichro=False, lockin=False):
     """
     Scan the beamline energy using a fixed step size.
@@ -223,11 +223,11 @@ def Escan(energy_0, energy_f, steps, count_time=None, *, detectors=None,
 
     _md.update(md or {})
     energy_list = linspace(energy_0, energy_f, steps)
-    return (yield from Escan_list(detectors, energy_list, count_time, md=_md,
+    return (yield from Escan_list(detectors, energy_list, time, md=_md,
                                   dichro=dichro, lockin=lockin))
 
 
-def qxscan(edge_energy, count_time=None, *, detectors=None, md=None,
+def qxscan(edge_energy, time=None, *, detectors=None, md=None,
            dichro=False, lockin=False):
     """
     Scan the beamline energy using variable step size.
@@ -282,6 +282,6 @@ def qxscan(edge_energy, count_time=None, *, detectors=None, md=None,
 
     _factor_list = yield from local_rd(qxscan_params.factor_list)
 
-    return (yield from Escan_list(detectors, energy_list, count_time,
+    return (yield from Escan_list(detectors, energy_list, time,
                                   factor_list=_factor_list, md=_md,
                                   dichro=dichro, lockin=lockin))

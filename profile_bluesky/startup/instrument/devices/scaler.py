@@ -120,10 +120,10 @@ class LocalScalerCH(ScalerCH):
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
             if ch in chan_names:
-                channel.kind = Kind.hinted
+                channel.s.kind = Kind.hinted
             else:
                 if channel.kind.value != 0:
-                    channel.kind = Kind.normal
+                    channel.s.kind = Kind.normal
 
     def select_read_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
@@ -193,11 +193,9 @@ class LocalScalerCH(ScalerCH):
 
         # Adjust gates
         for channel_name in self.channels.component_names:
-            channel = getattr(self.channels, channel_name)
-            if channel == self.monitor:
-                channel.gate.put(1)
-            else:
-                channel.gate.put(0)
+            chan = getattr(self.channels, channel_name)
+            target = 'Y' if chan == channel else 'N'
+            chan.gate.put(target, use_complete=True)
 
         self._monitor = channel
 

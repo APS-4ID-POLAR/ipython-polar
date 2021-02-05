@@ -20,14 +20,12 @@ class CountersClass:
                 self.monitor = monitor
 
         if detectors:
-            try:
-                _detectors = list(detectors)
-            except TypeError:
-                _detectors = [detectors]
+            if isinstance(detectors, str):
+                detectors = [detectors]
 
             self.detectors = []
             _plot_channels = []
-            for det in _detectors:
+            for det in detectors:
                 if isinstance(det, str):
                     self.detectors.append(scalerd)
                     _plot_channels.append(det)

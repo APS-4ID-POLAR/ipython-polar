@@ -4,7 +4,7 @@ from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, FormattedComponent, Kind)
 from ophyd.status import AndStatus, Status
 from ophyd.signal import SignalRO
-from bluesky.plan_stubs import mv
+from bluesky.plan_stubs import mv, rd
 from ..framework import sd
 
 from ..session_logs import logger
@@ -351,6 +351,9 @@ class Xspress3VortexBase(Device):
     def SetCountTimePlan(self, value, **kwargs):
         yield from mv(self.AcquireTime, value, **kwargs)
 
+    def GetCountTimePlan(self):
+        return (yield from rd(self.AcquireTime))
+        
     def unload(self):
         """
         Remove detector from baseline and run .destroy()

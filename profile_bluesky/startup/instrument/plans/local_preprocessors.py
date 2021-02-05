@@ -122,11 +122,12 @@ def configure_counts_wrapper(plan, detectors, count_time):
 
         elif count_time > 0:
             for det in detectors:
+                original_times[det] = yield from det.GetCountTimePlan()
+                
                 if det == scalerd:
                     original_monitor.append(scalerd.monitor)
                     det.monitor = 'Time'
 
-                original_times[det] = yield from det.GetCountTimePlan()
                 yield from det.SetCountTimePlan(count_time)
         else:
             raise ValueError('count_time cannot be zero.')
@@ -137,11 +138,15 @@ def configure_counts_wrapper(plan, detectors, count_time):
                 det.monitor = original_monitor[0]
 
             yield from det.SetCountTimePlan(time)
-
+            
+    def _inner_plan():
+        yield from setup()
+        return (yield from plan)
+    
     if count_time is None:
         return (yield from plan)
     else:
-        return (yield from finalize_wrapper(setup(), reset()))
+        return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
 def stage_dichro_wrapper(plan, dichro, lockin):

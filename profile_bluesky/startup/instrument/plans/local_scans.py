@@ -56,7 +56,7 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, count_time=None, detectors=None, lockin=False, dichro=False,
+def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
@@ -105,7 +105,7 @@ def lup(*args, count_time=None, detectors=None, lockin=False, dichro=False,
         detectors += [scalerd]
 
     @stage_ami_decorator(mag6t.field in args)
-    @configure_counts_decorator(detectors, count_time)
+    @configure_counts_decorator(detectors, time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_lup():
         yield from rel_scan(
@@ -117,7 +117,7 @@ def lup(*args, count_time=None, detectors=None, lockin=False, dichro=False,
     return (yield from _inner_lup())
 
 
-def ascan(*args, count_time=None, detectors=None, lockin=False,
+def ascan(*args, time=None, detectors=None, lockin=False,
           dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory.
@@ -165,7 +165,7 @@ def ascan(*args, count_time=None, detectors=None, lockin=False,
         detectors += [scalerd]
 
     @stage_ami_decorator(mag6t.field in args)
-    @configure_counts_decorator(detectors, count_time)
+    @configure_counts_decorator(detectors, time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_ascan():
         yield from scan(
