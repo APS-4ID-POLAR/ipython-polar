@@ -2,58 +2,36 @@ from ..devices import scalerd
 from ..session_logs import logger
 logger.info(__file__)
 
-__all__ = ['DEFAULTS', 'counters']
+__all__ = ['counters']
 
 
-class defaults(object):
+class counters:
 
-    def __init__(self):
-        super().__init__()
-        self._dets = []
+    monitor = 'Ion Ch 4'
+    detectors = [scalerd]
 
-    @property
-    def detectors(self):
-        if scalerd not in self._dets:
-            self._dets.append(scalerd)
-        return self._dets
+    def __call__(self, monitor=None, detectors=None):
 
-    @detectors.setter
-    def detectors(self, value):
-        if not hasattr(value, '__iter__'):
-            raise TypeError('value must be iterable.')
+        if monitor:
+            if monitor not in scalerd.channels_name_map.keys():
+                raise ValueError(f'{monitor} is not a scalerd channel.')
+            else:
+                scalerd.select_monitor(monitor)
+                self.monitor = monitor
 
-        if value not in self._dets:
-            self._dets = list(value)
+        if detectors:
+            try:
+                _detectors = list(detectors)
+            except TypeError:
+                _detectors = [detectors]
 
+            self.detectors = []
+            _plot_channels = []
+            for det in _detectors:
+                if isinstance(det, str):
+                    self.detectors.append(scalerd)
+                    _plot_channels.append(det)
+                else:
+                    self.detectors.append(det)
 
-def counters(detectors, monitor='Time'):
-    """
-    Selects the plotting detector and monitor.
-
-    For now both monitor and detector has to be in scalerd.
-
-    Parameters
-    ----------
-    detectors : str or iterable
-        Name(s) of the scalerd channels, or the detectors to plot
-    monitor : str, optional
-        Name of the scalerd channel to use as monitor, defaults to Time.
-    """
-
-    scalerd.select_monitor(monitor)
-
-    if not hasattr(detectors, '__iter__'):
-        detectors = [detectors]
-
-    scalerd_list = []
-    for item in detectors:
-        if isinstance(item, str):
-            scalerd_list.append(item)
-        else:
-            item.select_plot_channels(True)
-            DEFAULTS.detectors += [item]
-
-    scalerd.select_plot_channels(scalerd_list)
-
-
-DEFAULTS = defaults()
+            scalerd.select_plot_channels(_plot_channels)
