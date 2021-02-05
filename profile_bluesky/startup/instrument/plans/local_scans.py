@@ -11,7 +11,7 @@ from ..devices import scalerd, pr_setup, mag6t
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator)
-from ..utils import local_rd, DEFAULTS
+from ..utils import local_rd, counters
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -56,7 +56,7 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, monitor=None, detectors=None, lockin=False,
+def lup(*args, count_time=None, *, detectors=None, lockin=False,
         dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
@@ -97,28 +97,27 @@ def lup(*args, monitor=None, detectors=None, lockin=False,
     """
 
     if not detectors:
-        detectors = DEFAULTS.detectors
+        detectors = counters.detectors
 
-    if dichro:
-        per_step = one_dichro_step
-    else:
-        per_step = None
+    # Scalerd is always selected.
+    if scalerd not in detectors:
+        scalerd.select_plot_channels([])
+        detectors += [scalerd]
 
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
-
-    @stage_ami_decorator(magnet)
-    @configure_monitor_decorator(monitor)
+    @stage_ami_decorator(mag6t.field in args)
+    @configure_counts_decorator(detectors, count_time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_lup():
-        yield from rel_scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from rel_scan(
+            detectors,
+            *args,
+            per_step=one_dichro_step if dichro else None,
+            **kwargs)
 
     return (yield from _inner_lup())
 
 
-def ascan(*args, monitor=None, detectors=None, lockin=False,
+def ascan(*args, count_time=None, *, detectors=None, lockin=False,
           dichro=False, **kwargs):
     """
     Scan over one multi-motor trajectory.
@@ -158,27 +157,23 @@ def ascan(*args, monitor=None, detectors=None, lockin=False,
     """
 
     if not detectors:
-        detectors = DEFAULTS.detectors
+        detectors = counters.detectors
 
-    # Scalerd is aways selected.
+    # Scalerd is always selected.
     if scalerd not in detectors:
+        scalerd.select_plot_channels([])
         detectors += [scalerd]
 
-    if dichro:
-        per_step = one_dichro_step
-    else:
-        per_step = None
-
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
-
-    @stage_ami_decorator(magnet)
-    @configure_monitor_decorator(monitor)
+    @stage_ami_decorator(mag6t.field in args)
+    @configure_counts_decorator(detectors, count_time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_ascan():
-        yield from scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from scan(
+            detectors,
+            *args,
+            per_step=one_dichro_step if dichro else None,
+            **kwargs
+            )
 
     return (yield from _inner_ascan())
 
@@ -206,12 +201,9 @@ def mv(*args, **kwargs):
     --------
     :func:`bluesky.plan_stubs.mv`
     """
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
+    stage_magnet = mag6t.field in args
 
-    @stage_ami_decorator(magnet)
+    @stage_ami_decorator(stage_magnet)
     def _inner_mv():
         yield from bps_mv(*args, **kwargs)
 
