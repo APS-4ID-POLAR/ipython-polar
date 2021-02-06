@@ -1,24 +1,23 @@
-
 """
 APS only: connect with facility information
 """
 
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['aps', 'undulator']
 
 import apstools.devices
 from ..framework import sd
-from ..utils import TrackingSignal, DoneSignal
-from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
-                   PVPositioner)
-from ophyd.status import Status, AndStatus, wait as status_wait
+from ..utils import TrackingSignal
+from ophyd import Device, Component, Signal, EpicsSignal
+
+from ..session_logs import logger
+logger.info(__file__)
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
 
-class UndulatorEnergy(PVPositioner):
-  
+class MyUndulator(apstools.devices.ApsUndulator):
+
     energy = Component(EpicsSignal, "Energy", write_pv="EnergySet",
                        put_complete=True, kind='hinted', labels=('undulator',))
 
@@ -33,8 +32,8 @@ class UndulatorEnergy(PVPositioner):
     def undulator_setup(self):
         """Interactive setup of usual undulator parameters."""
         while True:
-            _tracking = input("Do you want to track the undulator energy? "
-                              "(yes/no): ")
+            msg = "Do you want to track the undulator energy? (yes/no): "
+            _tracking = input(msg)
             if _tracking == 'yes':
                 self.tracking.put(True)
                 break
@@ -45,15 +44,15 @@ class UndulatorEnergy(PVPositioner):
 
         if _tracking == 'yes':
             while True:
-                _offset = input("Undulator offset (keV) ({:0.3f}): ".format(
-                    self.energy.offset.get()))
+                msg = "Undulator offset (keV) ({:0.3f}): "
+                _offset = input(msg.format(self.offset.get()))
                 try:
-                    self.energy.offset.put(float(_offset))
+                    self.offset.put(float(_offset))
                     break
                 except ValueError:
                     if _offset == '':
-                        print('Using offset = {:0.3f} keV'.format(
-                            self.energy.offset.get()))
+                        msg = 'Using offset = {:0.3f} keV'
+                        print(msg.format(self.offset.get()))
                         break
                     else:
                         print("The undulator offset has to be a number.")

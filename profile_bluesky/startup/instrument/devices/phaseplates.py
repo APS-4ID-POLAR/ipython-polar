@@ -1,17 +1,19 @@
 """
-Phase retarders.
+Phase retarders
 """
 
-__all__ = ['pr1', 'pr2', 'pr3', 'pr_setup']
+__all__ = [
+    'pr1', 'pr2', 'pr3', 'pr_setup',
+    ]
+
 
 from ..framework import sd
-from ophyd import Device, EpicsMotor, PseudoPositioner, PseudoSingle
+from ophyd import Device, EpicsMotor
 from ophyd import Component, FormattedComponent
-from ophyd import EpicsSignal, EpicsSignalRO, Signal, DerivedSignal
-from ophyd.pseudopos import pseudo_position_argument, real_position_argument
+from ophyd import EpicsSignal, EpicsSignalRO, Signal
+from ophyd import Kind
 from scipy.constants import speed_of_light, Planck
-from numpy import arcsin, pi, sin
-from ..utils import TrackingSignal
+from numpy import arcsin, pi
 from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
@@ -27,7 +29,6 @@ class TrackingSignal(Signal):
     def check_value(self, value):
         """
         Check if the value is a boolean.
-
         Raises
         ------
         ValueError
@@ -109,35 +110,9 @@ class PRDeviceBase(Device):
         # lamb in angstroms
         lamb = speed_of_light*Planck*6.241509e15*1e10/energy
 
-    def convert_energy_to_theta(self, energy):
-        # lambda in angstroms, theta in degrees, energy in keV
-        lamb = speed_of_light*Planck*6.241509e15*1e10/energy
+        # theta in degrees
         theta = arcsin(lamb/2/self.d_spacing.get())*180./pi
-        return theta
 
-    def convert_theta_to_energy(self, theta):
-        # lambda in angstroms, theta in degrees, energy in keV
-        lamb = 2*self.d_spacing.get()*sin(theta*pi/180)
-        energy = speed_of_light*Planck*6.241509e15*1e10/lamb
-        return energy
-
-    @pseudo_position_argument
-    def forward(self, pseudo_pos):
-        '''Run a forward (pseudo -> real) calculation'''
-        return self.RealPosition(
-            th=self.convert_energy_to_theta(pseudo_pos.energy)
-            )
-
-    @real_position_argument
-    def inverse(self, real_pos):
-        '''Run an inverse (real -> pseudo) calculation'''
-        return self.PseudoPosition(
-            energy=self.convert_theta_to_energy(real_pos.th)
-            )
-
-    def set_energy(self, energy):
-        # energy in keV, theta in degrees.
-        theta = self.convert_energy_to_theta(energy)
         self.th.set_current_position(theta)
 
     def update_offset_degrees(self, value):
@@ -185,6 +160,7 @@ class PRSetup():
                     break
                 else:
                     print("Only yes or no are acceptable answers.")
+
             if _positioner is None:
                 while True:
                     oscillate = input('\tOscillate? (yes/no): ')

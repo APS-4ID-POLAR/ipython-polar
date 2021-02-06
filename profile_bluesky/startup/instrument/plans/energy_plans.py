@@ -2,9 +2,6 @@
 Energy scans
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read, rd
@@ -12,7 +9,8 @@ from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import (undulator, mono, qxscan_params, pr1, pr2, pr3, scalerd,
                        counters)
-from numpy import linspace, array
+from numpy import linspace, array, arcsin, pi
+from scipy.constants import speed_of_light, Planck
 from .local_preprocessors import (stage_dichro_decorator,
                                   configure_counts_decorator)
 from .local_scans import dichro_steps
@@ -21,7 +19,57 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
-def moveE(energy, group=None):
+def undscan(detectors, energy_0, energy_f, steps, time=None, md=None):
+    """
+    Scan the undulator energy.
+    Due to the undulator backlash, it is recommended that energy_0 > energy_f.
+    Parameters
+    ----------
+    detectors : list
+        list of 'readable' objects
+    energy_0 : float
+        Initial energy in keV
+    energy_f : float
+        Final energy in keV
+    steps : integer
+        Number of steps
+    md : dict, optional
+        metadata
+    See Also
+    --------
+    :func:`moveE`
+    :func:`Escan`
+    """
+    energy_list = linspace(energy_0, energy_f, steps)
+
+    _md = {'detectors': [det.name for det in detectors],
+           'positioners': [undulator.downstream.energy.name],
+           'num_points': len(energy_list),
+           'num_intervals': len(energy_list) - 1,
+           'plan_args': {'detectors': list(map(repr, detectors)),
+                         'initial_energy': repr(energy_0),
+                         'final_energy': repr(energy_f),
+                         'steps': repr(steps)},
+           'plan_name': 'undscan',
+           'hints': {'x': ['undulator_downstream_energy']},
+           }
+
+    _md.update(md or {})
+
+    @configure_counts_decorator(detectors, time)
+    @run_decorator(md=_md)
+    def _inner_undscan():
+        for energy in energy_list:
+            grp = short_uid('set')
+            yield Msg('checkpoint')
+            yield from moveE(energy, undscan=True, group=grp)
+            yield from trigger_and_read(list(detectors) +
+                                        [undulator.downstream.energy])
+
+    return (yield from _inner_undscan())
+
+
+def moveE(energy, undscan=False, group=None):
     """
     Move beamline energy.
 
