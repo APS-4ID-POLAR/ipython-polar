@@ -2,7 +2,10 @@
 Energy scans
 """
 
-__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
+from ..session_logs import logger
+logger.info(__file__)
+
+__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read, rd
 from bluesky.preprocessors import stage_decorator, run_decorator
@@ -28,42 +31,72 @@ def moveE(energy, group=None):
     ----------
     energy : float
         Target energy
+    undscan : boolean, optional
+        If True, it moves only the undulator energy
     group : string, optional
         Used to mark these as a unit to be waited on.
 
     See Also
     --------
     :func:`bluesky.plan_stubs.mv`
+    :func:`undscan`
     :func:`Escan`
     """
-    args = ()
-    stage = []
+    args_list = [()]
+    decorators = []
 
-    # Move mono if motion is larger than tolerance.
-    _mono_energy = yield from rd(mono.energy)
-    if abs(energy - _mono_energy) > mono.energy.tolerance:
-        args += (mono.energy, energy)
-        stage.append(mono)
+    _offset = undulator.downstream.offset.get()
+    _tracking = undulator.downstream.tracking.get()
 
-    # Move PRs that are tracking.
+    if undscan is False:
+        if abs(energy-mono.energy.get()) > mono.energy.tolerance:
+            args_list[0] += ((mono.energy, energy))
+            decorators.append(mono)
+
+        for pr in [pr1, pr2, pr3]:
+            if pr.tracking.get() is True:
+                _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
+                theta = arcsin(_lambda/2/pr.d_spacing.get())*180./pi
+                args_list.append((pr.th, theta))
+                decorators.append(pr)
+    else:
+        _offset = 0.0
+        _tracking = True
+
+    if _tracking is True:
+
+        decorators.append(undulator.downstream.energy)
+
+        target_energy = _offset + energy
+        current_energy = undulator.downstream.energy.get()
+
+        if abs(target_energy-current_energy) > \
+                undulator.downstream.deadband.get():
+            if current_energy < target_energy:
+                args_list[0] += (undulator.downstream.energy,
+                                 target_energy +
+                                 undulator.downstream.backlash.get())
+                args_list[0] += (undulator.downstream.start_button, 1)
+
+                args_list.append((undulator.downstream.energy, target_energy))
+                args_list[-1] += (undulator.downstream.start_button, 1)
+
+            else:
+                args_list[0] += (undulator.downstream.energy, target_energy)
+                args_list[0] += (undulator.downstream.start_button, 1)
+
     for pr in [pr1, pr2, pr3]:
-        _pr_tracking = yield from rd(pr.tracking)
-        if _pr_tracking is True:
-            args += (pr.energy, energy)
-            stage.append(pr)
+        if pr.tracking is True:
+            lamb = speed_of_light*Planck*6.241509e15*1e10/energy
+            theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
+            args_list.append((pr.th, theta))
 
-    # Move undulator if tracking.
-    _und_tracking = yield from rd(undulator.downstream.tracking)
-    if _und_tracking is True:
-        _und_offset = yield from rd(undulator.downstream.energy.offset)
-        args += (undulator.downstream.energy, energy + _und_offset)
-        stage.append(undulator.downstream.energy)
-
-    @stage_decorator(stage)
+    @stage_decorator(decorators)
     def _inner_moveE():
-        yield from mv(*args, group=group)
+        for args in args_list:
+            yield from mv(*args, group=group)
 
-    if len(args) > 0:
+    if len(args_list[0]) > 0:
         return (yield from _inner_moveE())
     else:
         return None
@@ -108,6 +141,9 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
 
     if (yield from rd(undulator.downstream.tracking)):
         _positioners.append(undulator.downstream.energy)
+    for pr in [pr1, pr2, pr3]:
+        if pr.tracking.get():
+            _positioners.append(pr.th)
 
     for pr in [pr1, pr2, pr3]:
         if (yield from rd(pr.tracking)):
@@ -159,7 +195,6 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
             grp = short_uid('set')
             yield Msg('checkpoint')
             yield from moveE(energy, group=grp)
-
             if dichro:
                 yield from dichro_steps(detectors, _positioners,
                                         trigger_and_read)

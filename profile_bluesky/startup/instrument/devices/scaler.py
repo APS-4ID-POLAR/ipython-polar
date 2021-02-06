@@ -5,7 +5,6 @@ Scalers
 
 __all__ = ['scalerd', 'scalerb']
 
-
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
 from ..framework import sd
@@ -197,6 +196,9 @@ class LocalScalerCH(ScalerCH):
             chan.gate.put(target, use_complete=True)
 
         self._monitor = channel
+
+    def GetCountTimePlan(self):
+        return (yield from rd(self.preset_monitor))
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
