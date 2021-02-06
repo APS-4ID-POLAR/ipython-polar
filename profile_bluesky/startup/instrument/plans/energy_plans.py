@@ -4,7 +4,7 @@ Energy scans
 
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
-from bluesky.plan_stubs import mv, trigger_and_read
+from bluesky.plan_stubs import mv, trigger_and_read, rd
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import (undulator, mono, qxscan_params, pr1, pr2, pr3, scalerd,
@@ -12,7 +12,6 @@ from ..devices import (undulator, mono, qxscan_params, pr1, pr2, pr3, scalerd,
 from numpy import linspace, array
 from .local_preprocessors import (stage_dichro_decorator,
                                   configure_counts_decorator)
-from ..utils import local_rd
 from .local_scans import dichro_steps
 
 from ..session_logs import logger
@@ -41,22 +40,22 @@ def moveE(energy, group=None):
     stage = []
 
     # Move mono if motion is larger than tolerance.
-    _mono_energy = yield from local_rd(mono.energy)
+    _mono_energy = yield from rd(mono.energy)
     if abs(energy - _mono_energy) > mono.energy.tolerance:
         args += (mono.energy, energy)
         stage.append(mono)
 
     # Move PRs that are tracking.
     for pr in [pr1, pr2, pr3]:
-        _pr_tracking = yield from local_rd(pr.tracking)
+        _pr_tracking = yield from rd(pr.tracking)
         if _pr_tracking is True:
             args += (pr.energy, energy)
             stage.append(pr)
 
     # Move undulator if tracking.
-    _und_tracking = yield from local_rd(undulator.downstream.tracking)
+    _und_tracking = yield from rd(undulator.downstream.tracking)
     if _und_tracking is True:
-        _und_offset = yield from local_rd(undulator.downstream.energy.offset)
+        _und_offset = yield from rd(undulator.downstream.energy.offset)
         args += (undulator.downstream.energy, energy + _und_offset)
         stage.append(undulator.downstream.energy)
 
@@ -107,11 +106,11 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
     # Create positioners list
     _positioners = [mono.energy]
 
-    if (yield from local_rd(undulator.downstream.tracking)):
+    if (yield from rd(undulator.downstream.tracking)):
         _positioners.append(undulator.downstream.energy)
 
     for pr in [pr1, pr2, pr3]:
-        if (yield from local_rd(pr.tracking)):
+        if (yield from rd(pr.tracking)):
             _positioners.append(pr.th)
             _positioners.append(pr.energy)
 
@@ -142,7 +141,7 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
         if count_time:
             value = abs(count_time)
         else:
-            value = yield from detector.GetCountTimePlan()
+            value = yield from rd(detector.preset_monitor)
         dets_preset.append(value)
 
     @stage_dichro_decorator(dichro, lockin)
@@ -154,7 +153,7 @@ def Escan_list(detectors, energy_list, count_time=None, *, factor_list=None,
 
             # Change counting time
             for detector, original_preset in zip(detectors, dets_preset):
-                yield from detector.SetCountTimePlan(factor*original_preset)
+                yield from mv(detector.preset_monitor, factor*original_preset)
 
             # Move and scan
             grp = short_uid('set')
@@ -277,10 +276,10 @@ def qxscan(edge_energy, time=None, *, detectors=None, md=None,
 
     _md.update(md or {})
 
-    energy_list = yield from local_rd(qxscan_params.energy_list)
+    energy_list = yield from rd(qxscan_params.energy_list)
     energy_list = array(energy_list) + edge_energy
 
-    _factor_list = yield from local_rd(qxscan_params.factor_list)
+    _factor_list = yield from rd(qxscan_params.factor_list)
 
     return (yield from Escan_list(detectors, energy_list, time,
                                   factor_list=_factor_list, md=_md,

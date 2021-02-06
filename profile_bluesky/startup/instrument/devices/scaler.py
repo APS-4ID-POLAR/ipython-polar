@@ -11,7 +11,6 @@ from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
-from bluesky.plan_stubs import mv, rd
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -198,12 +197,6 @@ class LocalScalerCH(ScalerCH):
             chan.gate.put(target, use_complete=True)
 
         self._monitor = channel
-
-    def SetCountTimePlan(self, value, **kwargs):
-        return (yield from mv(self.preset_monitor, value, **kwargs))
-
-    def GetCountTimePlan(self):
-        return (yield from rd(self.preset_monitor))
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',

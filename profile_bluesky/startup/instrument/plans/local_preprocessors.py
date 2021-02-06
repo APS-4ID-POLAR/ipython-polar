@@ -2,7 +2,7 @@
 
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
-from bluesky.plan_stubs import mv, sleep
+from bluesky.plan_stubs import mv, sleep, rd
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import local_rd
 
@@ -118,17 +118,17 @@ def configure_counts_wrapper(plan, detectors, count_time):
                                  'is only detector used.')
             else:
                 original_times[scalerd] = yield from scalerd.GetCountTimePlan()
-                yield from scalerd.SetCountTimePlan(abs(count_time))
+                yield from mv(scalerd.preset_monitor, abs(count_time))
 
         elif count_time > 0:
             for det in detectors:
-                original_times[det] = yield from det.GetCountTimePlan()
-                
+                original_times[det] = yield from rd(det.preset_monitor)
+
                 if det == scalerd:
                     original_monitor.append(scalerd.monitor)
                     det.monitor = 'Time'
 
-                yield from det.SetCountTimePlan(count_time)
+                yield from mv(det.preset_monitor, count_time)
         else:
             raise ValueError('count_time cannot be zero.')
 
@@ -137,12 +137,12 @@ def configure_counts_wrapper(plan, detectors, count_time):
             if det == scalerd and len(original_monitor) == 1:
                 det.monitor = original_monitor[0]
 
-            yield from det.SetCountTimePlan(time)
-            
+            yield from mv(det.preset_monitor, time)
+
     def _inner_plan():
         yield from setup()
         return (yield from plan)
-    
+
     if count_time is None:
         return (yield from plan)
     else:
