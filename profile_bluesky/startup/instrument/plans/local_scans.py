@@ -237,8 +237,7 @@ def qxscan(edge_energy, monitor=None, detectors=None, lockin=False,
             _ct[det] = yield from rd(det.preset_monitor)
             args += (det.preset_monitor, _ct[det]*array(factor_list))
 
-    @energy_scan_decorator(energy in args, extras)
-    @stage_ami_decorator(mag6t.field in args)
+    @energy_scan_decorator(True)
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_qxscan():
