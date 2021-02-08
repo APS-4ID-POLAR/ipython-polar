@@ -11,6 +11,7 @@ from ..utils import local_rd
 def energy_scan_wrapper(plan, flag, extras):
 
     hinted_stash = []
+
     def _stage():
         for device in extras:
             for _, component in device._get_components_of_kind(Kind.normal):
