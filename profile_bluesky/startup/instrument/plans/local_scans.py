@@ -6,11 +6,13 @@ __all__ = ['lup', 'ascan', 'mv']
 
 from bluesky.plans import rel_scan, scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
-from bluesky.plan_stubs import mv as bps_mv
-from ..devices import pr_setup, mag6t
+from bluesky.plan_stubs import mv as bps_mv, rd
+from ..devices import (pr_setup, mag6t, energy, undulator, pr1, pr2, pr3,
+                       scalerd)
 from .local_preprocessors import (configure_monitor_decorator,
                                   stage_dichro_decorator,
-                                  stage_ami_decorator)
+                                  stage_ami_decorator,
+                                  energy_scan_decorator)
 from ..utils import local_rd
 
 from ..session_logs import logger
@@ -109,11 +111,20 @@ def lup(*args, monitor=None, detectors=None, lockin=False,
     else:
         magnet = False
 
+    if not detectors:
+        detectors = [scalerd]
+    
+    extras = []
+    if energy in args:
+        extras = yield from _collect_extras()
+
+    @energy_scan_decorator(energy in args, extras)
     @stage_ami_decorator(magnet)
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_lup():
-        yield from rel_scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from rel_scan(detectors+extras, *args, per_step=per_step,
+                            **kwargs)
 
     return (yield from _inner_lup())
 
@@ -165,12 +176,20 @@ def ascan(*args, monitor=None, detectors=None, lockin=False,
         magnet = True
     else:
         magnet = False
+        
+    if not detectors:
+        detectors = [scalerd]
+    
+    extras = []
+    if energy in args:
+        extras = yield from _collect_extras()
 
+    @energy_scan_decorator(energy in args, extras)
     @stage_ami_decorator(magnet)
     @configure_monitor_decorator(monitor)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_ascan():
-        yield from scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from scan(detectors+extras, *args, per_step=per_step, **kwargs)
 
     return (yield from _inner_ascan())
 
@@ -208,3 +227,17 @@ def mv(*args, **kwargs):
         yield from bps_mv(*args, **kwargs)
 
     return (yield from _inner_mv())
+
+
+def _collect_extras():
+    
+    extras = []
+    und_track = yield from rd(undulator.downstream.tracking)
+    if und_track:
+        extras.append(undulator.downstream.energy)
+    for pr in [pr1, pr2, pr3]:
+        pr_track = yield from rd(pr.tracking)
+        if pr_track:
+            extras.append(pr.th)
+    
+    return extras
