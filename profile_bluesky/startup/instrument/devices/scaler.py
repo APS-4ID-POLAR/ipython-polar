@@ -213,7 +213,7 @@ class LocalScalerCH(ScalerCH):
                 channel.gate.put(0)
 
     def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.preset_monitor, value, **kwargs)
+        return (yield from mv(self.preset_monitor, value, **kwargs))
 
     def GetCountTimePlan(self):
         return (yield from rd(self.preset_monitor))

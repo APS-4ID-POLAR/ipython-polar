@@ -1,75 +1,26 @@
 """
 Energy scans
+
+THESE FUNCTIONS ARE DEPRECATED!
+All were replaced by mv, lup, ascan, qxscan defined in local_scans.py
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
-__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan', 'undscan']
+__all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 
 from bluesky.plan_stubs import mv, trigger_and_read
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
 from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
-from ..devices import pr_setup
-from numpy import linspace, array, arcsin, pi
-from scipy.constants import speed_of_light, Planck
+from numpy import linspace, array
 from .local_preprocessors import stage_dichro_decorator
+from ..utils import local_rd
+from .local_scans import dichro_steps
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
-def undscan(detectors, energy_0, energy_f, steps, md=None):
-    """
-    Scan the undulator energy.
-
-    Due to the undulator backlash, it is recommended that energy_0 > energy_f.
-
-    Parameters
-    ----------
-    detectors : list
-        list of 'readable' objects
-    energy_0 : float
-        Initial energy in keV
-    energy_f : float
-        Final energy in keV
-    steps : integer
-        Number of steps
-    md : dict, optional
-        metadata
-
-    See Also
-    --------
-    :func:`moveE`
-    :func:`Escan`
-    """
-    energy_list = linspace(energy_0, energy_f, steps)
-
-    _md = {'detectors': [det.name for det in detectors],
-           'positioners': [undulator.downstream.energy.name],
-           'num_points': len(energy_list),
-           'num_intervals': len(energy_list) - 1,
-           'plan_args': {'detectors': list(map(repr, detectors)),
-                         'initial_energy': repr(energy_0),
-                         'final_energy': repr(energy_f),
-                         'steps': repr(steps)},
-           'plan_name': 'undscan',
-           'hints': {'x': ['undulator_downstream_energy']},
-           }
-
-    _md.update(md or {})
-
-    @run_decorator(md=_md)
-    def _inner_undscan():
-        for energy in energy_list:
-            grp = short_uid('set')
-            yield Msg('checkpoint')
-            yield from moveE(energy, undscan=True, group=grp)
-            yield from trigger_and_read(list(detectors) +
-                                        [undulator.downstream.energy])
-
-    return (yield from _inner_undscan())
-
-
-def moveE(energy, undscan=False, group=None):
+def moveE(energy, group=None):
     """
     Move beamline energy.
 
@@ -79,72 +30,42 @@ def moveE(energy, undscan=False, group=None):
     ----------
     energy : float
         Target energy
-    undscan : boolean, optional
-        If True, it moves only the undulator energy
     group : string, optional
         Used to mark these as a unit to be waited on.
 
     See Also
     --------
     :func:`bluesky.plan_stubs.mv`
-    :func:`undscan`
     :func:`Escan`
     """
-    args_list = [()]
-    decorators = []
+    args = ()
+    stage = []
 
-    _offset = undulator.downstream.offset.get()
-    _tracking = undulator.downstream.tracking.get()
+    # Move mono if motion is larger than tolerance.
+    _mono_energy = yield from local_rd(mono.energy)
+    if abs(energy - _mono_energy) > mono.energy.tolerance:
+        args += (mono.energy, energy)
+        stage.append(mono)
 
-    if undscan is False:
-        if abs(energy-mono.energy.get()) > mono.energy.tolerance:
-            args_list[0] += ((mono.energy, energy))
-            decorators.append(mono)
-
-        for pr in [pr1, pr2, pr3]:
-            if pr.tracking.get() is True:
-                _lambda = speed_of_light*Planck*6.241509e15*1e10/energy
-                theta = arcsin(_lambda/2/pr.d_spacing.get())*180./pi
-                args_list.append((pr.th, theta))
-                decorators.append(pr)
-    else:
-        _offset = 0.0
-        _tracking = True
-
-    if _tracking is True:
-
-        decorators.append(undulator.downstream.energy)
-
-        target_energy = _offset + energy
-        current_energy = undulator.downstream.energy.get()
-
-        if abs(target_energy-current_energy) > \
-                undulator.downstream.deadband.get():
-            if current_energy < target_energy:
-                args_list[0] += (undulator.downstream.energy,
-                                 target_energy +
-                                 undulator.downstream.backlash.get())
-                args_list[0] += (undulator.downstream.start_button, 1)
-
-                args_list.append((undulator.downstream.energy, target_energy))
-                args_list[-1] += (undulator.downstream.start_button, 1)
-
-            else:
-                args_list[0] += (undulator.downstream.energy, target_energy)
-                args_list[0] += (undulator.downstream.start_button, 1)
-
+    # Move PRs that are tracking.
     for pr in [pr1, pr2, pr3]:
-        if pr.tracking is True:
-            lamb = speed_of_light*Planck*6.241509e15*1e10/energy
-            theta = arcsin(lamb/2/pr.d_spacing.get())*180./pi
-            args_list.append((pr.th, theta))
+        _pr_tracking = yield from local_rd(pr.tracking)
+        if _pr_tracking is True:
+            args += (pr.energy, energy)
+            stage.append(pr)
 
-    @stage_decorator(decorators)
+    # Move undulator if tracking.
+    _und_tracking = yield from local_rd(undulator.downstream.tracking)
+    if _und_tracking is True:
+        _und_offset = yield from local_rd(undulator.downstream.energy.offset)
+        args += (undulator.downstream.energy, energy + _und_offset)
+        stage.append(undulator.downstream.energy)
+
+    @stage_decorator(stage)
     def _inner_moveE():
-        for args in args_list:
-            yield from mv(*args, group=group)
+        yield from mv(*args, group=group)
 
-    if len(args_list[0]) > 0:
+    if len(args) > 0:
         return (yield from _inner_moveE())
     else:
         return None
@@ -185,19 +106,27 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     :func:`qxscan`
     """
     _positioners = [mono.energy]
-    if undulator.downstream.tracking:
+
+    if (yield from local_rd(undulator.downstream.tracking)):
         _positioners.append(undulator.downstream.energy)
     for pr in [pr1, pr2, pr3]:
         if pr.tracking.get():
             _positioners.append(pr.th)
 
+    for pr in [pr1, pr2, pr3]:
+        if (yield from local_rd(pr.tracking)):
+            _positioners.append(pr.th)
+            _positioners.append(pr.energy)
+
+    # Controls the time per point.
     if factor_list is None:
         factor_list = [1 for i in range(len(energy_list))]
     else:
         if len(factor_list) != len(energy_list):
-            raise ValueError('The size of factor_list cannot be different \
-                              from the size of the energy_list')
+            raise ValueError("The size of factor_list cannot be different "
+                             "from the size of the energy_list")
 
+    # Metadata
     _md = {'detectors': [det.name for det in detectors],
            'positioners': [pos.name for pos in _positioners],
            'num_points': len(energy_list),
@@ -205,30 +134,23 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
            'plan_args': {'detectors': list(map(repr, detectors)),
                          'energy_list': list(map(repr, energy_list))},
            'plan_name': 'Escan_list',
-           'hints': {},
+           'hints': {'dimensions': [(['monochromator_energy'], 'primary')]},
            }
 
     _md.update(md or {})
 
-    _md['hints'] = {'dimensions': [(['monochromator_energy'], 'primary')]}
-    _md['hints'].update(md.get('hints', {}) or {})
-
     # Collects current monitor count for each detector
     dets_preset = []
     for detector in detectors:
-        _preset = yield from detector.GetCountTimePlan()
-        dets_preset.append(_preset)
-
-    if dichro:
-        offset = pr_setup.positioner.parent.offset.get()
-        pr_pos = pr_setup.positioner.parent.center.get()
-        _positioners.append(pr_setup.positioner)
+        value = yield from detector.GetCountTimePlan()
+        dets_preset.append(value)
 
     @stage_dichro_decorator(dichro, lockin)
     @run_decorator(md=_md)
     def _inner_Escan_list():
         yield from moveE(energy_list[0]+0.001)
         for energy, factor in zip(energy_list, factor_list):
+
             grp = short_uid('set')
             yield Msg('checkpoint')
 
@@ -239,10 +161,10 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
 
             # Move and scan
             yield from moveE(energy, group=grp)
+
             if dichro:
-                for sign in [1, -1, -1, 1]:
-                    yield from mv(pr_setup.positioner, pr_pos + sign*offset)
-                    yield from trigger_and_read(list(detectors)+_positioners)
+                yield from dichro_steps(detectors, _positioners,
+                                        trigger_and_read)
             else:
                 yield from trigger_and_read(list(detectors)+_positioners)
 
@@ -253,7 +175,7 @@ def Escan_list(detectors, energy_list, factor_list=None, md=None,
     return (yield from _inner_Escan_list())
 
 
-def Escan(detectors, energy_0, energy_f, steps, md=None, dichro=False,
+def Escan(energy_0, energy_f, steps, detectors=None, md=None, dichro=False,
           lockin=False):
     """
     Scan the beamline energy using a fixed step size.
@@ -302,7 +224,7 @@ def Escan(detectors, energy_0, energy_f, steps, md=None, dichro=False,
                                   dichro=dichro, lockin=lockin))
 
 
-def qxscan(detectors, edge_energy, md=None, dichro=False, lockin=False):
+def qxscan(edge_energy, detectors=None, md=None, dichro=False, lockin=False):
     """
     Scan the beamline energy using variable step size.
 
@@ -338,11 +260,16 @@ def qxscan(detectors, edge_energy, md=None, dichro=False, lockin=False):
                          'dichro': dichro,
                          'lockin': lockin},
            'plan_name': 'qxscan',
-           'hints': {},
+           'hints': {'x': ['mono_energy']},
            }
 
     _md.update(md or {})
-    energy_list = array(qxscan_params.energy_list.get())+edge_energy
+
+    energy_list = yield from local_rd(qxscan_params.energy_list)
+    energy_list = array(energy_list) + edge_energy
+
+    _factor_list = yield from local_rd(qxscan_params.factor_list)
+
     return (yield from Escan_list(detectors, energy_list,
-                                  factor_list=qxscan_params.factor_list.get(),
-                                  md=_md, dichro=dichro, lockin=lockin))
+                                  factor_list=_factor_list, md=_md,
+                                  dichro=dichro, lockin=lockin))
