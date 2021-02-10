@@ -44,8 +44,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
-    feedback = FormattedComponent(MonoFeedback, '4id:')
-
     def calibrate_energy(self, value):
         """Calibrate the mono energy.
 

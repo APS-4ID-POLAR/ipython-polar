@@ -39,13 +39,6 @@ class EnergySignal(Signal):
                                           settle_time=settle_time)
             status = AndStatus(status, mono_status)
 
-        # Undulator
-        if undulator.downstream.tracking.get():
-            und_status = undulator.downstream.energy.move(
-                position, wait=wait, timeout=timeout, moved_cb=moved_cb
-                )
-            status = AndStatus(status, und_status)
-
         # Phase retarders
         for pr in [pr1, pr2, pr3]:
             if pr.tracking.get():
@@ -53,6 +46,14 @@ class EnergySignal(Signal):
                     position, wait=wait, timeout=timeout, moved_cb=moved_cb
                     )
                 status = AndStatus(status, pr_status)
+
+        # Undulator
+        if undulator.downstream.tracking.get():
+            und_pos = position + undulator.downstream.energy.offset.get()
+            und_status = undulator.downstream.energy.move(
+                und_pos, wait=wait, timeout=timeout, moved_cb=moved_cb
+                )
+            status = AndStatus(status, und_status)
 
         if wait:
             status_wait(status)

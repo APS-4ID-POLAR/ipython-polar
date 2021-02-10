@@ -3,11 +3,42 @@
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import mv, sleep, rd
+from ophyd import Kind
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import local_rd
 
 from ..session_logs import logger
 logger.info(__file__)
+
+
+def energy_scan_wrapper(plan, flag, extras):
+
+    hinted_stash = []
+
+    def _stage():
+        for device in extras:
+            for _, component in device._get_components_of_kind(Kind.normal):
+                if component.kind == Kind.hinted:
+                    component.kind = Kind.normal
+                    hinted_stash.append(component)
+        # TODO: I'm not very happy that I have to use the null here, but
+        # could not figure out another way.
+        yield from null()
+
+    def _unstage():
+        for component in hinted_stash:
+            component.kind = Kind.hinted
+        yield from null()
+
+    def _inner_plan():
+        yield from _stage()
+        return (yield from plan)
+
+    if flag and len(extras) != 0:
+        print(plan)
+        return (yield from finalize_wrapper(_inner_plan(), _unstage()))
+    else:
+        return (yield from plan)
 
 
 def stage_ami_wrapper(plan, magnet):
@@ -211,6 +242,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
     return (yield from finalize_wrapper(_inner_plan(), _unstage()))
 
 
-configure_counts_decorator = make_decorator(configure_counts_wrapper)
+energy_scan_decorator = make_decorator(energy_scan_wrapper)
+configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)

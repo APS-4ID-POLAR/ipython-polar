@@ -25,7 +25,6 @@ class APDDevice(Device):
     sca_window = Component(EpicsSignal, 'SCAwin.VAL',
                            write_pv='SetSCALevel.B', kind='config')
 
-
 apd_parameters = APDDevice('4idd:apd:1:', name='apd',
                            labels=('apd', 'detectors'))
 sd.baseline.append(apd_parameters)

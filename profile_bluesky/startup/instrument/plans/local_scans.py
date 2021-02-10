@@ -2,11 +2,11 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv']
+__all__ = ['lup', 'ascan', 'mv', 'qxscan']
 
-from bluesky.plans import rel_scan, scan
+from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
-from bluesky.plan_stubs import mv as bps_mv
+from bluesky.plan_stubs import mv as bps_mv, rd
 from ..devices import scalerd, pr_setup, mag6t, counters
 from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
@@ -15,6 +15,20 @@ from ..utils import local_rd
 
 from ..session_logs import logger
 logger.info(__file__)
+
+
+def _collect_extras():
+
+    extras = []
+    und_track = yield from rd(undulator.downstream.tracking)
+    if und_track:
+        extras.append(undulator.downstream.energy)
+    for pr in [pr1, pr2, pr3]:
+        pr_track = yield from rd(pr.tracking)
+        if pr_track:
+            extras.append(pr.th)
+
+    return extras
 
 
 def dichro_steps(detectors, motors, take_reading):
@@ -104,12 +118,17 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         scalerd.select_plot_channels([])
         detectors += [scalerd]
 
+    extras = []
+    if energy in args:
+        extras = yield from _collect_extras()
+
+    @energy_scan_decorator(energy in args, extras)
     @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_lup():
         yield from rel_scan(
-            detectors,
+            detectors + extras,
             *args,
             per_step=one_dichro_step if dichro else None,
             **kwargs)
@@ -164,18 +183,69 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         scalerd.select_plot_channels([])
         detectors += [scalerd]
 
+    extras = []
+    if energy in args:
+        extras = yield from _collect_extras()
+
+    @energy_scan_decorator(energy in args, extras)
     @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
     @stage_dichro_decorator(dichro, lockin)
     def _inner_ascan():
         yield from scan(
-            detectors,
+            detectors + extras,
             *args,
             per_step=one_dichro_step if dichro else None,
             **kwargs
             )
 
     return (yield from _inner_ascan())
+
+
+def qxscan(edge_energy, monitor=None, detectors=None, lockin=False,
+           dichro=False, **kwargs):
+
+    if not detectors:
+        detectors = [scalerd]
+
+    per_step = one_dichro_step if dichro else None
+
+    # Get energy argument and extras
+    energy_list = yield from local_rd(qxscan_params.energy_list)
+    args = (energy, array(energy_list) + edge_energy)
+
+    extras = []
+    if energy in args:
+        extras = yield from _collect_extras()
+
+    # Setup count time
+    factor_list = yield from local_rd(qxscan_params.factor_list)
+
+    _ct = {}
+    if monitor:
+        if monitor < 0 and detectors != [scalerd]:
+            raise TypeError('monitor < 0 can only be used with scaler.')
+        else:
+            for det in detectors:
+                _ct[det] = abs(monitor)
+                args += (det.preset_monitor, abs(monitor)*array(factor_list))
+    else:
+        for det in detectors:
+            _ct[det] = yield from rd(det.preset_monitor)
+            args += (det.preset_monitor, _ct[det]*array(factor_list))
+
+    @energy_scan_decorator(True, extras)
+    @configure_monitor_decorator(monitor)
+    @stage_dichro_decorator(dichro, lockin)
+    def _inner_qxscan():
+        yield from list_scan(detectors+extras, *args, per_step=per_step,
+                             **kwargs)
+
+        # put original times back.
+        for det, preset in _ct.items():
+            yield from mv(det.preset_monitor, preset)
+
+    return (yield from _inner_qxscan())
 
 
 def mv(*args, **kwargs):
