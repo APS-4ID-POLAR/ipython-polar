@@ -4,11 +4,11 @@ APD detector
 
 __all__ = ['apd_parameters']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import Component, Device, EpicsSignal
 from ..framework import sd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class APDDevice(Device):
@@ -24,6 +24,7 @@ class APDDevice(Device):
                         kind='config')
     sca_window = Component(EpicsSignal, 'SCAwin.VAL',
                            write_pv='SetSCALevel.B', kind='config')
+
 
 apd_parameters = APDDevice('4idd:apd:1:', name='apd',
                            labels=('apd', 'detectors'))

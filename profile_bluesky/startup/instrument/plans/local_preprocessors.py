@@ -2,10 +2,9 @@
 
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
-from bluesky.plan_stubs import mv, sleep, rd
+from bluesky.plan_stubs import mv, sleep, rd, null
 from ophyd import Kind
 from ..devices import scalerd, pr_setup, mag6t
-from ..utils import local_rd
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -63,14 +62,14 @@ def stage_ami_wrapper(plan, magnet):
     """
     def _stage():
 
-        _heater_status = yield from local_rd(mag6t.field.switch_heater)
+        _heater_status = yield from rd(mag6t.field.switch_heater)
         if _heater_status != 'On':
 
             yield from mv(mag6t.field.ramp_button, 1)
 
             while True:
-                supply = yield from local_rd(mag6t.field.supply_current)
-                target = yield from local_rd(mag6t.field.current)
+                supply = yield from rd(mag6t.field.supply_current)
+                target = yield from rd(mag6t.field.current)
                 if abs(supply-target) > 0.01:
                     yield from sleep(1)
                 else:
@@ -80,7 +79,7 @@ def stage_ami_wrapper(plan, magnet):
             yield from sleep(2)
 
             while True:
-                _status = yield from local_rd(mag6t.field.magnet_status)
+                _status = yield from rd(mag6t.field.magnet_status)
 
                 if _status != 3:
                     yield from sleep(1)
@@ -92,7 +91,7 @@ def stage_ami_wrapper(plan, magnet):
     def _unstage():
 
         while True:
-            voltage = yield from local_rd(mag6t.field.voltage)
+            voltage = yield from rd(mag6t.field.voltage)
             if abs(voltage) > 0.01:
                 yield from sleep(1)
             else:
@@ -102,7 +101,7 @@ def stage_ami_wrapper(plan, magnet):
         yield from sleep(2)
 
         while True:
-            _status = yield from local_rd(mag6t.field.magnet_status)
+            _status = yield from rd(mag6t.field.magnet_status)
 
             if _status not in [2, 3]:
                 yield from sleep(1)
@@ -243,6 +242,6 @@ def stage_dichro_wrapper(plan, dichro, lockin):
 
 
 energy_scan_decorator = make_decorator(energy_scan_wrapper)
-configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
+configure_counts_decorator = make_decorator(configure_counts_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)

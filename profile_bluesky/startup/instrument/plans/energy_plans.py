@@ -10,9 +10,11 @@ __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
 from bluesky.plan_stubs import mv, trigger_and_read, rd
 from bluesky.preprocessors import stage_decorator, run_decorator
 from bluesky.utils import Msg, short_uid
-from ..devices import undulator, mono, qxscan_params, pr1, pr2, pr3
+from ..devices import (undulator, mono, qxscan_params, pr1, pr2, pr3, counters,
+                       scalerd)
 from numpy import linspace, array
-from .local_preprocessors import stage_dichro_decorator
+from .local_preprocessors import (stage_dichro_decorator,
+                                  configure_counts_decorator)
 from ..utils import local_rd
 from .local_scans import dichro_steps
 
