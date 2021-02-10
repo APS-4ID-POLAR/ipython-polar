@@ -1,5 +1,8 @@
 """
 Energy scans
+
+THESE FUNCTIONS ARE DEPRECATED!
+All were replaced by mv, lup, ascan, qxscan defined in local_scans.py
 """
 
 __all__ = ['moveE', 'Escan', 'Escan_list', 'qxscan']
