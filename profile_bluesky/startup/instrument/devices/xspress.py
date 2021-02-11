@@ -4,7 +4,6 @@ from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, FormattedComponent, Kind, DynamicDeviceComponent)
 from ophyd.status import AndStatus, Status
 from ophyd.signal import SignalRO
-from bluesky.plan_stubs import mv, rd
 from collections import OrderedDict
 from ..framework import sd
 
@@ -252,7 +251,8 @@ class Xspress3VortexBase(Device):
                       kind='config')
 
     # Config
-    AcquireTime = Component(EpicsSignal, 'det1:AcquireTime', kind='config')
+    # AcquireTime
+    preset_monitor = Component(EpicsSignal, 'det1:AcquireTime', kind='config')
     NumImages = Component(EpicsSignal, 'det1:NumImages', kind='config')
     TriggerMode = Component(EpicsSignal, 'det1:TriggerMode', kind='config')
 
@@ -388,12 +388,6 @@ class Xspress3VortexBase(Device):
         button_status = super().trigger()
 
         return AndStatus(state_status, button_status)
-
-    def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.AcquireTime, value, **kwargs)
-
-    def GetCountTimePlan(self):
-        return (yield from rd(self.AcquireTime))
 
     def unload(self):
         """

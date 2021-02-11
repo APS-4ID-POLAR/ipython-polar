@@ -1,11 +1,13 @@
 """Local decorators."""
 
-from bluesky.utils import make_decorator, single_gen
-from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
-from bluesky.plan_stubs import mv, sleep, null
+from bluesky.utils import make_decorator
+from bluesky.preprocessors import finalize_wrapper
+from bluesky.plan_stubs import mv, sleep, rd, null
 from ophyd import Kind
 from ..devices import scalerd, pr_setup, mag6t
-from ..utils import local_rd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 def energy_scan_wrapper(plan, flag, extras):
@@ -60,14 +62,14 @@ def stage_ami_wrapper(plan, magnet):
     """
     def _stage():
 
-        _heater_status = yield from local_rd(mag6t.field.switch_heater)
+        _heater_status = yield from rd(mag6t.field.switch_heater)
         if _heater_status != 'On':
 
             yield from mv(mag6t.field.ramp_button, 1)
 
             while True:
-                supply = yield from local_rd(mag6t.field.supply_current)
-                target = yield from local_rd(mag6t.field.current)
+                supply = yield from rd(mag6t.field.supply_current)
+                target = yield from rd(mag6t.field.current)
                 if abs(supply-target) > 0.01:
                     yield from sleep(1)
                 else:
@@ -77,7 +79,7 @@ def stage_ami_wrapper(plan, magnet):
             yield from sleep(2)
 
             while True:
-                _status = yield from local_rd(mag6t.field.magnet_status)
+                _status = yield from rd(mag6t.field.magnet_status)
 
                 if _status != 3:
                     yield from sleep(1)
@@ -89,7 +91,7 @@ def stage_ami_wrapper(plan, magnet):
     def _unstage():
 
         while True:
-            voltage = yield from local_rd(mag6t.field.voltage)
+            voltage = yield from rd(mag6t.field.voltage)
             if abs(voltage) > 0.01:
                 yield from sleep(1)
             else:
@@ -99,7 +101,7 @@ def stage_ami_wrapper(plan, magnet):
         yield from sleep(2)
 
         while True:
-            _status = yield from local_rd(mag6t.field.magnet_status)
+            _status = yield from rd(mag6t.field.magnet_status)
 
             if _status not in [2, 3]:
                 yield from sleep(1)
@@ -118,7 +120,7 @@ def stage_ami_wrapper(plan, magnet):
         return (yield from plan)
 
 
-def configure_monitor_wrapper(plan, monitor):
+def configure_counts_wrapper(plan, detectors, count_time):
     """
     Set all devices with a `preset_monitor` to the same value.
 
@@ -136,28 +138,45 @@ def configure_monitor_wrapper(plan, monitor):
     msg : Msg
         messages from plan, with 'set' messages inserted
     """
-    devices_seen = set()
     original_times = {}
+    original_monitor = []
 
-    def insert_set(msg):
-        obj = msg.obj
-        if obj is not None and obj not in devices_seen:
-            devices_seen.add(obj)
-            if hasattr(obj, 'preset_monitor'):
-                original_times[obj] = obj.preset_monitor.get()
-                return pchain(mv(obj.preset_monitor, monitor),
-                              single_gen(msg)), None
-        return None, None
+    def setup():
+        if count_time < 0:
+            if detectors != [scalerd]:
+                raise ValueError('count_time can be < 0 only if the scalerd '
+                                 'is only detector used.')
+            else:
+                original_times[scalerd] = yield from scalerd.GetCountTimePlan()
+                yield from mv(scalerd.preset_monitor, abs(count_time))
+
+        elif count_time > 0:
+            for det in detectors:
+                original_times[det] = yield from rd(det.preset_monitor)
+
+                if det == scalerd:
+                    original_monitor.append(scalerd.monitor)
+                    det.monitor = 'Time'
+
+                yield from mv(det.preset_monitor, count_time)
+        else:
+            raise ValueError('count_time cannot be zero.')
 
     def reset():
-        for obj, time in original_times.items():
-            yield from mv(obj.preset_monitor, time)
+        for det, time in original_times.items():
+            if det == scalerd and len(original_monitor) == 1:
+                det.monitor = original_monitor[0]
 
-    if monitor is None:
+            yield from mv(det.preset_monitor, time)
+
+    def _inner_plan():
+        yield from setup()
+        return (yield from plan)
+
+    if count_time is None:
         return (yield from plan)
     else:
-        return (yield from finalize_wrapper(plan_mutator(plan, insert_set),
-                                            reset()))
+        return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
 def stage_dichro_wrapper(plan, dichro, lockin):
@@ -223,6 +242,6 @@ def stage_dichro_wrapper(plan, dichro, lockin):
 
 
 energy_scan_decorator = make_decorator(energy_scan_wrapper)
-configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
+configure_counts_decorator = make_decorator(configure_counts_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)

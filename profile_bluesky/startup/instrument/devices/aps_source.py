@@ -1,10 +1,8 @@
-
 """
 APS only: connect with facility information
 """
 
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['aps', 'undulator']
 
 import apstools.devices
 from ..framework import sd
@@ -13,10 +11,8 @@ from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, AndStatus, wait as status_wait
 
-__all__ = [
-    'aps',
-    'undulator',
-    ]
+from ..session_logs import logger
+logger.info(__file__)
 
 aps = apstools.devices.ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
