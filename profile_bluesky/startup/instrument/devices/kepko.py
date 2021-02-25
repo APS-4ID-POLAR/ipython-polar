@@ -28,16 +28,16 @@ class LocalPositioner(PVPositioner):
     done = Component(DoneSignal, value=0, kind='omitted')
     done_value = 1
 
-    def __init__(self, *args, type, **kwargs):
-        self._type = type
+    def __init__(self, *args, progtype, **kwargs):
+        self._type = progtype
         super().__init__(*args, **kwargs)
         self.tolerance = 0.01
 
 
 class KepkoController(Device):
 
-    voltage = Component(LocalPositioner, '', type='Volt')
-    current = Component(LocalPositioner, '', type='Curr')
+    voltage = Component(LocalPositioner, '', progtype='Volt')
+    current = Component(LocalPositioner, '', progtype='Curr')
 
     voltage_rbk = Component(
         EpicsSignalRO, 'Volt', kind='normal', labels=('kepko', 'magnet')
