@@ -26,7 +26,7 @@ class LocalMagics(BlueskyMagics):
         try:
             self.RE(plan)
         except RunEngineInterrupted:
-            ...
+            pass
         self.RE.waiting_hook = None
         self._ensure_idle()
         return None
@@ -45,7 +45,7 @@ class LocalMagics(BlueskyMagics):
         try:
             self.RE(plan)
         except RunEngineInterrupted:
-            ...
+            pass
         self.RE.waiting_hook = None
         self._ensure_idle()
         return None
