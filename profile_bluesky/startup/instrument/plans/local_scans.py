@@ -7,6 +7,7 @@ __all__ = ['lup', 'ascan', 'mv', 'qxscan']
 from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv, rd
+from bluesky.preprocessors import relative_set_decorator
 from ..devices import (scalerd, pr_setup, mag6t, counters, undulator,
                        pr1, pr2, pr3, energy, qxscan_params)
 from .local_preprocessors import (configure_counts_decorator,
@@ -14,6 +15,12 @@ from .local_preprocessors import (configure_counts_decorator,
                                   stage_ami_decorator,
                                   energy_scan_decorator)
 from numpy import array
+
+try:
+    # cytools is a drop-in replacement for toolz, implemented in Cython
+    from cytools import partition
+except ImportError:
+    from toolz import partition
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -257,7 +264,6 @@ def mv(*args, **kwargs):
     This is a local version of `bluesky.plan_stubs.mv`. If more than one device
     is specifed, the movements are done in parallel.
 
-
     Parameters
     ----------
     args :
@@ -278,3 +284,35 @@ def mv(*args, **kwargs):
         yield from bps_mv(*args, **kwargs)
 
     return (yield from _inner_mv())
+
+
+def mvr(*args, **kwargs):
+    """
+    Move one or more devices to a relative setpoint. Wait for all to complete.
+    If more than one device is specified, the movements are done in parallel.
+
+    This is a local version of `bluesky.plan_stubs.mvr`.
+
+    Parameters
+    ----------
+    args :
+        device1, value1, device2, value2, ...
+    kwargs :
+        passed to bluesky.plan_stub.mvr
+    Yields
+    ------
+    msg : Msg
+    See Also
+    --------
+    :func:`bluesky.plan_stubs.rel_set`
+    :func:`bluesky.plan_stubs.mv`
+    """
+    objs = []
+    for obj, _ in partition(2, args):
+        objs.append(obj)
+
+    @relative_set_decorator(objs)
+    def _inner_mvr():
+        return (yield from mv(*args, **kwargs))
+
+    return (yield from _inner_mvr())
