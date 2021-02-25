@@ -23,7 +23,8 @@ from bluesky import RunEngine
 from bluesky import SupplementalData
 from bluesky.callbacks.best_effort import BestEffortCallback
 # from bluesky.callbacks.broker import verify_files_saved
-from bluesky.magics import BlueskyMagics
+# from bluesky.magics import BlueskyMagics  # will use local magics now...
+from .local_magics import LocalMagics
 from bluesky.simulators import summarize_plan
 from bluesky.utils import PersistentDict
 from bluesky.utils import ProgressBarManager
@@ -33,7 +34,6 @@ from ophyd.signal import EpicsSignalBase
 import databroker
 import os
 import warnings
-
 
 # convenience imports
 import bluesky.plans as bp
@@ -67,7 +67,7 @@ pbar_manager = ProgressBarManager()
 RE.waiting_hook = pbar_manager
 
 # Register bluesky IPython magics.
-get_ipython().register_magics(BlueskyMagics)
+get_ipython().register_magics(LocalMagics)
 
 # Set up the BestEffortCallback.
 bec = BestEffortCallback()
