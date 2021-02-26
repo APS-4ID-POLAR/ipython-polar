@@ -10,7 +10,7 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
-def energy_scan_wrapper(plan, flag, extras):
+def extra_devices_wrapper(plan, extras):
 
     hinted_stash = []
 
@@ -20,8 +20,6 @@ def energy_scan_wrapper(plan, flag, extras):
                 if component.kind == Kind.hinted:
                     component.kind = Kind.normal
                     hinted_stash.append(component)
-        # TODO: I'm not very happy that I have to use the null here, but
-        # could not figure out another way.
         yield from null()
 
     def _unstage():
@@ -33,8 +31,7 @@ def energy_scan_wrapper(plan, flag, extras):
         yield from _stage()
         return (yield from plan)
 
-    if flag and len(extras) != 0:
-        print(plan)
+    if len(extras) != 0:
         return (yield from finalize_wrapper(_inner_plan(), _unstage()))
     else:
         return (yield from plan)
@@ -241,7 +238,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
     return (yield from finalize_wrapper(_inner_plan(), _unstage()))
 
 
-energy_scan_decorator = make_decorator(energy_scan_wrapper)
+extra_devices_decorator = make_decorator(extra_devices_wrapper)
 configure_counts_decorator = make_decorator(configure_counts_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)
