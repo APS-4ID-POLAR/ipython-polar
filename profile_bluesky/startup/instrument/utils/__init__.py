@@ -7,4 +7,4 @@ from .done_signal import *
 from .tracking_signal import *
 from .local_rd import *
 from .load_vortex import *
-from .beamline_defaults import *
+from .counters_class import *
