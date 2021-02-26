@@ -144,7 +144,10 @@ def configure_counts_wrapper(plan, detectors, count_time):
                 raise ValueError('count_time can be < 0 only if the scalerd '
                                  'is only detector used.')
             else:
-                original_times[scalerd] = yield from scalerd.GetCountTimePlan()
+                if scalerd.monitor == 'Time':
+                    raise ValueError('count_time can be < 0 only if '
+                                     'scalerd.monitor is not "Time".')
+                original_times[scalerd] = yield from rd(scalerd.preset_monitor)
                 yield from mv(scalerd.preset_monitor, abs(count_time))
 
         elif count_time > 0:
