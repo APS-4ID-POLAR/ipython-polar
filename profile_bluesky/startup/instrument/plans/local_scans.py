@@ -7,12 +7,13 @@ __all__ = ['lup', 'ascan', 'mv', 'qxscan']
 from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv, rd
-from ..devices import (scalerd, pr_setup, mag6t, counters, undulator,
+from ..devices import (scalerd, pr_setup, mag6t, undulator,
                        pr1, pr2, pr3, energy, qxscan_params)
 from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator,
                                   energy_scan_decorator)
+from ..utils import DEFAULTS
 from numpy import array
 
 from ..session_logs import logger
@@ -112,8 +113,8 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`ascan`
     """
 
-    if not detectors:
-        detectors = counters.detectors
+    if detectors is None:
+        detectors = DEFAULTS.detectors
 
     # Scalerd is always selected.
     if scalerd not in detectors:
@@ -177,8 +178,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     :func:`lup`
     """
 
-    if not detectors:
-        detectors = counters.detectors
+    if detectors is None:
+        detectors = DEFAULTS.detectors
 
     # Scalerd is always selected.
     if scalerd not in detectors:
@@ -207,8 +208,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
 def qxscan(edge_energy, time=None, detectors=None, lockin=False,
            dichro=False, **kwargs):
 
-    if not detectors:
-        detectors = [scalerd]
+    if detectors is None:
+        detectors = DEFAULTS.detectors
 
     per_step = one_dichro_step if dichro else None
 
