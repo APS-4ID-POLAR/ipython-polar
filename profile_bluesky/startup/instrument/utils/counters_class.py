@@ -1,5 +1,4 @@
 from ..devices import scalerd
-from warnings import warn
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -19,8 +18,7 @@ class CountersClass:
         scan. Keep in mind that it will "trigger and read", so if this takes a
         long time to trigger, it will slow down the scan.
     monitor : str
-        Name of the scalerd channel that is used as monitor. It will fall back
-        to 'Time' if `detectors` has items that are not from scalerd.
+        Name of the scalerd channel that is used as monitor.
     """
 
     def __init__(self):
@@ -49,7 +47,7 @@ class CountersClass:
     def __str__(self):
         return self.__repr__()
 
-    def __call__(self, detectors, monitor='Time'):
+    def __call__(self, detectors, monitor=None):
         """
         Selects the plotting detector and monitor.
 
@@ -58,13 +56,15 @@ class CountersClass:
         Parameters
         ----------
         detectors : str or iterable
-            Name(s) of the scalerd channels, or the detector instance to plot.
-        monitor : str, optional
-            Name of the scalerd channel to use as monitor, defaults to Time.
+            Name(s) of the scalerd channels, or the detector instance to plot,
+            if None it will not be changedd.
+        monitor : str or int, optional
+            Name or number of the scalerd channel to use as monitor, uses the
+            same number convention as in SPEC. If None, it will not be changed.
 
         Example
         -------
-        This selects the "Ion Ch 4" as detector, and "Time" as monitor:
+        This selects the "Ion Ch 4" as detector, and "Ion Ch 1" as monitor:
 
         .. code-block:: python
             In[1]: counters('Ion Ch 4')
@@ -79,19 +79,16 @@ class CountersClass:
         .. code-block:: python
             In[3]: counters(['Ion Ch 4', 'Ion Ch 5'], 'Ion Ch 3')
 
-        Vortex detector as detector. Note that this will automatically set
-        'Time' as the monitor, regardless of what is entered:
+        Vortex as detector:
 
         .. code-block:: python
             In[4]: vortex = load_votex('xspress', 4)
             In[5]: counters(vortex)
-            In[6]: # This will still use 'Time' as monitor:
-            In[7]: counters(vortex, 'Ion Ch 3')
 
         But you can mix scaler and other detectors:
 
         .. code-block:: python
-            In[8]: counters([vortex, 'Ion Ch 5'])
+            In[6]: counters([vortex, 'Ion Ch 5'])
 
         """
 
@@ -104,28 +101,25 @@ class CountersClass:
 
     @detectors.setter
     def detectors(self, value):
+        if value is not None:
+            # Ensures value is iterable.
+            try:
+                value = list(value)
+            except TypeError:
+                value = [value]
 
-        # Ensures value is iterable.
-        try:
-            value = list(value)
-        except TypeError:
-            value = [value]
+            # self._dets will hold the device instance.
+            # scalerd is always a detector even if it's not plotted.
+            self._dets = [scalerd]
+            scalerd_list = []
+            for item in value:
+                if isinstance(item, str):
+                    scalerd_list.append(item)
+                else:
+                    item.select_plot_channels(True)
+                    self._dets.append(item)
 
-        # self._dets will hold the device instance.
-        # scalerd is always a detector even if it's not plotted.
-        self._dets = [scalerd]
-        scalerd_list = []
-        for item in value:
-            if isinstance(item, str):
-                scalerd_list.append(item)
-            else:
-                item.select_plot_channels(True)
-                self._dets.append(item)
-
-        scalerd.select_plot_channels(scalerd_list)
-
-        # This checks if the current monitor is good for the new detectors.
-        self.monitor = self._mon
+            scalerd.select_plot_channels(scalerd_list)
 
     @property
     def monitor(self):
@@ -133,16 +127,12 @@ class CountersClass:
 
     @monitor.setter
     def monitor(self, value):
-
-        # monitor != 'Time' can only be used if only detectors is only scalerd
-        if value != 'Time' and self.detectors != [scalerd]:
-            warn(f"{value} can only be used as monitor if "
-                 f"detectors = [scalerd], but detectors = {self.detectors}."
-                 "Using 'Time' as monitor.")
-            value = 'Time'
-
-        scalerd.select_monitor(value)
-        self._mon = scalerd.monitor
+        if value is not None:
+            if isinstance(value, int):
+                ch = getattr(scalerd.channels, 'ch{:02d}'.format(value+1))
+                value = ch.s.name
+            scalerd.select_monitor(value)
+            self._mon = scalerd.monitor
 
     @property
     def extra_devices(self):
