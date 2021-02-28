@@ -116,7 +116,7 @@ class CountersClass:
                 if isinstance(item, str):
                     scalerd_list.append(item)
                 else:
-                    item.select_plot_channels(True)
+                    # item.select_plot_channels(True) This needs to be improved
                     self._dets.append(item)
 
             scalerd.select_plot_channels(scalerd_list)
