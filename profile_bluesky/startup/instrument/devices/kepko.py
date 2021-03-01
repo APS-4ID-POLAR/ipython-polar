@@ -51,7 +51,7 @@ class KepkoController(Device):
         )
 
     enable = Component(
-        EpicsSignal, 'Enable.val', kind='config', string=True,
+        EpicsSignal, 'Enable.VAL', kind='omitted', string=True,
         labels=('kepko', 'magnet')
         )
 
