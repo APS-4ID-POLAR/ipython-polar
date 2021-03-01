@@ -31,7 +31,7 @@ class CountersClass:
     def __repr__(self):
 
         read_names = [
-            item.name for item in self.detectors + self.extra_devices
+            item.name for item in (self.detectors + self.extra_devices)
         ]
 
         plot_names = []
