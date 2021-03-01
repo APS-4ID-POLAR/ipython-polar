@@ -119,7 +119,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         detectors = counters.detectors
 
     # This allows passing "time" without using the keyword.
-    if len(args) % 3 == 2:
+    if len(args) % 3 == 2 and time is not None:
         time = args[-1]
         args = args[:-1]
 
@@ -183,7 +183,7 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         detectors = counters.detectors
 
     # This allows passing "time" without using the keyword.
-    if len(args) % 3 == 2:
+    if len(args) % 3 == 2 and time is not None:
         time = args[-1]
         args = args[:-1]
 
