@@ -106,6 +106,8 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.rel_scan`.
 
@@ -114,6 +116,9 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
     """
+    # CHANGE THIS 
+    if dichro:
+        md = {'hints': {'scan_type': 'dichro'}}
 
     if detectors is None:
         detectors = counters.detectors
@@ -171,6 +176,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.scan`.
     See Also
@@ -178,6 +185,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
+    if dichro:
+        md = {'hints': {'scan_type': 'dichro'}}
 
     if detectors is None:
         detectors = counters.detectors

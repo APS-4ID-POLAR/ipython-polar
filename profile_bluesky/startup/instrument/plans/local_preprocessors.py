@@ -196,6 +196,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
         inserted and appended
     """
     _current_scaler_plot = []
+    _subs_token = None
 
     def _stage():
 
@@ -226,10 +227,33 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
 
+            # Start plot subscription
+            # TODO: Remove this?
+            # model = AutoXanesPlot()
+            # view = QtFigures(model.figures)
+            # view.show()
+
+            # _subs_token = yield Msg('subscribe', None,
+            #                         stream_documents_into_runs(model.add_run),
+            #                         'all')
+
     def _unstage():
+
         if lockin:
             scalerd.select_plot_channels(_current_scaler_plot)
             yield from mv(pr_setup.positioner.parent.selectDC, 1)
+
+        if dichro:
+            # move PZT to off center.
+            if 'pzt' in pr_setup.positioner.name:
+                yield from mv(pr_setup.positioner,
+                              pr_setup.positioner.parent.center.get() +
+                              pr_setup.positioner.parent.offset.get())
+
+            # Remove plot subscription
+            # TODO: remove this?
+            # if _subs_token:
+            #     yield Msg('unsubscribe', None, token=_subs_token)
 
     def _inner_plan():
         yield from _stage()
