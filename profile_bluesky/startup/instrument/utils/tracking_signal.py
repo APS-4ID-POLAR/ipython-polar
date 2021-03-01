@@ -21,5 +21,5 @@ class TrackingSignal(Signal):
         ValueError
         """
         if type(value) != bool:
-            msg = 'tracking is boolean, it can only be True or False.'
-            raise ValueError(msg)
+            raise ValueError('tracking is boolean, it can only be True or \
+                False.')

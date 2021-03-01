@@ -4,11 +4,10 @@ Other motor/counters
 
 __all__ = ['xbpm']
 
+from ophyd import MotorBundle, Component, EpicsMotor
+from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
-
-from ophyd import Component, EpicsMotor, MotorBundle
-from ..framework import sd
 
 
 class XBPM(MotorBundle):

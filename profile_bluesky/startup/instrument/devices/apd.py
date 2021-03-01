@@ -4,18 +4,17 @@ APD detector
 
 __all__ = ['apd_parameters']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import Component, Device, EpicsSignal
 from ..framework import sd
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class APDDevice(Device):
     source = Component(EpicsSignal, 'SetCSRC', kind='config')
     read_scan = Component(EpicsSignal, 'ReadCounts.SCAN', kind='config')
     count_time = Component(EpicsSignal, 'CountTime.A', kind='config')
-
     hv = Component(EpicsSignal, 'HV.VAL', write_pv='SetHV.A', kind='config')
     hv_on = Component(EpicsSignal, 'HVOnOff.VAL', kind='config')
 
