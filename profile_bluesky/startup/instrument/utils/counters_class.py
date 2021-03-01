@@ -121,6 +121,12 @@ class CountersClass:
             for item in value:
                 if isinstance(item, str):
                     scalerd_list.append(item)
+                elif isinstance(item, int):
+                    if isinstance(item, int):
+                        ch = getattr(
+                            scalerd.channels, 'chan{:02d}'.format(item+1)
+                        )
+                        scalerd_list.append(ch.s.name)
                 else:
                     # item.select_plot_channels(True) This needs to be improved
                     self._dets.append(item)
@@ -139,7 +145,7 @@ class CountersClass:
     def monitor(self, value):
         if value is not None:
             if isinstance(value, int):
-                ch = getattr(scalerd.channels, 'ch{:02d}'.format(value+1))
+                ch = getattr(scalerd.channels, 'chan{:02d}'.format(value+1))
                 value = ch.s.name
             scalerd.monitor = value
             self._mon = scalerd.monitor
