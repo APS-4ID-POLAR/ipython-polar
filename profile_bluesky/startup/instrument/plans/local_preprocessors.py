@@ -155,7 +155,6 @@ def configure_counts_wrapper(plan, detectors, count_time):
                 if det == scalerd:
                     original_monitor.append(scalerd.monitor)
                     det.monitor = 'Time'
-
                 original_times[det] = yield from rd(det.preset_monitor)
                 yield from mv(det.preset_monitor, count_time)
         else:
@@ -163,10 +162,9 @@ def configure_counts_wrapper(plan, detectors, count_time):
 
     def reset():
         for det, time in original_times.items():
+            yield from mv(det.preset_monitor, time)
             if det == scalerd and len(original_monitor) == 1:
                 det.monitor = original_monitor[0]
-
-            yield from mv(det.preset_monitor, time)
 
     def _inner_plan():
         yield from setup()
