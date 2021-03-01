@@ -118,6 +118,11 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     if detectors is None:
         detectors = counters.detectors
 
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2:
+        time = args[-1]
+        args = args[:-1]
+
     extras = yield from _collect_extras(energy in args)
 
     @configure_counts_decorator(detectors, time)
@@ -176,6 +181,11 @@ def ascan(*args, time=None, detectors=None, lockin=False,
 
     if detectors is None:
         detectors = counters.detectors
+
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2:
+        time = args[-1]
+        args = args[:-1]
 
     extras = yield from _collect_extras(energy in args)
 
