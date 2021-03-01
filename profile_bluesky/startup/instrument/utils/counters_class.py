@@ -131,7 +131,7 @@ class CountersClass:
             if isinstance(value, int):
                 ch = getattr(scalerd.channels, 'ch{:02d}'.format(value+1))
                 value = ch.s.name
-            scalerd.select_monitor(value)
+            scalerd.monitor = value
             self._mon = scalerd.monitor
 
     @property
