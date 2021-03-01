@@ -30,9 +30,9 @@ class CountersClass:
 
     def __repr__(self):
 
-        read_names = (
+        read_names = [
             item.name for item in self.detectors + self.extra_devices
-            )
+        ]
 
         plot_names = []
         for item in self.detectors:
@@ -104,7 +104,7 @@ class CountersClass:
         if value is not None:
             # Ensures value is iterable.
             try:
-                value = list(value)
+                value = [value] if isinstance(value, str) else list(value)
             except TypeError:
                 value = [value]
 
