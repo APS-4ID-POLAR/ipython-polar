@@ -167,16 +167,14 @@ class CountersClass:
 
     @property
     def monitor_counts(self):
-        return self._monitor_counts
+        return scalerd.preset_monitor.get()
 
     @monitor_counts.setter
     def monitor_counts(self, value):
         if isinstance(value, (int, float)):
             scalerd.preset_monitor.put(value)
             self._monitor_counts = scalerd.preset_monitor.get()
-        elif value is None:
-            self._monitor_counts = scalerd.preset_monitor.get()
-        else:
+        elif value is not None:
             raise TypeError(f"counts need to be a number, but {type(value)} "
                             "was entered.")
 
