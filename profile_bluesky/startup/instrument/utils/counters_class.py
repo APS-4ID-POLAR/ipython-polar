@@ -24,7 +24,7 @@ class CountersClass:
     def __init__(self):
         super().__init__()
         # This will hold the devices instances.
-        self._dets = []
+        self._dets = [scalerd]
         self._mon = scalerd.monitor
         self._extra_devices = []
 
