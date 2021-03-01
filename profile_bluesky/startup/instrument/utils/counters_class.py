@@ -152,7 +152,7 @@ class CountersClass:
                 raise ValueError("Input has to be a device instance, not a "
                                  f"device name, but {item} was entered.")
             if item not in self.detectors:
-                self._extra_devices.append(value)
+                self._extra_devices.append(item)
 
 
 counters = CountersClass()
