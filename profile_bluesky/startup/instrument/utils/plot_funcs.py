@@ -12,7 +12,7 @@ logger.info(__file__)
 
 
 # TODO: Is there a better way to do this?
-def start_dichro_plot(monitor, detector):
+def start_dichro_plot(monitor='Ion Ch 4', detector='Ion Ch 5'):
     model = AutoDichroPlot(monitor=monitor, detector=detector)
     view = QtFigures(model.figures)
     view.show()
