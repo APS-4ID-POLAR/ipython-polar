@@ -119,6 +119,10 @@ class CountersClass:
                     # item.select_plot_channels(True) This needs to be improved
                     self._dets.append(item)
 
+            # This is needed to select no scalerd channel.
+            if len(scalerd_list) == 0:
+                scalerd_list = ['']
+
             scalerd.select_plot_channels(scalerd_list)
 
     @property
