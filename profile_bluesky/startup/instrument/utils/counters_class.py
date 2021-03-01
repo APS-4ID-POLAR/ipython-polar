@@ -26,6 +26,7 @@ class CountersClass:
         # This will hold the devices instances.
         self._dets = [scalerd]
         self._mon = scalerd.monitor
+        self._monitor_counts = scalerd.preset_monitor.get()
         self._extra_devices = []
 
     def __repr__(self):
@@ -47,7 +48,7 @@ class CountersClass:
     def __str__(self):
         return self.__repr__()
 
-    def __call__(self, detectors, monitor=None):
+    def __call__(self, detectors, monitor=None, counts=None):
         """
         Selects the plotting detector and monitor.
 
@@ -61,7 +62,10 @@ class CountersClass:
         monitor : str or int, optional
             Name or number of the scalerd channel to use as monitor, uses the
             same number convention as in SPEC. If None, it will not be changed.
-
+        counts : int or float, optional
+            Counts in the monitor to be used. If monitor = 'Time', then this is
+            the time per point. If None, it will read the preset count for the
+            monitor in the EPICS scalerd.
         Example
         -------
         This selects the "Ion Ch 4" as detector, and "Ion Ch 1" as monitor:
@@ -94,6 +98,7 @@ class CountersClass:
 
         self.detectors = detectors
         self.monitor = monitor
+        self.monitor_counts = counts
 
     @property
     def detectors(self):
@@ -157,6 +162,21 @@ class CountersClass:
                                  f"device name, but {item} was entered.")
             if item not in self.detectors:
                 self._extra_devices.append(item)
+
+    @property
+    def monitor_counts(self):
+        return self._monitor_counts
+
+    @monitor_counts.setter
+    def monitor_counts(self, value):
+        if isinstance(value, (int, float)):
+            scalerd.preset_monitor.put(value)
+            self._monitor_counts = scalerd.preset_monitor.get()
+        elif value is None:
+            self._monitor_counts = scalerd.preset_monitor.get()
+        else:
+            raise TypeError(f"counts need to be a number, but {type(value)} "
+                            "was entered.")
 
 
 counters = CountersClass()
