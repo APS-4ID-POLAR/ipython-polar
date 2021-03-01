@@ -171,12 +171,16 @@ class CountersClass:
 
     @monitor_counts.setter
     def monitor_counts(self, value):
-        if isinstance(value, (int, float)):
-            scalerd.preset_monitor.put(value)
-            self._monitor_counts = scalerd.preset_monitor.get()
-        elif value is not None:
-            raise TypeError(f"counts need to be a number, but {type(value)} "
-                            "was entered.")
+        if value is not None:
+            try:
+                if value > 0:
+                    for det in self.detectors:
+                        det.preset_monitor.put(value)
+                else:
+                    raise ValueError("counts needs to be positive")
+            except TypeError:
+                raise TypeError("counts need to be a number, but "
+                                f"{type(value)} was entered.")
 
 
 counters = CountersClass()
