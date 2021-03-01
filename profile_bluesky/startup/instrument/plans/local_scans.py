@@ -118,10 +118,10 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     if detectors is None:
         detectors = counters.detectors
 
-    extras = _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args)
 
-    @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
     @extra_devices_decorator(extras)
     def _inner_lup():
@@ -177,10 +177,10 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     if detectors is None:
         detectors = counters.detectors
 
-    extras = _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args)
 
-    @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
     @extra_devices_decorator(extras)
     def _inner_ascan():
@@ -206,7 +206,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
     energy_list = yield from rd(qxscan_params.energy_list)
     args = (energy, array(energy_list) + edge_energy)
 
-    extras = _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args)
 
     # Setup count time
     factor_list = yield from rd(qxscan_params.factor_list)
