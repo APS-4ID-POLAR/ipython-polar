@@ -40,11 +40,6 @@ class KepkoController(Device):
     voltage = Component(LocalPositioner, '', progtype='V')
     current = Component(LocalPositioner, '', progtype='C')
 
-    output = Component(
-        EpicsSignal, 'OnOff', write_pv='OUTP', kind='config', string=True,
-        labels=('kepko', 'magnet')
-        )
-
     mode = Component(
         EpicsSignal, 'setMode', kind='config', string=True,
         labels=('kepko', 'magnet')
@@ -52,7 +47,7 @@ class KepkoController(Device):
 
     remote = Component(
         EpicsSignal, 'setRemote', kind='config', string=True,
-        labels=('kepko', 'magnet')
+        auto_monitor=True, labels=('kepko', 'magnet')
         )
 
     enable = Component(
@@ -71,5 +66,5 @@ class KepkoController(Device):
             self.voltage.readback.kind = Kind.hinted
 
 
-kepko = KepkoController('4idd:Kepko1:', name='kepko')
+kepko = KepkoController('4idd:BOP:PS1:', name='kepko')
 sd.baseline.append(kepko)
