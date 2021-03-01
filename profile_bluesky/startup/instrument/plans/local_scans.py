@@ -76,7 +76,7 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
 
 def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
-        **kwargs):
+        md=None, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -116,10 +116,6 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
     """
-    # CHANGE THIS 
-    if dichro:
-        md = {'hints': {'scan_type': 'dichro'}}
-
     if detectors is None:
         detectors = counters.detectors
 
@@ -130,6 +126,17 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
 
     extras = yield from _collect_extras(energy in args)
 
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
+    if dichro:
+        _md = {'hints': {'scan_type': 'dichro'}}
+
+    _md.update(md or {})
+
     @configure_counts_decorator(detectors, time)
     @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
@@ -139,6 +146,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
             detectors + extras,
             *args,
             per_step=one_dichro_step if dichro else None,
+            md=_md,
             **kwargs
             )
 
@@ -146,7 +154,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
 
 
 def ascan(*args, time=None, detectors=None, lockin=False,
-          dichro=False, **kwargs):
+          dichro=False, md=None, **kwargs):
     """
     Scan over one multi-motor trajectory.
 
@@ -185,8 +193,6 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
-    if dichro:
-        md = {'hints': {'scan_type': 'dichro'}}
 
     if detectors is None:
         detectors = counters.detectors
@@ -198,6 +204,17 @@ def ascan(*args, time=None, detectors=None, lockin=False,
 
     extras = yield from _collect_extras(energy in args)
 
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
+    if dichro:
+        _md = {'hints': {'scan_type': 'dichro'}}
+
+    _md.update(md or {})
+
     @configure_counts_decorator(detectors, time)
     @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
@@ -207,6 +224,7 @@ def ascan(*args, time=None, detectors=None, lockin=False,
             detectors + extras,
             *args,
             per_step=one_dichro_step if dichro else None,
+            md=_md,
             **kwargs
             )
 
@@ -214,7 +232,7 @@ def ascan(*args, time=None, detectors=None, lockin=False,
 
 
 def qxscan(edge_energy, time=None, detectors=None, lockin=False,
-           dichro=False, **kwargs):
+           dichro=False, md=None, **kwargs):
 
     if detectors is None:
         detectors = counters.detectors
@@ -229,6 +247,17 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
 
     # Setup count time
     factor_list = yield from rd(qxscan_params.factor_list)
+
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
+    if dichro:
+        _md = {'hints': {'scan_type': 'dichro'}}
+
+    _md.update(md or {})
 
     _ct = {}
     if time:
