@@ -7,28 +7,31 @@ __all__ = ['lup', 'ascan', 'mv', 'qxscan']
 from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv, rd
-from ..devices import (scalerd, pr_setup, mag6t, counters, undulator,
+from ..devices import (scalerd, pr_setup, mag6t, undulator,
                        pr1, pr2, pr3, energy, qxscan_params)
 from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
                                   stage_ami_decorator,
-                                  energy_scan_decorator)
+                                  extra_devices_decorator)
+from ..utils import counters
 from numpy import array
 
 from ..session_logs import logger
 logger.info(__file__)
 
 
-def _collect_extras():
+def _collect_extras(escan_flag):
 
-    extras = []
-    und_track = yield from rd(undulator.downstream.tracking)
-    if und_track:
-        extras.append(undulator.downstream.energy)
-    for pr in [pr1, pr2, pr3]:
-        pr_track = yield from rd(pr.tracking)
-        if pr_track:
-            extras.append(pr.th)
+    extras = counters.extra_devices
+
+    if escan_flag:
+        und_track = yield from rd(undulator.downstream.tracking)
+        if und_track:
+            extras.append(undulator.downstream.energy)
+        for pr in [pr1, pr2, pr3]:
+            pr_track = yield from rd(pr.tracking)
+            if pr_track:
+                extras.append(pr.th)
 
     return extras
 
@@ -112,28 +115,27 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`ascan`
     """
 
-    if not detectors:
+    if detectors is None:
         detectors = counters.detectors
 
-    # Scalerd is always selected.
-    if scalerd not in detectors:
-        scalerd.select_plot_channels([])
-        detectors += [scalerd]
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2 and time is not None:
+        time = args[-1]
+        args = args[:-1]
 
-    extras = []
-    if energy in args:
-        extras = yield from _collect_extras()
+    extras = yield from _collect_extras(energy in args)
 
-    @energy_scan_decorator(energy in args, extras)
-    @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
     def _inner_lup():
         yield from rel_scan(
             detectors + extras,
             *args,
             per_step=one_dichro_step if dichro else None,
-            **kwargs)
+            **kwargs
+            )
 
     return (yield from _inner_lup())
 
@@ -177,22 +179,20 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     :func:`lup`
     """
 
-    if not detectors:
+    if detectors is None:
         detectors = counters.detectors
 
-    # Scalerd is always selected.
-    if scalerd not in detectors:
-        scalerd.select_plot_channels([])
-        detectors += [scalerd]
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2 and time is not None:
+        time = args[-1]
+        args = args[:-1]
 
-    extras = []
-    if energy in args:
-        extras = yield from _collect_extras()
+    extras = yield from _collect_extras(energy in args)
 
-    @energy_scan_decorator(energy in args, extras)
-    @stage_ami_decorator(mag6t.field in args)
     @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
     def _inner_ascan():
         yield from scan(
             detectors + extras,
@@ -207,8 +207,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
 def qxscan(edge_energy, time=None, detectors=None, lockin=False,
            dichro=False, **kwargs):
 
-    if not detectors:
-        detectors = [scalerd]
+    if detectors is None:
+        detectors = counters.detectors
 
     per_step = one_dichro_step if dichro else None
 
@@ -216,9 +216,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
     energy_list = yield from rd(qxscan_params.energy_list)
     args = (energy, array(energy_list) + edge_energy)
 
-    extras = []
-    if energy in args:
-        extras = yield from _collect_extras()
+    extras = yield from _collect_extras(energy in args)
 
     # Setup count time
     factor_list = yield from rd(qxscan_params.factor_list)
@@ -236,12 +234,13 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
             _ct[det] = yield from rd(det.preset_monitor)
             args += (det.preset_monitor, _ct[det]*array(factor_list))
 
-    @energy_scan_decorator(True, extras)
     @configure_counts_decorator(detectors, time)
     @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
     def _inner_qxscan():
-        yield from list_scan(detectors+extras, *args, per_step=per_step,
-                             **kwargs)
+        yield from list_scan(
+            detectors + extras, *args, per_step=per_step, **kwargs
+            )
 
         # put original times back.
         for det, preset in _ct.items():
