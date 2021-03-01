@@ -42,7 +42,7 @@ class CountersClass:
         return ("Counters settings\n"
                 " Monitor:\n"
                 f"  Scaler channel = '{self._mon}'\n"
-                f"  Preset counts = '{self._monitor_counts}'"
+                f"  Preset counts = '{self._monitor_counts}'\n"
                 " Detectors:\n"
                 f"  Read devices = {read_names}\n"
                 f"  Plot components = {plot_names}")
