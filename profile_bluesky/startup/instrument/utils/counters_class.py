@@ -26,7 +26,6 @@ class CountersClass:
         # This will hold the devices instances.
         self._dets = [scalerd]
         self._mon = scalerd.monitor
-        self._monitor_counts = scalerd.preset_monitor.get()
         self._extra_devices = []
 
     def __repr__(self):
@@ -42,7 +41,7 @@ class CountersClass:
         return ("Counters settings\n"
                 " Monitor:\n"
                 f"  Scaler channel = '{self._mon}'\n"
-                f"  Preset counts = '{self._monitor_counts}'\n"
+                f"  Preset counts = '{self.monitor_counts}'\n"
                 " Detectors:\n"
                 f"  Read devices = {read_names}\n"
                 f"  Plot components = {plot_names}")
