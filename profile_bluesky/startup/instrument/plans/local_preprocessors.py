@@ -152,12 +152,11 @@ def configure_counts_wrapper(plan, detectors, count_time):
 
         elif count_time > 0:
             for det in detectors:
-                original_times[det] = yield from rd(det.preset_monitor)
-
                 if det == scalerd:
                     original_monitor.append(scalerd.monitor)
                     det.monitor = 'Time'
 
+                original_times[det] = yield from rd(det.preset_monitor)
                 yield from mv(det.preset_monitor, count_time)
         else:
             raise ValueError('count_time cannot be zero.')
