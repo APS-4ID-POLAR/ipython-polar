@@ -412,7 +412,7 @@ class Xspress3VortexBase(Device):
             ROI number.
         """
         if isinstance(value, int):
-            value = [int]
+            value = [value]
 
         for roi_num in range(1, 33):
             roi = getattr(self.corrected_counts, 'roi{:02d}'.format(roi_num))
