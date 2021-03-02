@@ -227,9 +227,17 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                               pr_setup.positioner.parent.center.get())
 
     def _unstage():
+
         if lockin:
             scalerd.select_plot_channels(_current_scaler_plot)
             yield from mv(pr_setup.positioner.parent.selectDC, 1)
+
+        if dichro:
+            # move PZT to off center.
+            if 'pzt' in pr_setup.positioner.name:
+                yield from mv(pr_setup.positioner,
+                              pr_setup.positioner.parent.center.get() +
+                              pr_setup.offset.get())
 
     def _inner_plan():
         yield from _stage()

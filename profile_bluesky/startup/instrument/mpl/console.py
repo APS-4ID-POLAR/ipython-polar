@@ -10,5 +10,4 @@ logger.info(__file__)
 
 import matplotlib.pyplot as plt
 
-
 plt.ion()
