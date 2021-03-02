@@ -248,7 +248,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
             if 'pzt' in pr_setup.positioner.name:
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get() +
-                              pr_setup.positioner.parent.offset.get())
+                              pr_setup.offset.get())
 
             # Remove plot subscription
             # TODO: remove this?
