@@ -8,7 +8,6 @@ from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
 from bluesky_widgets.models.plot_specs import Axes, Figure
 from numpy import log, array
-from ..mpl import plt
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -77,11 +76,11 @@ class AutoDichroPlot(AutoPlotter):
     @property
     def fluo(self):
         return self._fluo
-    
+
     @fluo.setter
     def fluo(self, value):
         self._fluo = bool(value)
-    
+
     def new_plot(self, x_name=None):
         # New plots for all types.
         if x_name is None:
@@ -122,8 +121,7 @@ class AutoDichroPlot(AutoPlotter):
             # We don't have a figure for this x. Make one.
             xanes_axes = Axes(x_label=x, title="XANES")
             xmcd_axes = Axes(x_label=x, title="XMCD")
-            figure = Figure((xanes_axes, xmcd_axes),
-                                title="XANES and XMCD")
+            figure = Figure((xanes_axes, xmcd_axes), title="XANES and XMCD")
             # Set up objects that will select the approriate data and do the
             # desired transformation for plotting.
             xanes_lines = Lines(
