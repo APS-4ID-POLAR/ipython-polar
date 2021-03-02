@@ -357,6 +357,9 @@ class Xspress3VortexBase(Device):
             be used.
         """
         self._toggle_roi(index, channels=channels, enable=True)
+        for ind in index:
+            roi = getattr(self.corrected_counts, 'roi{:02d}'.format(ind))
+            roi.kind = Kind.normal
 
     def disable_roi(self, index, channels=None):
         """
@@ -372,6 +375,9 @@ class Xspress3VortexBase(Device):
             be used.
         """
         self._toggle_roi(index, channels=channels, enable=False)
+        for ind in index:
+            roi = getattr(self.corrected_counts, 'roi{:02d}'.format(ind))
+            roi.kind = Kind.omitted
 
     def trigger(self):
 
@@ -396,11 +402,21 @@ class Xspress3VortexBase(Device):
         sd.baseline.remove(self)
         self.destroy()
 
-    def select_plot_channels(self, value=True):
-        if value:
-            self.total_corrected.kind = Kind.hinted
-        else:
-            self.total.corrected.kind = Kind.normal
+    def select_plot_channels(self, value):
+        """
+        Selects channels to plot
+
+        Parameters
+        ----------
+        value : int or iterable of ints
+            ROI number.
+        """
+        if isinstance(value, int):
+            value = [int]
+
+        for roi_num in range(1, 33):
+            roi = getattr(self.corrected_counts, 'roi{:02d}'.format(roi_num))
+            roi.kind = Kind.hinted if roi_num in value else Kind.normal
 
 
 class Xspress3Vortex4Ch(Xspress3VortexBase):
