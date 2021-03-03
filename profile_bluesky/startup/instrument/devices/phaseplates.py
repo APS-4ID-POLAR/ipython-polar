@@ -154,10 +154,8 @@ class PRDevice(PRDeviceBase):
         super().__init__(prefix, name, motorsDict, **kwargs)
 
     @select_pr.sub_value
-    def _set_d_spacing(self, value=None, **kwargs):
-        if isinstance(value, int):
-            value = self.select_pr.get()
-
+    def _set_d_spacing(self, **kwargs):
+        value = self.select_pr.get()
         spacing_dictionary = {'111': 2.0595, '220': 1.26118}
         plane = value.split('(')[1].split(')')[0]
         self.d_spacing.put(spacing_dictionary[plane])
@@ -297,11 +295,11 @@ class PRSetup():
 
 pr1 = PRDevice('4idb', 'pr1', 1, {'x': 'm10', 'y': 'm11', 'th': 'm13'})
 pr1.pzt.conversion_factor.put(0.001636)
-pr1._set_d_spacing('(111)')
+pr1._set_d_spacing()
 
 pr2 = PRDevice('4idb', 'pr2', 2, {'x': 'm15', 'y': 'm16', 'th': 'm18'})
 pr2.pzt.conversion_factor.put(0.0019324)
-pr2._set_d_spacing('(111)')
+pr2._set_d_spacing()
 
 pr3 = PRDeviceBase('4idb', 'pr3', {'x': 'm19', 'y': 'm20', 'th': 'm21'})
 pr3.d_spacing.put(3.135)
