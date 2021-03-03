@@ -42,7 +42,7 @@ class KepkoController(Device):
 
     mode = Component(
         EpicsSignal, 'setMode', kind='config', string=True,
-        labels=('kepko', 'magnet')
+        auto_monitor=True, labels=('kepko', 'magnet')
         )
 
     remote = Component(
@@ -67,4 +67,5 @@ class KepkoController(Device):
 
 
 kepko = KepkoController('4idd:BOP:PS1:', name='kepko')
+kepko.mode_change(value=kepko.mode.get())
 sd.baseline.append(kepko)
