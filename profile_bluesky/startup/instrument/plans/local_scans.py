@@ -284,7 +284,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
     @extra_devices_decorator(extras)
     def _inner_qxscan():
         yield from list_scan(
-            detectors + extras, *args, per_step=per_step, **kwargs
+            detectors + extras, *args, per_step=per_step, md=_md, **kwargs
             )
 
         # put original times back.
