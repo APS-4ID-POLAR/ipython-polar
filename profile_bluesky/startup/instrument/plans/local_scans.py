@@ -29,7 +29,7 @@ logger.info(__file__)
 
 def _collect_extras(escan_flag):
 
-    extras = counters.extra_devices
+    extras = counters.extra_devices.copy()
 
     if escan_flag:
         und_track = yield from rd(undulator.downstream.tracking)
@@ -140,7 +140,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         _md['hints']['detectors'].extend(item.hints['fields'])
 
     if dichro:
-        _md = {'hints': {'scan_type': 'dichro'}}
+        _md['hints']['scan_type'] = 'dichro'
 
     _md.update(md or {})
 
@@ -218,7 +218,9 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         _md['hints']['detectors'].extend(item.hints['fields'])
 
     if dichro:
-        _md = {'hints': {'scan_type': 'dichro'}}
+        _md['hints']['scan_type'] = 'dichro'
+
+    _md.update(md or {})
 
     _md.update(md or {})
 
@@ -262,7 +264,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
         _md['hints']['detectors'].extend(item.hints['fields'])
 
     if dichro:
-        _md = {'hints': {'scan_type': 'dichro'}}
+        _md['hints']['scan_type'] = 'dichro'
 
     _md.update(md or {})
 

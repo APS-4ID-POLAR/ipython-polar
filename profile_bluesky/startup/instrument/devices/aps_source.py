@@ -49,7 +49,8 @@ class UndulatorEnergy(PVPositioner):
         super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
-
+        
+        self.done.put(0)
         # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
             status = Status(self)
@@ -71,12 +72,15 @@ class UndulatorEnergy(PVPositioner):
                 first_status = AndStatus(first_pos_status, first_click_status)
                 status_wait(first_status)
 
-            pos_status = super().move(position, wait=False, **kwargs)
+            timeout = kwargs.pop('timeout', 120)
+            pos_status = super().move(position, wait=False, timeout=timeout,
+                                      **kwargs)
             click_status = self.parent.start_button.set(1)
             status = AndStatus(pos_status, click_status)
 
-            if wait:
-                status_wait(status)
+        self.done.get()
+        if wait:
+            status_wait(status)
 
         return status
 
