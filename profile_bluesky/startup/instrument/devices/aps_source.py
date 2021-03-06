@@ -21,9 +21,10 @@ sd.baseline.append(aps)
 class UndulatorEnergy(PVPositioner):
 
     # Position
-    readback = Component(EpicsSignalRO, 'Energy', kind='hinted')
+    readback = Component(EpicsSignalRO, 'Energy', kind='hinted',
+                         auto_monitor=True)
     setpoint = Component(EpicsSignal, 'EnergySet', put_complete=True,
-                         kind='normal')
+                         auto_monitor=True, kind='normal')
 
     # Configuration
     deadband = Component(Signal, value=0.002, kind='config')
