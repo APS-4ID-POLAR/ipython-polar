@@ -286,7 +286,6 @@ class Xspress3VortexBase(Device):
 
     def unstage(self, *args, **kwargs):
         super().unstage(*args, **kwargs)
-        pass
 
     def set_roi(self, index, ev_low, ev_size, name='', channels=None):
         """

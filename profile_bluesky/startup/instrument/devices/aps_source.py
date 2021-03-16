@@ -4,7 +4,7 @@ APS only: connect with facility information
 
 __all__ = ['aps', 'undulator']
 
-import apstools.devices
+from apstools.devices import ApsMachineParametersDevice, ApsUndulator
 from ..framework import sd
 from ..utils import TrackingSignal, DoneSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
@@ -14,7 +14,7 @@ from ophyd.status import Status, AndStatus, wait as status_wait
 from ..session_logs import logger
 logger.info(__file__)
 
-aps = apstools.devices.ApsMachineParametersDevice(name="aps")
+aps = ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
 
@@ -50,8 +50,7 @@ class UndulatorEnergy(PVPositioner):
         super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
-        
-        self.done.put(0)
+
         # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
             status = Status(self)
@@ -86,7 +85,7 @@ class UndulatorEnergy(PVPositioner):
         return status
 
 
-class MyUndulator(apstools.devices.ApsUndulator):
+class MyUndulator(ApsUndulator):
 
     energy = Component(UndulatorEnergy, '')
     tracking = Component(TrackingSignal, value=False, kind='config')

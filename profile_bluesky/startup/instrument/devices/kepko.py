@@ -33,7 +33,7 @@ class LocalPositioner(PVPositioner):
         super().__init__(*args, **kwargs)
         # TODO: This seems good, but may need to be tested.
         self.tolerance = 0.02
-        
+
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
 
@@ -42,7 +42,6 @@ class LocalPositioner(PVPositioner):
         super()._move_changed(**kwargs)
 
     def move(self, *args, **kwargs):
-        self.done.put(0)
         status = super().move(*args, **kwargs)
         self.done.get()
         return status
