@@ -126,8 +126,10 @@ class LS336_LoopControl(PVPositioner):
         if self._staged == Staged.no:
             self.stage()
             self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
-        self.done.put(0)
-        return super().move(*args, **kwargs)
+        
+        status = super().move(*args, **kwargs)
+        _ = self.done.get()
+        return status
 
     def stage(self):
         self.readback.subscribe(self.done.get, event_type='value')
@@ -221,14 +223,13 @@ class LoopSample(LS336_LoopControl):
         sample_status = super().move(position, wait=False, **kwargs)
 
         vaporizer_position = self._get_vaporizer_position(position)
-        vaporizer_status = self.root.loop1.move(vaporizer_position, wait=False,
-                                                **kwargs)
+        # Will not wait for vaporizer.
+        _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
 
-        combined_status = AndStatus(sample_status, vaporizer_status)
         if wait:
-            status_wait(combined_status)
+            status_wait(sample_status)
 
-        return combined_status
+        return sample_status
 
 
 class LS336Device(Device):
