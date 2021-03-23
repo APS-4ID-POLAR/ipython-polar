@@ -56,7 +56,7 @@ db = databroker.catalog["mongodb_config"]
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
-callback_db["db"] = RE.subscribe(db.insert)
+callback_db["db"] = RE.subscribe(db.v1.insert)
 
 # Set up SupplementalData.
 sd = SupplementalData()

@@ -97,8 +97,8 @@ def stage_ami_wrapper(plan, magnet):
             # Wait for the supply current to match the magnet.
             target = yield from local_rd(mag6t.field.current)
             function = _difference_check(target, tolerance=0.01)
-            yield abs_set(signal, mag6t.field.supply_current, function,
-                          wait=True)
+            yield from abs_set(signal, mag6t.field.supply_current, function,
+                               wait=True)
 
             # Turn on persistance switch heater.
             yield from mv(mag6t.field.switch_heater, 'On')
@@ -115,8 +115,8 @@ def stage_ami_wrapper(plan, magnet):
     def _unstage():
 
         # Wait for the voltage to be zero.
-        function = _difference_check(target=0.0, tolerance=0.01)
-        yield abs_set(signal, mag6t.field.voltage, function,
+        function = _difference_check(target=0.0, tolerance=0.02)
+        yield from abs_set(signal, mag6t.field.voltage, function,
                       wait=True)
 
         # Turn off persistance switch heater
@@ -127,6 +127,8 @@ def stage_ami_wrapper(plan, magnet):
         function = _status_check(target=[2, 3])
         yield from abs_set(signal, mag6t.field.magnet_status, function,
                            wait=True)
+        
+        yield from mv(mag6t.field.zero_button, 1)
 
     def _inner_plan():
         yield from _stage()
