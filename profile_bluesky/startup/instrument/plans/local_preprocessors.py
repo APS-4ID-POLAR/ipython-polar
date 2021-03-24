@@ -38,6 +38,8 @@ def extra_devices_wrapper(plan, extras):
         return (yield from plan)
 
 
+# TODO: This is a workaround. Maybe the best fix would be to turn
+# ramp_button and switch_heater into PVPositioners.
 class SetSignal(Signal):
 
     """ Signal that only matters for the set function """
