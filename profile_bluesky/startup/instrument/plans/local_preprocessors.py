@@ -1,7 +1,7 @@
 """Local decorators."""
 
 from bluesky.utils import make_decorator
-from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
+from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import mv, sleep, abs_set, rd, null
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
@@ -114,14 +114,14 @@ def stage_ami_wrapper(plan, magnet):
 
     def _stage():
 
-        _heater_status = yield from local_rd(mag6t.field.switch_heater)
+        _heater_status = yield from rd(mag6t.field.switch_heater)
 
         if _heater_status != 'On':
             # Click current ramp button
             yield from mv(mag6t.field.ramp_button, 1)
 
             # Wait for the supply current to match the magnet.
-            target = yield from local_rd(mag6t.field.current)
+            target = yield from rd(mag6t.field.current)
             function = _difference_check(target, tolerance=0.01)
             yield from abs_set(signal, mag6t.field.supply_current, function,
                                wait=True)
@@ -143,7 +143,7 @@ def stage_ami_wrapper(plan, magnet):
         # Wait for the voltage to be zero.
         function = _difference_check(target=0.0, tolerance=0.02)
         yield from abs_set(signal, mag6t.field.voltage, function,
-                      wait=True)
+                           wait=True)
 
         # Turn off persistance switch heater
         yield from mv(mag6t.field.switch_heater, 'Off')
