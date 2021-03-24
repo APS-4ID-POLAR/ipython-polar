@@ -14,14 +14,14 @@ logger.info(__file__)
 
 
 class SetpointSignal(EpicsSignal):
-    
-    def __init__(self, *args, max_iteractions=5, sleep_default=0.02, 
+
+    def __init__(self, *args, max_iteractions=5, sleep_default=0.02,
                  ramp_attr='ramp_on', **kwargs):
         super().__init__(*args, **kwargs)
         self.max_iteractions = max_iteractions
         self.sleep_default = sleep_default
         self.ramp_attr = ramp_attr
-    
+
     def put(self, value, **kwargs):
         super().put(value, **kwargs)
         ramp = getattr(self.parent, self.ramp_attr).get()
@@ -189,10 +189,10 @@ class LS340Device(Device):
     @auto_heater.sub_value
     def _subscribe_auto_heater(self, value=None, **kwargs):
         if value:
-            self.control.setpointRO.subscribe(self._switch_heater,
-                                              event_type='value')
+            self.control.setpoint.subscribe(self._switch_heater,
+                                            event_type='value')
         else:
-            self.control.setpointRO.clear_subs(self._switch_heater)
+            self.control.setpoint.clear_subs(self._switch_heater)
 
     def _switch_heater(self, value=None, **kwargs):
         # TODO: Find a better way to do this, perhaps with an array?

@@ -6,7 +6,7 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Staged
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
-from ophyd.status import AndStatus, wait as status_wait
+from ophyd.status import wait as status_wait
 from ..utils import DoneSignal, TrackingSignal
 
 from instrument.session_logs import logger
@@ -126,7 +126,7 @@ class LS336_LoopControl(PVPositioner):
         if self._staged == Staged.no:
             self.stage()
             self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
-        
+
         status = super().move(*args, **kwargs)
         _ = self.done.get()
         return status
