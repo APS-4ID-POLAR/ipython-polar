@@ -13,6 +13,20 @@ from instrument.session_logs import logger
 logger.info(__file__)
 
 
+def _get_vaporizer_position(sample_position):
+    # TODO: I would like to have this stored in some variable that we can
+    # change.
+    if sample_position < 6:
+        vaporizer_position = sample_position - 1
+    elif sample_position < 20:
+        vaporizer_position = sample_position - 2
+    elif sample_position < 100:
+        vaporizer_position = sample_position - 5
+    else:
+        vaporizer_position = 100
+    return vaporizer_position
+
+
 class LS336_LoopControl(PVPositioner):
 
     # position
@@ -117,7 +131,7 @@ class LS336_LoopControl(PVPositioner):
     def _move_changed(self, **kwargs):
         super()._move_changed(**kwargs)
 
-    def move(self, *args, **kwargs):
+    def move(self, position, **kwargs):
         # TODO: This is an area that may be problematic. Need to test at
         # beamline when doing scan and when just moving.
 
@@ -127,7 +141,7 @@ class LS336_LoopControl(PVPositioner):
             self.stage()
             self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
 
-        status = super().move(*args, **kwargs)
+        status = super().move(position, **kwargs)
         _ = self.done.get()
         return status
 
@@ -200,21 +214,7 @@ class LS336_LoopRO(Device):
 
 class LoopSample(LS336_LoopControl):
 
-    def _get_vaporizer_position(self, sample_position):
-        # TODO: I would like to have this stored in some variable that we can
-        # change.
-        if sample_position < 6:
-            vaporizer_position = sample_position - 1
-        elif sample_position < 20:
-            vaporizer_position = sample_position - 2
-        elif sample_position < 100:
-            vaporizer_position = sample_position - 5
-        else:
-            vaporizer_position = 100
-        return vaporizer_position
-
     def move(self, position, **kwargs):
-
         # Just changes the sample temperature if not tracking vaporizer.
         if self.parent.track_vaporizer.get() is False:
             return super().move(position, **kwargs)
