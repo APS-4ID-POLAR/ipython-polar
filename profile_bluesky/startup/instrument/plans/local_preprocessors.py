@@ -1,15 +1,41 @@
 """Local decorators."""
 
-from bluesky.utils import make_decorator, single_gen
+from bluesky.utils import make_decorator
 from bluesky.preprocessors import pchain, plan_mutator, finalize_wrapper
-from bluesky.plan_stubs import mv, sleep, abs_set
-from ophyd import Signal
+from bluesky.plan_stubs import mv, sleep, abs_set, rd, null
+from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
-from ..utils import local_rd
 
 from ..session_logs import logger
 logger.info(__file__)
+
+
+def extra_devices_wrapper(plan, extras):
+
+    hinted_stash = []
+
+    def _stage():
+        for device in extras:
+            for _, component in device._get_components_of_kind(Kind.normal):
+                if component.kind == Kind.hinted:
+                    component.kind = Kind.normal
+                    hinted_stash.append(component)
+        yield from null()
+
+    def _unstage():
+        for component in hinted_stash:
+            component.kind = Kind.hinted
+        yield from null()
+
+    def _inner_plan():
+        yield from _stage()
+        return (yield from plan)
+
+    if len(extras) != 0:
+        return (yield from finalize_wrapper(_inner_plan(), _unstage()))
+    else:
+        return (yield from plan)
 
 
 class SetSignal(Signal):
@@ -127,7 +153,7 @@ def stage_ami_wrapper(plan, magnet):
         function = _status_check(target=[2, 3])
         yield from abs_set(signal, mag6t.field.magnet_status, function,
                            wait=True)
-        
+
         yield from mv(mag6t.field.zero_button, 1)
 
     def _inner_plan():
@@ -140,7 +166,7 @@ def stage_ami_wrapper(plan, magnet):
         return (yield from plan)
 
 
-def configure_monitor_wrapper(plan, monitor):
+def configure_counts_wrapper(plan, detectors, count_time):
     """
     Set all devices with a `preset_monitor` to the same value.
 
@@ -158,28 +184,45 @@ def configure_monitor_wrapper(plan, monitor):
     msg : Msg
         messages from plan, with 'set' messages inserted
     """
-    devices_seen = set()
     original_times = {}
+    original_monitor = []
 
-    def insert_set(msg):
-        obj = msg.obj
-        if obj is not None and obj not in devices_seen:
-            devices_seen.add(obj)
-            if hasattr(obj, 'preset_monitor'):
-                original_times[obj] = obj.preset_monitor.get()
-                return pchain(mv(obj.preset_monitor, monitor),
-                              single_gen(msg)), None
-        return None, None
+    def setup():
+        if count_time < 0:
+            if detectors != [scalerd]:
+                raise ValueError('count_time can be < 0 only if the scalerd '
+                                 'is only detector used.')
+            else:
+                if scalerd.monitor == 'Time':
+                    raise ValueError('count_time can be < 0 only if '
+                                     'scalerd.monitor is not "Time".')
+                original_times[scalerd] = yield from rd(scalerd.preset_monitor)
+                yield from mv(scalerd.preset_monitor, abs(count_time))
+
+        elif count_time > 0:
+            for det in detectors:
+                if det == scalerd:
+                    original_monitor.append(scalerd.monitor)
+                    det.monitor = 'Time'
+                original_times[det] = yield from rd(det.preset_monitor)
+                yield from mv(det.preset_monitor, count_time)
+        else:
+            raise ValueError('count_time cannot be zero.')
 
     def reset():
-        for obj, time in original_times.items():
-            yield from mv(obj.preset_monitor, time)
+        for det, time in original_times.items():
+            yield from mv(det.preset_monitor, time)
+            if det == scalerd and len(original_monitor) == 1:
+                det.monitor = original_monitor[0]
 
-    if monitor is None:
+    def _inner_plan():
+        yield from setup()
+        return (yield from plan)
+
+    if count_time is None:
         return (yield from plan)
     else:
-        return (yield from finalize_wrapper(plan_mutator(plan, insert_set),
-                                            reset()))
+        return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
 def stage_dichro_wrapper(plan, dichro, lockin):
@@ -233,9 +276,17 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                               pr_setup.positioner.parent.center.get())
 
     def _unstage():
+
         if lockin:
             scalerd.select_plot_channels(_current_scaler_plot)
             yield from mv(pr_setup.positioner.parent.selectDC, 1)
+
+        if dichro:
+            # move PZT to off center.
+            if 'pzt' in pr_setup.positioner.name:
+                yield from mv(pr_setup.positioner,
+                              pr_setup.positioner.parent.center.get() +
+                              pr_setup.offset.get())
 
     def _inner_plan():
         yield from _stage()
@@ -244,6 +295,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
     return (yield from finalize_wrapper(_inner_plan(), _unstage()))
 
 
-configure_monitor_decorator = make_decorator(configure_monitor_wrapper)
+extra_devices_decorator = make_decorator(extra_devices_wrapper)
+configure_counts_decorator = make_decorator(configure_counts_wrapper)
 stage_dichro_decorator = make_decorator(stage_dichro_wrapper)
 stage_ami_decorator = make_decorator(stage_ami_wrapper)

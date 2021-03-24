@@ -2,18 +2,59 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv']
+__all__ = ['lup', 'ascan', 'mv', 'mvr', 'qxscan']
 
-from bluesky.plans import rel_scan, scan
+from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
-from bluesky.plan_stubs import mv as bps_mv
-from ..devices import scalerd, pr_setup, mag6t
-from .local_preprocessors import (configure_monitor_decorator,
+from bluesky.plan_stubs import mv as bps_mv, rd
+from bluesky.preprocessors import relative_set_decorator
+from ..devices import (scalerd, pr_setup, mag6t, undulator,
+                       pr1, pr2, pr3, energy, qxscan_params)
+from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
-                                  stage_ami_decorator)
+                                  stage_ami_decorator,
+                                  extra_devices_decorator)
+from ..utils import counters
+from numpy import array
 
-# TODO: should I have some default like this?
-# DETECTORS = [scalerd]
+try:
+    # cytools is a drop-in replacement for toolz, implemented in Cython
+    from cytools import partition
+except ImportError:
+    from toolz import partition
+
+from ..session_logs import logger
+logger.info(__file__)
+
+
+def _collect_extras(escan_flag):
+
+    extras = counters.extra_devices
+
+    if escan_flag:
+        und_track = yield from rd(undulator.downstream.tracking)
+        if und_track:
+            extras.append(undulator.downstream.energy)
+        for pr in [pr1, pr2, pr3]:
+            pr_track = yield from rd(pr.tracking)
+            if pr_track:
+                extras.append(pr.th)
+
+    return extras
+
+
+def dichro_steps(detectors, motors, take_reading):
+
+    pr_pos = yield from rd(pr_setup.positioner)
+    offset = yield from rd(pr_setup.offset)
+
+    for sign in pr_setup.dichro_steps:
+        yield from mv(pr_setup.positioner, pr_pos + sign*offset)
+        yield from take_reading(list(detectors) + list(motors) +
+                                [pr_setup.positioner])
+
+    # TODO: This step is unnecessary if the pr motor is used.
+    yield from mv(pr_setup.positioner, pr_pos)
 
 
 def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
@@ -38,21 +79,11 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
     motors = step.keys()
     yield from move_per_step(step, pos_cache)
-
-    offset = pr_setup.positioner.parent.offset.get()
-    pr_pos = pr_setup.positioner.get()
-
-    for sign in [1, -1, -1, 1]:
-        yield from mv(pr_setup.positioner, pr_pos + sign*offset)
-        yield from take_reading(list(detectors) + list(motors) +
-                                [pr_setup.positioner])
-
-    # TODO: This step is unnecessary if the pr motor is used.
-    yield from mv(pr_setup.positioner, pr_pos)
+    yield from dichro_steps(detectors, motors, take_reading)
 
 
-def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
-        **kwargs):
+def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
+        md=None, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -71,8 +102,8 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
             motorN, startN, stopN,
             number of points
         Motors can be any 'settable' object (motor, temp controller, etc.)
-    monitor : float, optional
-        If a number is passed, it will modify the counts over monitor. All
+    time : float, optional
+        If a number is passed, it will modify the counts over time. All
         detectors need to have a .preset_monitor signal.
     lockin : boolean, optional
         Flag to do a lock-in scan. Please run pr_setup.config() prior do a
@@ -82,6 +113,8 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.rel_scan`.
 
@@ -90,27 +123,45 @@ def lup(*args, monitor=None, detectors=[scalerd], lockin=False, dichro=False,
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
     """
+    if detectors is None:
+        detectors = counters.detectors
+
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2 and time is None:
+        time = args[-1]
+        args = args[:-1]
+
+    extras = yield from _collect_extras(energy in args)
+
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
     if dichro:
-        per_step = one_dichro_step
-    else:
-        per_step = None
+        _md = {'hints': {'scan_type': 'dichro'}}
 
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
+    _md.update(md or {})
 
-    @stage_ami_decorator(magnet)
-    @configure_monitor_decorator(monitor)
+    @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
     def _inner_lup():
-        yield from rel_scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from rel_scan(
+            detectors + extras,
+            *args,
+            per_step=one_dichro_step if dichro else None,
+            md=_md,
+            **kwargs
+            )
 
     return (yield from _inner_lup())
 
 
-def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
-          dichro=False, **kwargs):
+def ascan(*args, time=None, detectors=None, lockin=False,
+          dichro=False, md=None, **kwargs):
     """
     Scan over one multi-motor trajectory.
 
@@ -129,8 +180,8 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
             motorN, startN, stopN,
             number of points
         Motors can be any 'settable' object (motor, temp controller, etc.)
-    monitor : float, optional
-        If a number is passed, it will modify the counts over monitor. All
+    time : float, optional
+        If a number is passed, it will modify the counts over time. All
         detectors need to have a .preset_monitor signal.
     lockin : boolean, optional
         Flag to do a lock-in scan. Please run pr_setup.config() prior do a
@@ -140,6 +191,8 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    md : dictionary, optional
+        Metadata to be added to the run start.
     kwargs :
         Passed to `bluesky.plans.scan`.
     See Also
@@ -147,23 +200,98 @@ def ascan(*args, monitor=None, detectors=[scalerd], lockin=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
+
+    if detectors is None:
+        detectors = counters.detectors
+
+    # This allows passing "time" without using the keyword.
+    if len(args) % 3 == 2 and time is None:
+        time = args[-1]
+        args = args[:-1]
+
+    extras = yield from _collect_extras(energy in args)
+
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
     if dichro:
-        per_step = one_dichro_step
-    else:
-        per_step = None
+        _md = {'hints': {'scan_type': 'dichro'}}
 
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
+    _md.update(md or {})
 
-    @stage_ami_decorator(magnet)
-    @configure_monitor_decorator(monitor)
+    @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(mag6t.field in args)
     @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
     def _inner_ascan():
-        yield from scan(detectors, *args, per_step=per_step, **kwargs)
+        yield from scan(
+            detectors + extras,
+            *args,
+            per_step=one_dichro_step if dichro else None,
+            md=_md,
+            **kwargs
+            )
 
     return (yield from _inner_ascan())
+
+
+def qxscan(edge_energy, time=None, detectors=None, lockin=False,
+           dichro=False, md=None, **kwargs):
+
+    if detectors is None:
+        detectors = counters.detectors
+
+    per_step = one_dichro_step if dichro else None
+
+    # Get energy argument and extras
+    energy_list = yield from rd(qxscan_params.energy_list)
+    args = (energy, array(energy_list) + edge_energy)
+
+    extras = yield from _collect_extras(energy in args)
+
+    # Setup count time
+    factor_list = yield from rd(qxscan_params.factor_list)
+
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
+    if dichro:
+        _md = {'hints': {'scan_type': 'dichro'}}
+
+    _md.update(md or {})
+
+    _ct = {}
+    if time:
+        if time < 0 and detectors != [scalerd]:
+            raise TypeError('time < 0 can only be used with scaler.')
+        else:
+            for det in detectors:
+                _ct[det] = abs(time)
+                args += (det.preset_monitor, abs(time)*array(factor_list))
+    else:
+        for det in detectors:
+            _ct[det] = yield from rd(det.preset_monitor)
+            args += (det.preset_monitor, _ct[det]*array(factor_list))
+
+    @configure_counts_decorator(detectors, time)
+    @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
+    def _inner_qxscan():
+        yield from list_scan(
+            detectors + extras, *args, per_step=per_step, **kwargs
+            )
+
+        # put original times back.
+        for det, preset in _ct.items():
+            yield from mv(det.preset_monitor, preset)
+
+    return (yield from _inner_qxscan())
 
 
 def mv(*args, **kwargs):
@@ -172,7 +300,6 @@ def mv(*args, **kwargs):
 
     This is a local version of `bluesky.plan_stubs.mv`. If more than one device
     is specifed, the movements are done in parallel.
-
 
     Parameters
     ----------
@@ -189,13 +316,40 @@ def mv(*args, **kwargs):
     --------
     :func:`bluesky.plan_stubs.mv`
     """
-    if mag6t.field in args:
-        magnet = True
-    else:
-        magnet = False
-
-    @stage_ami_decorator(magnet)
+    @stage_ami_decorator(mag6t.field in args)
     def _inner_mv():
         yield from bps_mv(*args, **kwargs)
 
     return (yield from _inner_mv())
+
+
+def mvr(*args, **kwargs):
+    """
+    Move one or more devices to a relative setpoint. Wait for all to complete.
+    If more than one device is specified, the movements are done in parallel.
+
+    This is a local version of `bluesky.plan_stubs.mvr`.
+
+    Parameters
+    ----------
+    args :
+        device1, value1, device2, value2, ...
+    kwargs :
+        passed to bluesky.plan_stub.mvr
+    Yields
+    ------
+    msg : Msg
+    See Also
+    --------
+    :func:`bluesky.plan_stubs.rel_set`
+    :func:`bluesky.plan_stubs.mv`
+    """
+    objs = []
+    for obj, _ in partition(2, args):
+        objs.append(obj)
+
+    @relative_set_decorator(objs)
+    def _inner_mvr():
+        return (yield from mv(*args, **kwargs))
+
+    return (yield from _inner_mvr())

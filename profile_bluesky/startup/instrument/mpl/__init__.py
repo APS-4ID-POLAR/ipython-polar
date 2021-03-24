@@ -26,3 +26,5 @@ if isnotebook():
     from .notebook import *
 else:
     from .console import *
+
+from .plot_absorption import *

@@ -17,3 +17,7 @@ from .plans import *
 from .utils import *
 
 from apstools.utils import *
+
+from IPython import get_ipython
+from .utils.local_magics import LocalMagics
+get_ipython().register_magics(LocalMagics)
