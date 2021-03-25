@@ -1,17 +1,18 @@
 """
-APD detector
+APD detector parameters
 """
 
 __all__ = ['apd_parameters']
 
 from ophyd import Component, Device, EpicsSignal
 from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
 
 
 class APDDevice(Device):
+    """ Hold APD parameters, it is read through scaler channel. """
+
     source = Component(EpicsSignal, 'SetCSRC', kind='config')
     read_scan = Component(EpicsSignal, 'ReadCounts.SCAN', kind='config')
     count_time = Component(EpicsSignal, 'CountTime.A', kind='config')
