@@ -4,14 +4,14 @@ Flat mirror
 """
 __all__ = ['flat_mirror']
 
+from ophyd import Component, Device, EpicsMotor, EpicsSignal
+from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor, EpicsSignal
-from ..framework import sd
-
 
 class FlatMirror(Device):
+    """ Beamline flat mirror components. """
 
     y_upstream = Component(EpicsMotor, 'm39', labels=('motor', 'mirrors'),
                            kind='config')
@@ -35,5 +35,5 @@ class FlatMirror(Device):
                        labels=('mirrors',), kind='config')
 
 
-flat_mirror = FlatMirror('4idb:', name='flat mirror')
+flat_mirror = FlatMirror('4idb:', name='flat_mirror')
 sd.baseline.append(flat_mirror)
