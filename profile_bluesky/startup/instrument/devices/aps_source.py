@@ -19,9 +19,9 @@ sd.baseline.append(aps)
 
 
 class UndulatorEnergy(PVPositioner):
-    """ 
+    """
     Undulator energy positioner.
-    
+
     Main purpose this being a PVPositioner is to handle the undulator backlash.
     """
 
