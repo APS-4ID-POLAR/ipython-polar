@@ -4,26 +4,24 @@ GE pressure controllers
 
 __all__ = ['ge_applyP', 'ge_releaseP']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import Component
 from ophyd import EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
 from ..utils import DoneSignal
 from ..framework import sd
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class GEController(PVPositioner):
+    """ General controller as a PVPositioner """
 
     # position
     readback = FormattedComponent(EpicsSignalRO, "{self.prefix}Pressure_RBV",
-                                  auto_monitor=True, kind=Kind.hinted,
-                                  labels=('gecontroller',))
+                                  auto_monitor=True, kind=Kind.hinted)
     setpoint = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}Setpoint",
-                                  auto_monitor=True, kind=Kind.normal,
-                                  labels=('gecontroller',))
+                                  auto_monitor=True, kind=Kind.normal)
 
     # status
     done = Component(DoneSignal, value=0, kind=Kind.omitted)
@@ -31,20 +29,19 @@ class GEController(PVPositioner):
 
     # configuration
     units = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}Units",
-                               kind=Kind.config, labels=('gecontroller',))
+                               kind=Kind.config)
 
     control = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}Control",
-                                 kind=Kind.config, labels=('gecontroller',))
+                                 kind=Kind.config)
 
     slew_mode = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}SlewMode",
-                                   kind=Kind.config, labels=('gecontroller',))
+                                   kind=Kind.config)
 
     slew = FormattedComponent(EpicsSignalWithRBV, "{self.prefix}Slew",
-                              kind=Kind.config, labels=('gecontroller',))
+                              kind=Kind.config)
 
     effort = FormattedComponent(EpicsSignalRO, "{self.prefix}Effort_RBV",
-                                auto_monitor=True, kind=Kind.normal,
-                                labels=('gecontroller',))
+                                auto_monitor=True, kind=Kind.config)
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
@@ -102,8 +99,10 @@ class GEController(PVPositioner):
         return super().move(*args, **kwargs)
 
 
-ge_applyP = GEController("4idd:PC1:", name="GE Controller Apply Press")
-ge_releaseP = GEController("4idd:PC2:", name="GE Controller Release Press")
+ge_applyP = GEController("4idd:PC1:", name="ge_applyP",
+                         labels=('ge_controller',))
+ge_releaseP = GEController("4idd:PC2:", name="ge_releaseP",
+                           labels=('ge_controller',))
 
 sd.baseline.append(ge_applyP)
 sd.baseline.append(ge_releaseP)
