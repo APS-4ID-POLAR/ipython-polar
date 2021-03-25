@@ -6,7 +6,8 @@ __all__ = ['AutoDichroPlot']
 
 from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
-from bluesky_widgets.models.plot_specs import Axes, Figure
+# Axes and Figure were renamed to AxesSpec, FigureSpecc
+from bluesky_widgets.models.plot_specs import AxesSpec, FigureSpec
 from numpy import log, array
 
 from ..session_logs import logger
@@ -119,9 +120,10 @@ class AutoDichroPlot(AutoPlotter):
             (xanes_lines, xmcd_lines) = self._x_to_lines[x]
         except KeyError:
             # We don't have a figure for this x. Make one.
-            xanes_axes = Axes(x_label=x, title="XANES")
-            xmcd_axes = Axes(x_label=x, title="XMCD")
-            figure = Figure((xanes_axes, xmcd_axes), title="XANES and XMCD")
+            xanes_axes = AxesSpec(x_label=x, title="XANES")
+            xmcd_axes = AxesSpec(x_label=x, title="XMCD")
+            figure = FigureSpec((xanes_axes, xmcd_axes),
+                                title="XANES and XMCD")
             # Set up objects that will select the approriate data and do the
             # desired transformation for plotting.
             xanes_lines = Lines(
