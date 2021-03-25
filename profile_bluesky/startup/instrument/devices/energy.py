@@ -9,7 +9,6 @@ from ..framework import sd
 from .monochromator import mono
 from .aps_source import undulator
 from .phaseplates import pr1, pr2, pr3
-
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -22,14 +21,15 @@ class EnergySignal(Signal):
     Here it is setup so that the monochromator is the beamline energy, but note
     that this can be changed.
     """
-    # Uses the mono as the standard beamline energy.
     def get(self, **kwargs):
+        """ Uses the mono as the standard beamline energy. """
         self._readback = mono.energy.get(**kwargs)
         return self._readback
 
     def set(self, position, *, wait=True, timeout=None, settle_time=None,
             moved_cb=None):
 
+        # In case nothing needs to be moved, just create a finished status
         status = Status()
         status.set_finished()
 
@@ -59,6 +59,8 @@ class EnergySignal(Signal):
             status_wait(status)
 
         return status
+
+    # TODO: Create stop method.
 
 
 energy = EnergySignal(name='energy', value=10, kind='hinted')
