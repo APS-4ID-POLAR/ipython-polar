@@ -34,6 +34,18 @@ class LocalPositioner(PVPositioner):
         # TODO: This seems good, but may need to be tested.
         self.tolerance = 0.02
 
+        self.readback.subscribe(self.done.get)
+        self.setpoint.subscribe(self.done.get)
+
+    @done.sub_value
+    def _move_changed(self, **kwargs):
+        super()._move_changed(**kwargs)
+
+    def move(self, *args, **kwargs):
+        status = super().move(*args, **kwargs)
+        self.done.get()
+        return status
+
 
 class KepkoController(Device):
 

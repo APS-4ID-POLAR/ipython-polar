@@ -4,7 +4,7 @@ APS only: connect with facility information
 
 __all__ = ['aps', 'undulator']
 
-import apstools.devices
+from apstools.devices import ApsMachineParametersDevice, ApsUndulator
 from ..framework import sd
 from ..utils import TrackingSignal, DoneSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
@@ -14,16 +14,17 @@ from ophyd.status import Status, AndStatus, wait as status_wait
 from ..session_logs import logger
 logger.info(__file__)
 
-aps = apstools.devices.ApsMachineParametersDevice(name="aps")
+aps = ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
 
 class UndulatorEnergy(PVPositioner):
 
     # Position
-    readback = Component(EpicsSignalRO, 'Energy', kind='hinted')
+    readback = Component(EpicsSignalRO, 'Energy', kind='hinted',
+                         auto_monitor=True)
     setpoint = Component(EpicsSignal, 'EnergySet', put_complete=True,
-                         kind='normal')
+                         auto_monitor=True, kind='normal')
 
     # Configuration
     deadband = Component(Signal, value=0.002, kind='config')
@@ -71,17 +72,20 @@ class UndulatorEnergy(PVPositioner):
                 first_status = AndStatus(first_pos_status, first_click_status)
                 status_wait(first_status)
 
-            pos_status = super().move(position, wait=False, **kwargs)
+            timeout = kwargs.pop('timeout', 120)
+            pos_status = super().move(position, wait=False, timeout=timeout,
+                                      **kwargs)
             click_status = self.parent.start_button.set(1)
             status = AndStatus(pos_status, click_status)
 
-            if wait:
-                status_wait(status)
+        self.done.get()
+        if wait:
+            status_wait(status)
 
         return status
 
 
-class MyUndulator(apstools.devices.ApsUndulator):
+class MyUndulator(ApsUndulator):
 
     energy = Component(UndulatorEnergy, '')
     tracking = Component(TrackingSignal, value=False, kind='config')

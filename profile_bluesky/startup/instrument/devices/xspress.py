@@ -276,7 +276,7 @@ class Xspress3VortexBase(Device):
         # MCA1ROI:2:Total_RBV  # channel-1, roi-2
 
     def stage(self, *args, **kwargs):  # need to separate, hdf5 saving or none.
-        pass
+        super().stage(*args, **kwargs)
         # if frame mode: hdf5:
         #   S4QX4:HDF1:Capture # 0/1: done/capture, this needs to be 1 before
         # acquiring to save hdf files
@@ -285,7 +285,7 @@ class Xspress3VortexBase(Device):
         #   det1:NumImages=1, det1:AcquireTime
 
     def unstage(self, *args, **kwargs):
-        pass
+        super().unstage(*args, **kwargs)
 
     def set_roi(self, index, ev_low, ev_size, name='', channels=None):
         """

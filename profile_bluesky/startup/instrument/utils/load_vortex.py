@@ -35,11 +35,11 @@ def load_vortex(electronic, num_channels, num_rois=2):
         else:
             raise ValueError('num_channels must be 1 or 4.')
         # Disable all but ROI 1 and 2
-        vortex.enable_roi([1, 2])
-        num_rois = vortex.Ch1.rois.num_rois.get()
-        vortex.disable_roi([i for i in range(3, num_rois+1)])
+        vortex.enable_roi([i+1 for i in range(num_rois+1)])
+        total_rois = vortex.Ch1.rois.num_rois.get()
+        vortex.disable_roi([i for i in range(num_rois+1, total_rois+1)])
     else:
-        raise ValueError('electronic must be "xspress"')
+        raise ValueError('electronic must be "xspress3"')
 
     sd.baseline.append(vortex)
     return vortex
