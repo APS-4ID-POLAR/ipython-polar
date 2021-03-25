@@ -19,6 +19,11 @@ sd.baseline.append(aps)
 
 
 class UndulatorEnergy(PVPositioner):
+    """ 
+    Undulator energy positioner.
+    
+    Main purpose this being a PVPositioner is to handle the undulator backlash.
+    """
 
     # Position
     readback = Component(EpicsSignalRO, 'Energy', kind='hinted',
@@ -86,6 +91,14 @@ class UndulatorEnergy(PVPositioner):
 
 
 class MyUndulator(ApsUndulator):
+    """
+    Undulator setup.
+
+    Differences from `apstools` standard:
+    - energy is a PVPositioner.
+    - Has a flag used to track the mono energy.
+    - Has an interactive undulator_setup.
+    """
 
     energy = Component(UndulatorEnergy, '')
     tracking = Component(TrackingSignal, value=False, kind='config')
@@ -120,6 +133,7 @@ class MyUndulator(ApsUndulator):
 
 
 class MyDualUndulator(Device):
+    """ 4-ID has two undulators, we use only the downstream. """
     upstream = None
     downstream = Component(MyUndulator, 'ds:')
 
