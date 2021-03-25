@@ -1,40 +1,40 @@
 """
-Filters
+Filter banks
 """
 __all__ = ['filter_pre8c', 'filter_tth']
 
+from ophyd import Component, Device, EpicsSignal, FormattedComponent
+from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsSignal
-from ..framework import sd
+
+class OneSlot(Device):
+    """ Configure one filter slot. """
+
+    name = FormattedComponent(EpicsSignal, '{prefix}{_num}.DESC',
+                              kind='config', string=True)
+    position = FormattedComponent(EpicsSignal, '{prefix}{_num}.VAL',
+                                  kind='config')
+
+    def __init__(self, *args, num=0, **kwargs):
+        self._num = num
+        super().__init__(*args, **kwargs)
 
 
 class FilterBank(Device):
+    """ Filter bank with 4 slots """
 
-    slot1_name = Component(EpicsSignal, 'bo1.DESC', kind='config',
-                           labels=('Filters'))
-    slot1_position = Component(EpicsSignal, 'bo1.VAL', kind='config',
-                               labels=('filters',))
-
-    slot2_name = Component(EpicsSignal, 'bo2.DESC', kind='config',
-                           labels=('filters',))
-    slot2_position = Component(EpicsSignal, 'bo2.VAL', kind='config',
-                               labels=('filters',))
-
-    slot3_name = Component(EpicsSignal, 'bo3.DESC', kind='config',
-                           labels=('filters',))
-    slot3_position = Component(EpicsSignal, 'bo3.VAL', kind='config',
-                               labels=('filters',))
-
-    slot4_name = Component(EpicsSignal, 'bo4.DESC', kind='config',
-                           labels=('filters',))
-    slot4_position = Component(EpicsSignal, 'bo4.VAL', kind='config',
-                               labels=('filters',))
+    slot1 = Component(OneSlot, 'bo', num=1)
+    slot2 = Component(OneSlot, 'bo', num=2)
+    slot3 = Component(OneSlot, 'bo', num=3)
+    slot4 = Component(OneSlot, 'bo', num=4)
 
 
-filter_pre8c = FilterBank('4idd:PCFfilter:1:', name='filter_pre8c')
-filter_tth = FilterBank('4idd:PCFfilter:2:', name='filter_tth')
+filter_pre8c = FilterBank('4idd:PCFfilter:1:', name='filter_pre8c',
+                          labels=('filters',))
+filter_tth = FilterBank('4idd:PCFfilter:2:', name='filter_tth',
+                        labels=('filters',))
 
 sd.baseline.append(filter_pre8c)
 sd.baseline.append(filter_tth)
