@@ -1,4 +1,4 @@
-"""Local decorators."""
+""" Local decorators """
 
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
