@@ -14,6 +14,7 @@ logger.info(__file__)
 
 
 class LocalPositioner(PVPositioner):
+    """ Voltage/Current positioner """
 
     readback = FormattedComponent(
         EpicsSignalRO, '{prefix}d{_type}', kind='normal',
