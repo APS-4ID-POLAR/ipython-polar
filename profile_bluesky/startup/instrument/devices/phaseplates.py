@@ -44,6 +44,8 @@ class MicronsSignal(DerivedSignal):
 
 
 class PRPzt(Device):
+    """ Phase retarder PZT """
+
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL')
     remote_readback = Component(EpicsSignalRO, 'microns')
 
@@ -87,23 +89,26 @@ class PRDeviceBase(PseudoPositioner):
 
     energy = Component(PseudoSingle, limits=(2.7, 20))
     th = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[th]}',
-                            labels=('motor', 'phase retarders'))
+                            labels=('motors', 'phase_retarders'))
 
     # Explicitly selects the real motor
     _real = ['th']
 
     x = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[x]}',
-                           labels=('motor', 'phase retarders'))
+                           labels=('motors', 'phase_retarders'))
 
     y = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[y]}',
-                           labels=('motor', 'phase retarders'))
+                           labels=('motors', 'phase_retarders'))
 
-    d_spacing = Component(Signal, value=0, kind='config')
+    d_spacing = Component(Signal, value=0, kind='config',
+                          labels=('phase_retarders',))
 
     # This offset is used when the motor is used to switch polarization
-    offset_degrees = Component(Signal, value=0.0, kind='config')
+    offset_degrees = Component(Signal, value=0.0, kind='config',
+                               labels=('phase_retarders',))
 
-    tracking = Component(TrackingSignal, value=False, kind='config')
+    tracking = Component(TrackingSignal, value=False, kind='config',
+                         labels=('phase_retarders',))
 
     def __init__(self, PV, name, motorsDict, **kwargs):
         self._motorsDict = motorsDict
@@ -144,10 +149,11 @@ class PRDeviceBase(PseudoPositioner):
 
 class PRDevice(PRDeviceBase):
 
-    pzt = FormattedComponent(PRPzt, '{prefix}:E665:{_prnum}:')
+    pzt = FormattedComponent(PRPzt, '{prefix}:E665:{_prnum}:',
+                             labels=('phase_retarders',))
     select_pr = FormattedComponent(EpicsSignal, '{prefix}:PRA{_prnum}',
                                    string=True, auto_monitor=True,
-                                   kind='config')
+                                   kind='config', labels=('phase_retarders',))
 
     def __init__(self, prefix, name, prnum, motorsDict, **kwargs):
         self._prnum = prnum
