@@ -42,6 +42,8 @@ class EvSignal(DerivedSignal):
 
 
 class TotalCorrectedSignal(SignalRO):
+    """ Signal that returns the deadtime corrected total counts """
+
     def __init__(self, prefix, roi_index, **kwargs):
         if not roi_index:
             raise ValueError('chnum must be the channel number, but '
