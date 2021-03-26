@@ -1,14 +1,13 @@
 '''
-Other motor/counters
+Uptable motors
 '''
 
 __all__ = ['uptable']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import Component, MotorBundle, EpicsMotor
 from ..framework import sd
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class UpTable(MotorBundle):
