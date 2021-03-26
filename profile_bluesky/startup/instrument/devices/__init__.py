@@ -13,7 +13,7 @@ from .huber import *
 from .kbic import *
 from .kepko import *
 from .lakeshores import *
-from .magnets import *
+from .high_field_magnet import *
 from .monochromator import *
 from .phaseplates import *
 from .qxscan_setup import *
