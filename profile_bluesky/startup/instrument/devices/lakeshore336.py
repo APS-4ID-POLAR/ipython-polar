@@ -1,5 +1,5 @@
 """
-Lakeshore 336 temperature controller
+Lakeshore 336 temperature controller EPICS version 1.0
 """
 
 from apstools.synApps.asyn import AsynRecord

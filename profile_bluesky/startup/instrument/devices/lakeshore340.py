@@ -1,5 +1,5 @@
 """
-Lakeshore temperature controllers
+Lakeshore 340 temperature controller EPICS version 1.1
 """
 
 from apstools.synApps.asyn import AsynRecord
@@ -13,7 +13,14 @@ from instrument.session_logs import logger
 logger.info(__file__)
 
 
+# TODO: This should not be needed.
 class SetpointSignal(EpicsSignal):
+    """
+    Signal for the control setpoint
+
+    This is implemented because sometimes the setpoint PV is not updated. Here,
+    it will check for the update, and retry.
+    """
 
     def __init__(self, *args, max_iteractions=5, sleep_default=0.02,
                  ramp_attr='ramp_on', **kwargs):
@@ -40,6 +47,7 @@ class SetpointSignal(EpicsSignal):
 
 
 class LS340_LoopBase(PVPositioner):
+    """ Base settings for both sample and control loops. """
 
     # position
     readback = Component(Signal, value=0)
@@ -142,7 +150,9 @@ class LS340_LoopBase(PVPositioner):
 
 
 class LS340_LoopControl(LS340_LoopBase):
+    """ Control specific """
 
+    # TODO: why FormattedComponent!?!?
     readback = FormattedComponent(EpicsSignalRO, "{prefix}Control",
                                   kind="normal")
     sensor = FormattedComponent(EpicsSignal, "{prefix}Ctl_sel",
@@ -150,7 +160,9 @@ class LS340_LoopControl(LS340_LoopBase):
 
 
 class LS340_LoopSample(LS340_LoopBase):
+    """ Sample specific """
 
+    # TODO: why FormattedComponent!?!?
     readback = FormattedComponent(EpicsSignalRO, "{prefix}Sample",
                                   kind="hinted")
     sensor = FormattedComponent(EpicsSignal, "{prefix}Spl_sel",
@@ -158,6 +170,7 @@ class LS340_LoopSample(LS340_LoopBase):
 
 
 class LS340Device(Device):
+    """ Lakeshore 340 setup EPICS version 1.1 """
 
     control = FormattedComponent(LS340_LoopControl, "{prefix}",
                                  loop_number=1)
