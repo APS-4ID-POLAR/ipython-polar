@@ -16,6 +16,8 @@ logger.info(__file__)
 
 
 class PresetMonitorSignal(Signal):
+    """ Signal that control the selected monitor channel """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._readback = 0
@@ -199,19 +201,16 @@ class LocalScalerCH(ScalerCH):
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
-                        labels=('detectors', 'counters'))
+                        labels=('detectors',))
 scalerd.monitor = 'Time'
 scalerd.select_read_channels()
 scalerd.select_plot_channels()
 sd.baseline.append(scalerd)
 
 scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
-                        labels=('detectors', 'counters'))
+                        labels=('detectors',))
 scalerb.channels.chan01.chname.set('Time_b')
 scalerb.monitor = 'Time_b'
 scalerb.select_read_channels()
 scalerb.select_plot_channels()
 sd.baseline.append(scalerb)
-
-# TODO: name the other channels, watch out for python keywords such as del!
-# TODO: How should we handle the scalers? What is scaler3?
