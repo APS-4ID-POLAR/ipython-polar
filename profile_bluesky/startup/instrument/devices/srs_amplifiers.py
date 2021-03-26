@@ -1,117 +1,66 @@
 """
-SRS preamplifiers
+SRS preamp class
 """
-__all__ = ['preamps']
 
+from ophyd import Component, Device, EpicsSignal
 from ..session_logs import logger
 logger.info(__file__)
-
-from ophyd import Component, Device, EpicsSignal, FormattedComponent
-from ..framework import sd
 
 
 class PreAmpDevice(Device):
 
     # Current sensitivity
-    sensitivity_value = FormattedComponent(EpicsSignal,
-                                           '{prefix}A{_num}sens_num.VAL',
-                                           kind='config', string=True,
-                                           labels=('preamps',))
+    sensitivity_value = Component(EpicsSignal, 'sens_num.VAL', kind='config',
+                                  string=True)
 
-    sensitivity_unit = FormattedComponent(EpicsSignal,
-                                          '{prefix}A{_num}sens_unit.VAL',
-                                          kind='config', string=True,
-                                          labels=('preamps',))
+    sensitivity_unit = Component(EpicsSignal, 'sens_unit.VAL', kind='config',
+                                 string=True)
 
     # Offset current
-    offset_on = FormattedComponent(EpicsSignal, '{prefix}A{_num}offset_on.VAL',
-                                   kind='config', string=True,
-                                   labels=('preamps',))
+    offset_on = Component(EpicsSignal, 'offset_on.VAL', kind='config',
+                          string=True)
 
-    offset_sign = FormattedComponent(EpicsSignal,
-                                     '{prefix}A{_num}offset_sign.VAL',
-                                     kind='config', string=True,
-                                     labels=('preamps',))
+    offset_sign = Component(EpicsSignal, 'offset_sign.VAL', kind='config',
+                            string=True)
 
-    offset_value = FormattedComponent(EpicsSignal,
-                                      '{prefix}A{_num}offset_num.VAL',
-                                      kind='config', string=True,
-                                      labels=('preamps',))
+    offset_value = Component(EpicsSignal, 'offset_num.VAL', kind='config',
+                             string=True)
 
-    offset_unit = FormattedComponent(EpicsSignal,
-                                     '{prefix}A{_num}offset_unit.VAL',
-                                     kind='config', string=True,
-                                     labels=('preamps',))
+    offset_unit = Component(EpicsSignal, 'offset_unit.VAL', kind='config',
+                            string=True)
 
-    offset_fine = FormattedComponent(EpicsSignal,
-                                     '{prefix}A{_num}off_u_put.VAL',
-                                     kind='config', string=True,
-                                     labels=('preamps',))
+    offset_fine = Component(EpicsSignal, 'off_u_put.VAL', kind='config',
+                            string=True)
 
-    offset_cal = FormattedComponent(EpicsSignal,
-                                    '{prefix}A{_num}offset_cal.VAL',
-                                    kind='config', string=True,
-                                    labels=('preamps',))
+    offset_cal = Component(EpicsSignal, 'offset_cal.VAL', kind='config',
+                           string=True)
 
     # Set all button
-    set_all = FormattedComponent(EpicsSignal, '{prefix}A{_num}init.PROC',
-                                 kind='config', labels=('preamps',))
+    set_all = Component(EpicsSignal, 'init.PROC', kind='config')
 
     # Bias voltage
-    bias_value = FormattedComponent(EpicsSignal, '{prefix}A{_num}bias_put.VAL',
-                                    kind='config', string=True,
-                                    labels=('preamps',))
+    bias_value = Component(EpicsSignal, 'bias_put.VAL', kind='config',
+                           string=True)
 
-    bias_on = FormattedComponent(EpicsSignal, '{prefix}A{_num}bias_on.VAL',
-                                 kind='config', string=True,
-                                 labels=('preamps',))
+    bias_on = Component(EpicsSignal, 'bias_on.VAL', kind='config', string=True)
 
     # Filter
-    filter_type = FormattedComponent(EpicsSignal,
-                                     '{prefix}A{_num}filter_type.VAL',
-                                     kind='config', string=True,
-                                     labels=('preamps',))
+    filter_type = Component(EpicsSignal, 'filter_type.VAL', kind='config',
+                            string=True)
 
-    filter_lowpass = FormattedComponent(EpicsSignal,
-                                        '{prefix}A{_num}low_freq.VAL',
-                                        kind='config', string=True,
-                                        labels=('preamps',))
+    filter_lowpass = Component(EpicsSignal, 'low_freq.VAL', kind='config',
+                               string=True)
 
-    filter_highpass = FormattedComponent(EpicsSignal,
-                                         '{prefix}A{_num}high_freq.VAL',
-                                         kind='config', string=True,
-                                         labels=('preamps',))
+    filter_highpass = Component(EpicsSignal, 'high_freq.VAL', kind='config',
+                                string=True)
 
     # Gain mode
-    gain_mode = FormattedComponent(EpicsSignal, '{prefix}A{_num}gain_mode.VAL',
-                                   kind='config', string=True,
-                                   labels=('preamps',))
+    gain_mode = Component(EpicsSignal, 'gain_mode.VAL', kind='config',
+                          string=True)
 
     # Invert
-    invert = FormattedComponent(EpicsSignal, '{prefix}A{_num}invert_on.VAL',
-                                kind='config', string=True,
-                                labels=('preamps',))
+    invert = Component(EpicsSignal, 'invert_on.VAL', kind='config',
+                       string=True)
 
     # Blank
-    blank = FormattedComponent(EpicsSignal, '{prefix}A{_num}blank_on.VAL',
-                               kind='config', string=True, labels=('preamps',))
-
-    def __init__(self, *args, num=0, **kwargs):
-        self._num = num
-        super().__init__(*args, **kwargs)
-
-
-class PreAmpStack(Device):
-
-    ch1 = Component(PreAmpDevice, '', num=1, labels=('preamps',))
-    ch2 = Component(PreAmpDevice, '', num=2, labels=('preamps',))
-    ch3 = Component(PreAmpDevice, '', num=3, labels=('preamps',))
-    ch4 = Component(PreAmpDevice, '', num=4, labels=('preamps',))
-    ch5 = Component(PreAmpDevice, '', num=5, labels=('preamps',))
-    ch6 = Component(PreAmpDevice, '', num=6, labels=('preamps',))
-    ch7 = Component(PreAmpDevice, '', num=7, labels=('preamps',))
-    ch8 = Component(PreAmpDevice, '', num=8, labels=('preamps',))
-
-
-preamps = PreAmpStack('4idd:', name='preamps')
-sd.baseline.append(preamps)
+    blank = Component(EpicsSignal, 'blank_on.VAL', kind='config', string=True)

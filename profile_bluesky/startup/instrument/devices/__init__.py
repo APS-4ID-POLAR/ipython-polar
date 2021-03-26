@@ -20,7 +20,6 @@ from .qxscan_setup import *
 from .ruby_motors import *
 from .scaler import *
 from .slits import *
-from .srs_amplifiers import *
 from .srs810 import *
 from .toroidal_mirror import *
 from .uptable import *
