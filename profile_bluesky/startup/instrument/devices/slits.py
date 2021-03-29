@@ -13,10 +13,10 @@ logger.info(__file__)
 class PVPositionerSoftDone(PVPositioner):
 
     # positioner
-    readback = FormattedComponent(EpicsSignal, "{prefix}{_readback_pv}",
-                                  kind="normal")
-    setpoint = FormattedComponent(EpicsSignalRO, "{prefix}{_setpoint_pv}",
+    readback = FormattedComponent(EpicsSignalRO, "{prefix}{_readback_pv}",
                                   kind="hinted", auto_monitor=True)
+    setpoint = FormattedComponent(EpicsSignal, "{prefix}{_setpoint_pv}",
+                                  kind="normal")
     done = Component(Signal, value=True)
     done_value = True
 
