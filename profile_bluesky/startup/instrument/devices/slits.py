@@ -21,7 +21,7 @@ class PVPositionerSoftDone(PVPositioner):
     done_value = True
 
     tolerance = Component(Signal, value=0.001)
-    report_dmov_changes = Component(Signal, value=True, kind="omitted")
+    report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
         """
@@ -62,16 +62,16 @@ class PVPositionerSoftDone(PVPositioner):
 class SlitDevice(Device):
 
     # Setting motors
-    top = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[top]}',
+    top = FormattedComponent(EpicsMotor, '{prefix}{_motorsDict[top]}',
                              labels=('motors', 'slits'))
 
-    bot = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[bot]}',
+    bot = FormattedComponent(EpicsMotor, '{prefix}{_motorsDict[bot]}',
                              labels=('motors', 'slits'))
 
-    out = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[out]}',
+    out = FormattedComponent(EpicsMotor, '{prefix}{_motorsDict[out]}',
                              labels=('motors', 'slits'))
 
-    inb = FormattedComponent(EpicsMotor, '{prefix}:{_motorsDict[inb]}',
+    inb = FormattedComponent(EpicsMotor, '{prefix}{_motorsDict[inb]}',
                              labels=('motors', 'slits'))
 
     # Setting pseudo positioners
