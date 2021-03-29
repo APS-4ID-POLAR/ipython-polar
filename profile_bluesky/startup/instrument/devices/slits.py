@@ -75,19 +75,19 @@ class SlitDevice(Device):
 
     # Setting pseudo positioners
     vcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                              readback_pv='Vt2.D', setpoint_pv='Vcenter',
-                              labels=('slits',))
-
-    hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                              readback_pv='Vt2.C', setpoint_pv='Vsize',
+                              readback_pv='Vt2.D', setpoint_pv='Vcenter.VAL',
                               labels=('slits',))
 
     vsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                               readback_pv='Ht2.D', setpoint_pv='Hcenter',
+                              readback_pv='Vt2.C', setpoint_pv='Vsize.VAL',
+                              labels=('slits',))
+
+    hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
+                               readback_pv='Ht2.D', setpoint_pv='Hcenter.VAL',
                                labels=('slits',))
 
     hsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                               readback_pv='Ht2.C', setpoint_pv='Hsize',
+                               readback_pv='Ht2.C', setpoint_pv='Hsize.VAL',
                                labels=('slits',))
 
     def __init__(self, PV, name, motorsDict, slitnum, **kwargs):
@@ -99,37 +99,37 @@ class SlitDevice(Device):
 
 
 # White beam slit
-wbslt = SlitDevice('4idb', 'wbslt',
+wbslt = SlitDevice('4idb:', 'wbslt',
                    {'top': 'm25', 'bot': 'm26', 'out': 'm27', 'inb': 'm28'},
                    1)
 sd.baseline.append(wbslt)
 
 # Entrance slit
-enslt = SlitDevice('4iddx', 'enslt',
+enslt = SlitDevice('4iddx:', 'enslt',
                    {'top': 'm1', 'bot': 'm2', 'out': 'm3', 'inb': 'm4'},
                    1)
 sd.baseline.append(enslt)
 
 # 8C incident slit
-inslt = SlitDevice('4iddx', 'inslt',
+inslt = SlitDevice('4iddx:', 'inslt',
                    {'top': 'm5', 'bot': 'm6', 'out': 'm7', 'inb': 'm11'},
                    2)
 sd.baseline.append(inslt)
 
 # 2th guard slit
-grdslt = SlitDevice('4iddx', 'grdslt',
+grdslt = SlitDevice('4iddx:', 'grdslt',
                     {'top': 'm21', 'bot': 'm22', 'out': 'm23', 'inb': 'm24'},
                     3)
 sd.baseline.append(grdslt)
 
 # 2th detector slit
-detslt = SlitDevice('4iddx', 'detslt',
+detslt = SlitDevice('4iddx:', 'detslt',
                     {'top': 'm25', 'bot': 'm26', 'out': 'm27', 'inb': 'm28'},
                     4)
 sd.baseline.append(detslt)
 
 # Magnet incident slit
-magslt = SlitDevice('4iddx', 'magslt',
+magslt = SlitDevice('4iddx:', 'magslt',
                     {'top': 'm29', 'bot': 'm30', 'out': 'm31', 'inb': 'm32'},
                     5)
 sd.baseline.append(magslt)
