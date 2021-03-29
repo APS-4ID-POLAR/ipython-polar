@@ -21,6 +21,7 @@ class PVPositionerSoftDone(PVPositioner):
     done_value = True
 
     tolerance = Component(Signal, value=0.001)
+    report_dmov_changes = Component(Signal, value=True, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
         """
@@ -79,12 +80,12 @@ class SlitDevice(Device):
                               labels=('slits',))
 
     vsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                              readback_pv='Vt2.C', setpoint_pv='Vsize.VAL',
-                              labels=('slits',))
+                               readback_pv='Vt2.C', setpoint_pv='Vsize.VAL',
+                               labels=('slits',))
 
     hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                               readback_pv='Ht2.D', setpoint_pv='Hcenter.VAL',
-                               labels=('slits',))
+                              readback_pv='Ht2.D', setpoint_pv='Hcenter.VAL',
+                              labels=('slits',))
 
     hsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
                                readback_pv='Ht2.C', setpoint_pv='Hsize.VAL',
