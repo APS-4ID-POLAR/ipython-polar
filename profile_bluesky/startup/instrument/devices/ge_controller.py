@@ -8,7 +8,7 @@ from ophyd import Component
 from ophyd import EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd import Kind
-from ..utils import DoneSignal
+from .extra_signals import DoneSignal
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)

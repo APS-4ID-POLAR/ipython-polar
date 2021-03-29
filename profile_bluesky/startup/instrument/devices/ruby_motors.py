@@ -7,7 +7,7 @@ __all__ = ['ruby']
 from ophyd import (Component, Device, EpicsMotor, EpicsSignal, PVPositioner,
                    EpicsSignalRO, FormattedComponent)
 from ..framework import sd
-from ..utils import DoneSignal
+from .extra_signals import DoneSignal
 from ..session_logs import logger
 logger.info(__file__)
 

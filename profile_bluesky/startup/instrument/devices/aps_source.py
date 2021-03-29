@@ -6,7 +6,7 @@ __all__ = ['aps', 'undulator']
 
 from apstools.devices import ApsMachineParametersDevice, ApsUndulator
 from ..framework import sd
-from ..utils import TrackingSignal, DoneSignal
+from .extra_signals import TrackingSignal, DoneSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, AndStatus, wait as status_wait

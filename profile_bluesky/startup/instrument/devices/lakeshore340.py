@@ -6,7 +6,7 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import Component, Device, Signal, Staged
 from ophyd import EpicsSignal, EpicsSignalRO
 from ophyd import FormattedComponent, PVPositioner
-from ..utils import DoneSignal, TrackingSignal
+from .extra_signals import DoneSignal, TrackingSignal
 from time import sleep
 
 from instrument.session_logs import logger
