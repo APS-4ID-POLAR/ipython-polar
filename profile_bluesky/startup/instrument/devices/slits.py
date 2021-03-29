@@ -74,19 +74,19 @@ class SlitDevice(Device):
                              labels=('motors', 'slits'))
 
     # Setting pseudo positioners
-    vcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{slit_prefix}',
+    vcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
                               readback_pv='Vt2.D', setpoint_pv='Vcenter',
                               labels=('slits',))
 
-    hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{slit_prefix}',
+    hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
                               readback_pv='Vt2.C', setpoint_pv='Vsize',
                               labels=('slits',))
 
-    vsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{slit_prefix}',
+    vsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
                                readback_pv='Ht2.D', setpoint_pv='Hcenter',
                                labels=('slits',))
 
-    hsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{slit_prefix}',
+    hsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
                                readback_pv='Ht2.C', setpoint_pv='Hsize',
                                labels=('slits',))
 
