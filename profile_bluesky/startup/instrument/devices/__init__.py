@@ -10,7 +10,7 @@ from .filters import *
 from .flat_mirror import *
 from .ge_controller import *
 from .huber import *
-from .kbic import *
+from .ion_chambers import *
 from .kepko import *
 from .lakeshores import *
 from .high_field_magnet import *
