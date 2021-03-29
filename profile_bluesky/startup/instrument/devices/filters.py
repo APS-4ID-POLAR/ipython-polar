@@ -15,7 +15,7 @@ class OneSlot(Device):
     label = FormattedComponent(EpicsSignal, '{prefix}{_num}.DESC',
                                kind='config', string=True)
     status = FormattedComponent(EpicsSignal, '{prefix}{_num}.VAL',
-                                kind='config')
+                                kind='config', string=True)
 
     def __init__(self, *args, num=0, **kwargs):
         self._num = num
