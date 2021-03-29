@@ -2,7 +2,7 @@
 GE pressure controllers
 """
 
-__all__ = ['ge_applyP', 'ge_releaseP']
+__all__ = ['ge_apply', 'ge_release']
 
 from ophyd import Component
 from ophyd import EpicsSignalRO, EpicsSignalWithRBV
@@ -99,10 +99,10 @@ class GEController(PVPositioner):
         return super().move(*args, **kwargs)
 
 
-ge_applyP = GEController("4idd:PC1:", name="ge_applyP",
-                         labels=('ge_controller',))
-ge_releaseP = GEController("4idd:PC2:", name="ge_releaseP",
-                           labels=('ge_controller',))
+ge_apply = GEController("4idd:PC1:", name="ge_apply",
+                        labels=('ge_controller',))
+ge_release = GEController("4idd:PC2:", name="ge_release",
+                          labels=('ge_controller',))
 
-sd.baseline.append(ge_applyP)
-sd.baseline.append(ge_releaseP)
+sd.baseline.append(ge_apply)
+sd.baseline.append(ge_release)
