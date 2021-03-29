@@ -12,10 +12,10 @@ logger.info(__file__)
 class OneSlot(Device):
     """ Configure one filter slot. """
 
-    name = FormattedComponent(EpicsSignal, '{prefix}{_num}.DESC',
-                              kind='config', string=True)
-    position = FormattedComponent(EpicsSignal, '{prefix}{_num}.VAL',
-                                  kind='config')
+    label = FormattedComponent(EpicsSignal, '{prefix}{_num}.DESC',
+                               kind='config', string=True)
+    status = FormattedComponent(EpicsSignal, '{prefix}{_num}.VAL',
+                                kind='config')
 
     def __init__(self, *args, num=0, **kwargs):
         self._num = num
