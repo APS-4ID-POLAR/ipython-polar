@@ -6,6 +6,8 @@ __all__ = ['AutoDichroPlot']
 
 from bluesky_widgets.models.auto_plot_builders import AutoPlotter
 from bluesky_widgets.models.plot_builders import Lines
+# Axes and Figure will be renamed to AxesSpec, FigureSpec?
+# from bluesky_widgets.models.plot_specs import AxesSpec, FigureSpec
 from bluesky_widgets.models.plot_specs import Axes, Figure
 from numpy import log, array
 

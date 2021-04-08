@@ -14,6 +14,7 @@ logger.info(__file__)
 
 
 class MonoFeedback(Device):
+    """ Mono feedback reading """
 
     readback = Component(EpicsSignalRO, 'mono_pid2.CVAL', kind='config',
                          labels=('mono',))
@@ -24,20 +25,22 @@ class MonoFeedback(Device):
 
 
 class Monochromator(KohzuSeqCtl_Monochromator):
+    """ Tweaks from apstools mono """
 
+    # No y1 at 4-ID-D
     y1 = None
 
-    x2 = Component(EpicsMotor, 'm6', labels=('motor', 'mono'))
+    x2 = Component(EpicsMotor, 'm6', labels=('motors', 'mono'))
     y2 = Component(EpicsSignalRO, 'KohzuYRdbkAI',
-                   labels=('motor', 'mono'))
+                   labels=('motors', 'mono'))
     z2 = Component(EpicsSignalRO, 'KohzuZRdbkAI',
-                   labels=('motor', 'mono'))
+                   labels=('motors', 'mono'))
 
-    thf2 = Component(EpicsMotor, 'm4', labels=('motor', 'mono'))
-    chi2 = Component(EpicsMotor, 'm5', labels=('motor', 'mono'))
+    thf2 = Component(EpicsMotor, 'm4', labels=('motors', 'mono'))
+    chi2 = Component(EpicsMotor, 'm5', labels=('motors', 'mono'))
 
-    table_x = Component(EpicsMotor, 'm7', labels=('motor', 'mono'))
-    table_y = Component(EpicsMotor, 'm8', labels=('motor', 'mono'))
+    table_x = Component(EpicsMotor, 'm7', labels=('motors', 'mono'))
+    table_y = Component(EpicsMotor, 'm8', labels=('motors', 'mono'))
 
     energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
                        put_complete=True, labels=('mono',))
@@ -57,6 +60,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
         self.use_set.put('Use', use_complete=True)
 
 
-mono = Monochromator('4idb:', name='monochromator')
+mono = Monochromator('4idb:', name='mono')
 mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
 sd.baseline.append(mono)

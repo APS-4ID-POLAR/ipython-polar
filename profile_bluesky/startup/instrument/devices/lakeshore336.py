@@ -1,5 +1,5 @@
 """
-Lakeshore temperature controllers
+Lakeshore 336 temperature controller EPICS version 1.0
 """
 
 from apstools.synApps.asyn import AsynRecord
@@ -7,13 +7,15 @@ from ophyd import Component, Device, Staged
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd.status import wait as status_wait
-from ..utils import DoneSignal, TrackingSignal
+from .extra_signals import DoneSignal, TrackingSignal
 
 from instrument.session_logs import logger
 logger.info(__file__)
 
 
 def _get_vaporizer_position(sample_position):
+    """ Returns vaporizer setpoint based on the sample setpoint. """
+
     # TODO: I would like to have this stored in some variable that we can
     # change.
     if sample_position < 6:
@@ -28,8 +30,14 @@ def _get_vaporizer_position(sample_position):
 
 
 class LS336_LoopControl(PVPositioner):
+    """
+    Setup for loop with heater control.
+
+    The lakeshore 336 accepts up to two heaters.
+    """
 
     # position
+    # TODO: Intead of separating setpoint, should create a "target" Signal.
     readback = FormattedComponent(EpicsSignalRO, "{prefix}IN{loop_number}",
                                   auto_monitor=True, kind="hinted")
     setpoint = FormattedComponent(EpicsSignal, "{prefix}OUT{loop_number}:SP",
@@ -132,9 +140,6 @@ class LS336_LoopControl(PVPositioner):
         super()._move_changed(**kwargs)
 
     def move(self, position, **kwargs):
-        # TODO: This is an area that may be problematic. Need to test at
-        # beamline when doing scan and when just moving.
-
         # This will apply only when we use bps.mv, not for scans. In the later,
         # the stage/unstage will run before/after the scan.
         if self._staged == Staged.no:
@@ -194,7 +199,7 @@ class LS336_LoopControl(PVPositioner):
 
 class LS336_LoopRO(Device):
     """
-    Additional controls for loop3 and loop4: heater and pid
+    loop3 and loop4 do not use the heaters.
     """
     # Set this to normal because we don't use it.
     readback = FormattedComponent(EpicsSignalRO,
@@ -213,6 +218,7 @@ class LS336_LoopRO(Device):
 
 
 class LoopSample(LS336_LoopControl):
+    """ Sample will move the vaporizer temperature if track_vaporizer=True """
 
     def move(self, position, **kwargs):
         # Just changes the sample temperature if not tracking vaporizer.
@@ -234,7 +240,7 @@ class LoopSample(LS336_LoopControl):
 
 class LS336Device(Device):
     """
-    support for Lakeshore 336 temperature controller
+    Support for Lakeshore 336 temperature controller
     """
     loop1 = FormattedComponent(LS336_LoopControl, "{prefix}",
                                loop_number=1)

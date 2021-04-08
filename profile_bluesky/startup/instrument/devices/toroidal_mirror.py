@@ -1,17 +1,17 @@
 
 """
-Magnet motor
+Toroidal mirror
 """
 __all__ = ['toroidal_mirror']
 
+from ophyd import Component, Device, EpicsMotor, EpicsSignal
+from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
-from ophyd import Component, Device, EpicsMotor, EpicsSignal
-from ..framework import sd
-
 
 class ToroidalMirror(Device):
+    """ Beamline toroidal mirror components. """
 
     y_upstream = Component(EpicsMotor, 'm35', labels=('motor', 'mirrors'),
                            kind='config')
@@ -37,5 +37,5 @@ class ToroidalMirror(Device):
                        labels=('mirrors',), kind='config')
 
 
-toroidal_mirror = ToroidalMirror('4idb:', name='toroidal mirror')
+toroidal_mirror = ToroidalMirror('4idb:', name='toroidal_mirror')
 sd.baseline.append(toroidal_mirror)

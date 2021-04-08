@@ -1,17 +1,16 @@
 """
-Magnets
+6T magnet
 """
 
 __all__ = ['mag6t']
-
-from ..session_logs import logger
-logger.info(__file__)
 
 from ophyd import Component, Device, EpicsMotor, PVPositioner
 from ophyd import EpicsSignal, EpicsSignalRO, Signal
 from ophyd import Kind
 from ophyd.status import wait as status_wait
 from ..framework import sd
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class AMIZones(Device):
@@ -22,59 +21,61 @@ class AMIZones(Device):
 
 
 class AMIController(PVPositioner):
+    """ Magnetic field controler """
 
     # position
     readback = Component(EpicsSignalRO, "Field", auto_monitor=True,
-                         kind=Kind.hinted, labels=('ami_controller', 'magnet'))
+                         kind=Kind.hinted,
+                         labels=('ami_controller', 'magnets'))
 
     setpoint = Component(EpicsSignal, "PField", write_pv="PField:Wrt.A",
                          auto_monitor=True, kind=Kind.normal,
-                         labels=('ami_controller', 'magnet'))
+                         labels=('ami_controller', 'magnets'))
 
     current = Component(EpicsSignalRO, "Current", auto_monitor=True,
-                        kind=Kind.normal, labels=('ami_controller', 'magnet'))
+                        kind=Kind.normal, labels=('ami_controller', 'magnets'))
 
     voltage = Component(EpicsSignalRO, "Voltage", auto_monitor=True,
-                        kind=Kind.normal, labels=('ami_controller', 'magnet'))
+                        kind=Kind.normal, labels=('ami_controller', 'magnets'))
 
     supply_current = Component(EpicsSignalRO, "CurrentSP", auto_monitor=True,
                                kind=Kind.normal,
-                               labels=('ami_controller', 'magnet'))
+                               labels=('ami_controller', 'magnets'))
     # status
     magnet_status = Component(EpicsSignalRO, "StateInt.A", auto_monitor=True,
                               kind=Kind.config,
-                              labels=('ami_controller', 'magnet'))
+                              labels=('ami_controller', 'magnets'))
 
     done = magnet_status
     done_value = 2
 
     # configuration
     units = Component(EpicsSignalRO, "FieldUnits.SVAL", kind=Kind.config,
-                      labels=('ami_controller', 'magnet'))
+                      labels=('ami_controller', 'magnets'))
 
     field_limit = Component(EpicsSignalRO, "Field:Limit", kind=Kind.config,
-                            labels=('ami_controller', 'magnet'))
+                            labels=('ami_controller', 'magnets'))
     current_limit = Component(EpicsSignalRO, "Curr:Limit.VAL",
                               kind=Kind.config,
-                              labels=('ami_controller', 'magnet'))
+                              labels=('ami_controller', 'magnets'))
     voltage_limit = Component(EpicsSignalRO, "Volt:Limit.VAL",
                               kind=Kind.config,
-                              labels=('ami_controller', 'magnet'))
+                              labels=('ami_controller', 'magnets'))
 
     switch_heater = Component(EpicsSignal, "PSOnOff", string=True,
                               kind=Kind.config,
-                              labels=('ami_controller', 'magnet'))
+                              labels=('ami_controller', 'magnets'))
 
     zone_1 = Component(AMIZones, "RampR1:", kind=Kind.config,
-                       labels=('ami_controller', 'magnet'))
+                       labels=('ami_controller', 'magnets'))
     zone_2 = Component(AMIZones, "RampR2:", kind=Kind.config,
-                       labels=('ami_controller', 'magnet'))
+                       labels=('ami_controller', 'magnets'))
     zone_3 = Component(AMIZones, "RampR3:", kind=Kind.config,
-                       labels=('ami_controller', 'magnet'))
+                       labels=('ami_controller', 'magnets'))
     ramp_units = Component(EpicsSignalRO, "RampR:Units.SVAL", kind=Kind.config,
-                           labels=('ami_controller', 'magnet'))
+                           labels=('ami_controller', 'magnets'))
     tolerance = Component(Signal, value=0.0005, kind=Kind.config,
-                          labels=('ami_controller', 'magnet'))
+                          labels=('ami_controller', 'magnets'))
 
     # Buttons
     ramp_button = Component(EpicsSignal, "Ramp.PROC", kind=Kind.omitted,
@@ -137,22 +138,23 @@ class AMIController(PVPositioner):
 
 # Magnet and sample motors
 class Magnet6T(Device):
+    """ 6T magnet setup """
 
     # Motors #
-    tabth = Component(EpicsMotor, 'm53', labels=('motor', 'magnet'))
-    tabx = Component(EpicsMotor, 'm49', labels=('motor', 'magnet'))
-    taby = Component(EpicsMotor, 'm50', labels=('motor', 'magnet'))
+    tabth = Component(EpicsMotor, 'm53', labels=('motors', 'magnets'))
+    tabx = Component(EpicsMotor, 'm49', labels=('motors', 'magnets'))
+    taby = Component(EpicsMotor, 'm50', labels=('motors', 'magnets'))
 
-    tabth2 = Component(EpicsMotor, 'm56', labels=('motor', 'magnet'))
-    tabz2 = Component(EpicsMotor, 'm51', labels=('motor', 'magnet'))
-    tabx2 = Component(EpicsMotor, 'm52', labels=('motor', 'magnet'))
+    tabth2 = Component(EpicsMotor, 'm56', labels=('motors', 'magnets'))
+    tabz2 = Component(EpicsMotor, 'm51', labels=('motors', 'magnets'))
+    tabx2 = Component(EpicsMotor, 'm52', labels=('motors', 'magnets'))
 
-    sampy = Component(EpicsMotor, 'm63', labels=('motor', 'magnet'))
-    sampth = Component(EpicsMotor, 'm58', labels=('motor', 'magnet'))
+    sampy = Component(EpicsMotor, 'm63', labels=('motors', 'magnets'))
+    sampth = Component(EpicsMotor, 'm58', labels=('motors', 'magnets'))
 
     # Magnetic field controller
     field = Component(AMIController, '4idd:AMI430:', add_prefix='')
 
 
-mag6t = Magnet6T('4iddx:', name='magnet_6T')
+mag6t = Magnet6T('4iddx:', name='mag6t')
 sd.baseline.append(mag6t)

@@ -5,9 +5,6 @@ Diffractometer motors
 
 __all__ = ['fourc']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import Component, FormattedComponent
 from ophyd import PseudoSingle
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
@@ -15,11 +12,12 @@ from bluesky.suspenders import SuspendBoolLow
 from apstools.diffractometer import DiffractometerMixin
 from ..framework import RE
 from ..framework import sd
-
 import gi
 gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.diffract import E4CV
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class FourCircleDiffractometer(DiffractometerMixin, E4CV):
@@ -30,18 +28,14 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
 
     # HKL and 4C motors
-    h = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
-    k = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
-    l = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
+    h = Component(PseudoSingle, '', labels=("hkl", "fourc"))
+    k = Component(PseudoSingle, '', labels=("hkl", "fourc"))
+    l = Component(PseudoSingle, '', labels=("hkl", "fourc"))
 
-    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"),
-                      kind="hinted")
-    chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"),
-                    kind="hinted")
-    phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"),
-                    kind="hinted")
-    tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"),
-                    kind="hinted")
+    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"))
+    phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"))
+    tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"))
 
     th_tth_min = Component(EpicsSignal, "userCalc1.C",
                            labels=('fourc', 'limits'),
@@ -125,4 +119,11 @@ fourc.calc.physical_axis_names = {'omega': 'theta',
                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
+
+# TODO: This is a rough workaround...
+for attr in ("x", "y", "z", "baseth", "basetth", "ath", "achi", "atth",
+             "tablex", "tabley"):
+    getattr(fourc, attr).kind = "normal"
+fourc.energy.kind = "omitted"
+
 sd.baseline.append(fourc)

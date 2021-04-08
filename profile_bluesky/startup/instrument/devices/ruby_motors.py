@@ -1,19 +1,19 @@
 """
-Ruby spectrometer motors.
+Ruby spectrometer motors and controls.
 """
 
 __all__ = ['ruby']
 
-from ..session_logs import logger
-logger.info(__file__)
-
 from ophyd import (Component, Device, EpicsMotor, EpicsSignal, PVPositioner,
                    EpicsSignalRO, FormattedComponent)
 from ..framework import sd
-from ..utils import DoneSignal
+from .extra_signals import DoneSignal
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class DAC(PVPositioner):
+    """ Setup DAC as a PVPositioner """
 
     setpoint = Component(EpicsSignal, '.VAL', put_complete=True, kind='normal')
     readback = Component(EpicsSignalRO, '_rbv.VAL', auto_monitor=True,
@@ -51,6 +51,8 @@ class DAC(PVPositioner):
 
 
 class RubyDevice(Device):
+    """ Ruby system """
+
     focus = Component(EpicsMotor, 'm37', labels=('motor', 'ruby'))
     y = Component(EpicsMotor, 'm38', labels=('motor', 'ruby'))
     z = Component(EpicsMotor, 'm39', labels=('motor', 'ruby'))
@@ -60,5 +62,5 @@ class RubyDevice(Device):
     laser = FormattedComponent(DAC, '4idd:DAC1_2', labels=('ruby',))
 
 
-ruby = RubyDevice('4iddx:', name='ruby_system')
+ruby = RubyDevice('4iddx:', name='ruby')
 sd.baseline.append(ruby)

@@ -1,5 +1,5 @@
 '''
-Other motor/counters
+XBPM motors
 '''
 
 __all__ = ['xbpm']
@@ -15,5 +15,5 @@ class XBPM(MotorBundle):
     x = Component(EpicsMotor, 'm19', labels=('motor', 'xbpm'))
 
 
-xbpm = XBPM('4iddx:', name='XBPM')
+xbpm = XBPM('4iddx:', name='xbpm')
 sd.baseline.append(xbpm)

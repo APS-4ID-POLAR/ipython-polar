@@ -1,5 +1,7 @@
 
-__all__ = ['DoneSignal']
+"""
+Convenient signals
+"""
 
 from ophyd import Signal
 from ..session_logs import logger
@@ -7,6 +9,7 @@ logger.info(__file__)
 
 
 class DoneSignal(Signal):
+    """ Signal that tracks if two values become the same. """
     def __init__(self, *args, readback_attr='readback',
                  setpoint_attr='setpoint', tolerance_attr='tolerance',
                  **kwargs):
@@ -24,3 +27,18 @@ class DoneSignal(Signal):
         else:
             self.put(0)
         return self._readback
+
+
+class TrackingSignal(Signal):
+    """ Signal that forces value to be a boolean. """
+    def check_value(self, value):
+        """
+        Check if the value is a boolean.
+
+        Raises
+        ------
+        ValueError
+        """
+        if not isinstance(value, bool):
+            raise ValueError('tracking is boolean, it can only be True or \
+                False.')

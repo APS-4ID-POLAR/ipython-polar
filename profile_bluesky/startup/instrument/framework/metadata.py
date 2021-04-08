@@ -2,13 +2,6 @@
 """
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
-# required before hkl is imported
-import gi
-gi.require_version('Hkl', '5.0')
-
 import apstools
 import bluesky
 import databroker
@@ -16,7 +9,6 @@ import databroker
 import epics
 import getpass
 import h5py
-import hkl
 import matplotlib
 import numpy
 import ophyd
@@ -25,7 +17,17 @@ import pyRestTable
 import socket
 import spec2nexus
 
+# required before hkl is imported
+import gi
+gi.require_version('Hkl', '5.0')
+import hkl
+
 from .initialize import RE
+
+from ..session_logs import logger
+logger.info(__file__)
+
+
 
 # Set up default metadata
 

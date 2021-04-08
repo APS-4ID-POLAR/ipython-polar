@@ -3,14 +3,13 @@
 custom callbacks
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
 import apstools.filewriters
 import apstools.utils
 import datetime
 import os
 from .initialize import RE, callback_db
+from ..session_logs import logger
+logger.info(__file__)
 
 __all__ = [
     'specwriter',

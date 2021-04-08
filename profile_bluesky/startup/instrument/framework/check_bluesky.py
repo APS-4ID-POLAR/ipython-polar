@@ -3,11 +3,10 @@
 ensure BlueSky is available
 """
 
-from ..session_logs import logger
-logger.info(__file__)
-
 import sys
 import ophyd
+from ..session_logs import logger
+logger.info(__file__)
 
 __all__ = []
 
