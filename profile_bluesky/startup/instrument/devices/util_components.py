@@ -1,9 +1,9 @@
 
 """
-Convenient signals
+Utilities
 """
 
-from ophyd import Signal
+from ophyd import Signal, EpicsSignal, FormattedComponent
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -42,3 +42,16 @@ class TrackingSignal(Signal):
         if not isinstance(value, bool):
             raise ValueError('tracking is boolean, it can only be True or \
                 False.')
+
+
+class EpicsSignalwithStop(EpicsSignal):
+    stop_signal = FormattedComponent("{_stop_pv}", kind="omitted")
+    stop_value = 1
+
+    def __init__(self, *args, stop_pv=None, stop_value=1, **kwargs):
+        self._stop_pv = stop_pv
+        super().__init__(*args, **kwargs)
+        self.stop_value = stop_value
+
+    def stop(self, *, success=False):
+        self.stop_signal.put(self.stop_value, wait=False)
