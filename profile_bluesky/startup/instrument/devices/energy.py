@@ -60,7 +60,12 @@ class EnergySignal(Signal):
 
         return status
 
-    # TODO: Create stop method.
+    def stop(self, *, success=False):
+        """
+        Stops all energy related devices regardless if it's tracking or not.
+        """
+        for positioner in [mono, pr1, pr2, pr3, undulator.downstream]:
+            positioner.energy.stop(success=success)
 
 
 energy = EnergySignal(name='energy', value=10, kind='hinted')

@@ -5,10 +5,12 @@ Monochromator motors
 __all__ = ['mono']
 
 from apstools.devices import KohzuSeqCtl_Monochromator
-from ophyd import EpicsMotor, EpicsSignal, EpicsSignalRO
-from ophyd import Component, Device, FormattedComponent
+from ophyd import (
+    Component, Device, FormattedComponent, EpicsMotor, EpicsSignal,
+    EpicsSignalRO
+)
+from .util_components import PVPositionerSoftDone
 from ..framework import sd
-
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -24,8 +26,46 @@ class MonoFeedback(Device):
                       labels=('mono',), put_complete=True)
 
 
+class KohzuPositioner(PVPositionerSoftDone):
+    stop_signal = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
+                                     kind="omitted")
+    stop_value = 1
+
+    def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
+                 name=None, read_attrs=None, configuration_attrs=None,
+                 parent=None, egu="", **kwargs):
+
+        # TODO: Ugly... but works.
+        _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI", name="tmp")
+        _theta_pv_signal.wait_for_connection()
+        self._theta_pv = _theta_pv_signal.get(as_string=True)
+        _theta_pv_signal.destroy()
+        _theta_pv_signal = None
+
+        super().__init__(
+            prefix, limits=limits, readback_pv=readback_pv,
+            setpoint_pv=setpoint_pv, name=name, read_attrs=read_attrs,
+            configuration_attrs=configuration_attrs, parent=parent, egu=egu,
+            **kwargs
+        )
+
+
 class Monochromator(KohzuSeqCtl_Monochromator):
     """ Tweaks from apstools mono """
+
+    wavelength = Component(
+        KohzuPositioner, "", readback_pv="BraggLambdaRdbkAO",
+        setpoint_pv="BraggLambdaAO"
+    )
+
+    energy = Component(
+        KohzuPositioner, "", readback_pv="BraggERdbkAO", setpoint_pv="BraggEAO"
+    )
+
+    theta = Component(
+        KohzuPositioner, "", readback_pv="BraggThetaRdbkAO",
+        setpoint_pv="BraggThetaAO"
+    )
 
     # No y1 at 4-ID-D
     y1 = None
@@ -41,9 +81,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     table_x = Component(EpicsMotor, 'm7', labels=('motors', 'mono'))
     table_y = Component(EpicsMotor, 'm8', labels=('motors', 'mono'))
-
-    energy = Component(EpicsSignal, "BraggERdbkAO", write_pv="BraggEAO",
-                       put_complete=True, labels=('mono',))
 
     feedback = FormattedComponent(MonoFeedback, '4id:')
 
