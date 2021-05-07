@@ -89,6 +89,10 @@ class UndulatorEnergy(PVPositioner):
 
         return status
 
+    def stop(self, *, success=False):
+        self.parent.stop_button.put(1)
+        super().stop(success=success)
+
 
 class MyUndulator(ApsUndulator):
     """
