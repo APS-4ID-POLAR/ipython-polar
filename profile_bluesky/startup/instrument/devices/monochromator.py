@@ -27,7 +27,8 @@ class MonoFeedback(Device):
 
 
 class KohzuPositioner(PVPositionerSoftDone):
-    stop_signal = FormattedComponent("{_theta_pv}.STOP", kind="omitted")
+    stop_signal = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
+                                     kind="omitted")
     stop_value = 1
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
