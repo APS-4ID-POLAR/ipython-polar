@@ -61,7 +61,9 @@ class EnergySignal(Signal):
         return status
 
     def stop(self, *, success=False):
-        # Stops everything regardless if it's tracking or not.
+        """
+        Stops all energy related devices regardless if it's tracking or not.
+        """
         for positioner in [mono, pr1, pr2, pr3, undulator.downstream]:
             positioner.energy.stop(success=success)
 
