@@ -7,7 +7,7 @@ __all__ = ['mono']
 from apstools.devices import KohzuSeqCtl_Monochromator
 from ophyd import (
     Component, Device, FormattedComponent, EpicsMotor, EpicsSignal,
-    EpicsSignalRO, PVPositioner
+    EpicsSignalRO
 )
 from .util_components import PVPositionerSoftDone
 from ..framework import sd
@@ -27,34 +27,6 @@ class MonoFeedback(Device):
 
 
 class KohzuPositioner(PVPositionerSoftDone):
-    stop_signal = FormattedComponent("{_stop_pv}.STOP", kind="omitted")
-    stop_value = 1
-
-    def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
-                 name=None, read_attrs=None, configuration_attrs=None,
-                 parent=None, egu="", **kwargs):
-
-        # TODO: Ugly... but works?
-        _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI", name="tmp")
-        _theta_pv_signal.wait_for_connection()
-        self._theta_pv = _theta_pv_signal.get(as_string=True)
-        _theta_pv_signal.destroy()
-        _theta_pv_signal = None
-
-        super().__init__(
-            prefix, limits=limits, readback_pv=readback_pv,
-            setpoint_pv=setpoint_pv, name=name, read_attrs=read_attrs,
-            configuration_attrs=configuration_attrs, parent=parent, egu=egu,
-            **kwargs
-        )
-
-
-# TODO: OR!?!?
-class KohzuPositioner2(PVPositioner):
-
-    done = FormattedComponent("{_theta_pv}.DMOV", kind="omitted")
-    done_value = 1
-
     stop_signal = FormattedComponent("{_theta_pv}.STOP", kind="omitted")
     stop_value = 1
 
@@ -62,7 +34,7 @@ class KohzuPositioner2(PVPositioner):
                  name=None, read_attrs=None, configuration_attrs=None,
                  parent=None, egu="", **kwargs):
 
-        # TODO: Ugly... but works?
+        # TODO: Ugly... but works.
         _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI", name="tmp")
         _theta_pv_signal.wait_for_connection()
         self._theta_pv = _theta_pv_signal.get(as_string=True)
@@ -81,16 +53,16 @@ class Monochromator(KohzuSeqCtl_Monochromator):
     """ Tweaks from apstools mono """
 
     wavelength = Component(
-        KohzuPositioner2, readback_pv="BraggLambdaRdbkAO",
+        KohzuPositioner, "", readback_pv="BraggLambdaRdbkAO",
         setpoint_pv="BraggLambdaAO"
     )
 
     energy = Component(
-        KohzuPositioner2, readback_pv="BraggERdbkAO", setpoint_pv="BraggEAO"
+        KohzuPositioner, "", readback_pv="BraggERdbkAO", setpoint_pv="BraggEAO"
     )
 
     theta = Component(
-        KohzuPositioner2, readback_pv="BraggThetaRdbkAO",
+        KohzuPositioner, "", readback_pv="BraggThetaRdbkAO",
         setpoint_pv="BraggThetaAO"
     )
 
