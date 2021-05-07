@@ -56,7 +56,7 @@ class PVPositionerSoftDone(PVPositioner):
     readback = FormattedComponent(EpicsSignalRO, "{prefix}{_readback_pv}",
                                   kind="hinted", auto_monitor=True)
     setpoint = FormattedComponent(EpicsSignal, "{prefix}{_setpoint_pv}",
-                                  kind="normal")
+                                  kind="normal", put_complete=True)
     done = Component(Signal, value=True)
     done_value = True
 
@@ -85,7 +85,7 @@ class PVPositionerSoftDone(PVPositioner):
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
                  name=None, read_attrs=None, configuration_attrs=None,
-                 parent=None, egu="", **kwargs):
+                 parent=None, egu="", tolerance=None, **kwargs):
 
         self._setpoint_pv = setpoint_pv
         self._readback_pv = readback_pv
@@ -97,3 +97,14 @@ class PVPositionerSoftDone(PVPositioner):
 
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
+
+        if tolerance is None:
+            self.readback.wait_for_connection()
+            self.setpoint.wait_for_connection()
+
+            rb = self.readback.precision
+            sp = self.setpoint.precision
+
+            tolerance = rb if rb >= sp else sp
+
+        self.tolerance.put(tolerance)
