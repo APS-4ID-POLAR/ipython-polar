@@ -43,8 +43,8 @@ class TrackingSignal(Signal):
         ValueError
         """
         if not isinstance(value, bool):
-            raise ValueError('tracking is boolean, it can only be True or \
-                False.')
+            raise ValueError('tracking is boolean, it can only be True or '
+                             'False.')
 
 
 # TODO: Can we have readback_pv, setpoint_pv as *args? It looks
