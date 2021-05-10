@@ -6,9 +6,8 @@ __all__ = ['aps', 'undulator']
 
 from apstools.devices import ApsMachineParametersDevice, ApsUndulator
 from ..framework import sd
-from .util_components import TrackingSignal, DoneSignal
-from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
-                   PVPositioner)
+from .util_components import TrackingSignal, PVPositionerSoftDone
+from ophyd import Device, Component, Signal
 from ophyd.status import Status, AndStatus, wait as status_wait
 
 from ..session_logs import logger
@@ -18,41 +17,22 @@ aps = ApsMachineParametersDevice(name="aps")
 sd.baseline.append(aps)
 
 
-class UndulatorEnergy(PVPositioner):
+class UndulatorEnergy(PVPositionerSoftDone):
     """
     Undulator energy positioner.
 
     Main purpose this being a PVPositioner is to handle the undulator backlash.
     """
 
-    # Position
-    readback = Component(EpicsSignalRO, 'Energy', kind='hinted',
-                         auto_monitor=True)
-    setpoint = Component(EpicsSignal, 'EnergySet', put_complete=True,
-                         auto_monitor=True, kind='normal')
-
     # Configuration
     deadband = Component(Signal, value=0.002, kind='config')
     backlash = Component(Signal, value=0.25, kind='config')
     offset = Component(Signal, value=0, kind='config')
 
-    done = Component(DoneSignal, value=0, kind='omitted')
-    done_value = 1
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.tolerance = 0.002
-        self.readback.subscribe(self.done.get)
-        self.setpoint.subscribe(self.done.get)
-
     @deadband.sub_value
     def _change_tolerance(self, value=None, **kwargs):
         if value:
             self.tolerance = value
-
-    @done.sub_value
-    def _move_changed(self, **kwargs):
-        super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
 
@@ -82,8 +62,7 @@ class UndulatorEnergy(PVPositioner):
                                       **kwargs)
             click_status = self.parent.start_button.set(1)
             status = AndStatus(pos_status, click_status)
-
-        self.done.get()
+        self.cb_readback()
         if wait:
             status_wait(status)
 
@@ -104,7 +83,11 @@ class MyUndulator(ApsUndulator):
     - Has an interactive undulator_setup.
     """
 
-    energy = Component(UndulatorEnergy, '')
+    energy = Component(
+        UndulatorEnergy, '', readback_pv='Energy', setpoint_pv='EnergySet',
+        tolerance=0.002
+    )
+
     tracking = Component(TrackingSignal, value=False, kind='config')
 
     def undulator_setup(self):
