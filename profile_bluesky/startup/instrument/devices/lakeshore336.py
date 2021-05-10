@@ -3,7 +3,7 @@ Lakeshore 336 temperature controller EPICS version 1.0
 """
 
 from apstools.synApps.asyn import AsynRecord
-from ophyd import (Component, FormattedComponent, Device, EpicsSignal,
+from ophyd import (Component, FormattedComponent, Device, EpicsSignal, Signal,
                    EpicsSignalRO, EpicsSignalWithRBV)
 from ophyd.status import wait as status_wait
 from .util_components import TrackingSignal, PVPositionerSoftDone
@@ -42,6 +42,10 @@ class LS336_LoopControl(PVPositionerSoftDone):
     setpoint = FormattedComponent(EpicsSignalWithRBV,
                                   "{prefix}OUT{loop_number}:SP",
                                   put_complete=True, kind="normal")
+    # Due to ramping the setpoint will change slowly and the readback may catch
+    # up even if the motion is not done.
+    target = Component(Signal, value=0, kind="omitted")
+
     heater = FormattedComponent(EpicsSignalRO, "{prefix}HTR{loop_number}",
                                 auto_monitor=True, kind="normal")
 
@@ -89,7 +93,8 @@ class LS336_LoopControl(PVPositionerSoftDone):
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, tolerance=0.1, **kwargs)
+        super().__init__(*args, timeout=timeout, tolerance=0.1,
+                         target_attr="target", **kwargs)
         self._settle_time = 0
 
     @property
