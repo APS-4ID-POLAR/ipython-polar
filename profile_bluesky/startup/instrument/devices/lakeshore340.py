@@ -3,10 +3,9 @@ Lakeshore 340 temperature controller EPICS version 1.1
 """
 
 from apstools.synApps.asyn import AsynRecord
-from ophyd import Component, Device, Signal, Staged
-from ophyd import EpicsSignal, EpicsSignalRO
-from ophyd import FormattedComponent, PVPositioner
-from .util_components import DoneSignal, TrackingSignal
+from ophyd import (Component, Device, Signal, EpicsSignal, EpicsSignalRO,
+                   FormattedComponent)
+from .util_components import PVPositionerSoftDone, TrackingSignal
 from time import sleep
 
 from instrument.session_logs import logger
@@ -46,7 +45,7 @@ class SetpointSignal(EpicsSignal):
             counter += 1
 
 
-class LS340_LoopBase(PVPositioner):
+class LS340_LoopBase(PVPositionerSoftDone):
     """ Base settings for both sample and control loops. """
 
     # position
@@ -58,11 +57,6 @@ class LS340_LoopBase(PVPositioner):
     # This is here only because of ramping, because then setpoint will change
     # slowly.
     target = Component(Signal, value=0, kind="omitted")
-
-    # status
-    done = Component(DoneSignal, value=0, setpoint_attr='target',
-                     kind="omitted")
-    done_value = 1
 
     # configuration
     units = Component(Signal, value='K', kind="config")
@@ -87,9 +81,9 @@ class LS340_LoopBase(PVPositioner):
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, **kwargs)
+        super().__init__(*args, timeout=timeout, tolerance=0.1,
+                         target_attr="target", **kwargs)
         self._settle_time = 0
-        self._tolerance = 1
 
     @property
     def settle_time(self):
@@ -103,50 +97,16 @@ class LS340_LoopBase(PVPositioner):
             self._settle_time = value
 
     @property
-    def tolerance(self):
-        return self._tolerance
-
-    @tolerance.setter
-    def tolerance(self, value):
-        if value < 0:
-            raise ValueError('Tolerance needs to be >= 0.')
-        else:
-            self._tolerance = value
-
-    @property
     def egu(self):
         return self.units.get(as_string=True)
 
     def pause(self):
         self.setpoint.put(self._position, wait=True)
 
-    @done.sub_value
-    def _move_changed(self, **kwargs):
-        super()._move_changed(**kwargs)
-
     def move(self, position, **kwargs):
-
-        # TODO: This is an area that may be problematic. Need to test at
-        # beamline when doing scan and when just moving.
-
-        # This will apply only when we are moving, not scanning. In the later,
-        # the stage/unstage will run before/after the scan.
-        if self._staged == Staged.no:
-            self.stage()
-            self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
-        self.done.put(0)
+        # Need to update the target.
         self.target.put(position)
         return super().move(position, **kwargs)
-
-    def stage(self):
-        self.readback.subscribe(self.done.get, event_type='value')
-        self.setpoint.subscribe(self.done.get, event_type='value')
-        super().stage()
-
-    def unstage(self, **kwargs):
-        self.readback.clear_subs(self.done.get)
-        self.setpoint.clear_subs(self.done.get)
-        super().unstage()
 
 
 class LS340_LoopControl(LS340_LoopBase):
