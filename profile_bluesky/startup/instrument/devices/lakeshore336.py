@@ -3,11 +3,10 @@ Lakeshore 336 temperature controller EPICS version 1.0
 """
 
 from apstools.synApps.asyn import AsynRecord
-from ophyd import Component, Device, Staged
-from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
-from ophyd import FormattedComponent, PVPositioner
+from ophyd import (Component, FormattedComponent, Device, EpicsSignal,
+                   EpicsSignalRO, EpicsSignalWithRBV)
 from ophyd.status import wait as status_wait
-from .util_components import DoneSignal, TrackingSignal
+from .util_components import TrackingSignal, PVPositionerSoftDone
 
 from instrument.session_logs import logger
 logger.info(__file__)
@@ -29,7 +28,7 @@ def _get_vaporizer_position(sample_position):
     return vaporizer_position
 
 
-class LS336_LoopControl(PVPositioner):
+class LS336_LoopControl(PVPositionerSoftDone):
     """
     Setup for loop with heater control.
 
@@ -37,21 +36,14 @@ class LS336_LoopControl(PVPositioner):
     """
 
     # position
-    # TODO: Intead of separating setpoint, should create a "target" Signal.
+    # TODO: Not sure this will work. May need to separate the RO again.
     readback = FormattedComponent(EpicsSignalRO, "{prefix}IN{loop_number}",
                                   auto_monitor=True, kind="hinted")
-    setpoint = FormattedComponent(EpicsSignal, "{prefix}OUT{loop_number}:SP",
-                                  auto_monitor=True, put_complete=True,
-                                  kind="omitted")
-    setpointRO = FormattedComponent(EpicsSignalRO,
-                                    "{prefix}OUT{loop_number}:SP_RBV",
-                                    kind="normal")
+    setpoint = FormattedComponent(EpicsSignalWithRBV,
+                                  "{prefix}OUT{loop_number}:SP",
+                                  put_complete=True, kind="normal")
     heater = FormattedComponent(EpicsSignalRO, "{prefix}HTR{loop_number}",
                                 auto_monitor=True, kind="normal")
-
-    # status
-    done = Component(DoneSignal, value=0, kind="omitted")
-    done_value = 1
 
     # configuration
     units = FormattedComponent(EpicsSignalWithRBV,
@@ -97,9 +89,8 @@ class LS336_LoopControl(PVPositioner):
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, **kwargs)
+        super().__init__(*args, timeout=timeout, tolerance=0.1, **kwargs)
         self._settle_time = 0
-        self._tolerance = 0.1
 
     @property
     def settle_time(self):
@@ -113,17 +104,6 @@ class LS336_LoopControl(PVPositioner):
             self._settle_time = value
 
     @property
-    def tolerance(self):
-        return self._tolerance
-
-    @tolerance.setter
-    def tolerance(self, value):
-        if value < 0:
-            raise ValueError('Tolerance needs to be >= 0.')
-        else:
-            self._tolerance = value
-
-    @property
     def egu(self):
         return self.units.get(as_string=True)
 
@@ -134,31 +114,6 @@ class LS336_LoopControl(PVPositioner):
 
     def pause(self):
         self.setpoint.put(self._position)
-
-    @done.sub_value
-    def _move_changed(self, **kwargs):
-        super()._move_changed(**kwargs)
-
-    def move(self, position, **kwargs):
-        # This will apply only when we use bps.mv, not for scans. In the later,
-        # the stage/unstage will run before/after the scan.
-        if self._staged == Staged.no:
-            self.stage()
-            self.subscribe(self.unstage, event_type=self._SUB_REQ_DONE)
-
-        status = super().move(position, **kwargs)
-        _ = self.done.get()
-        return status
-
-    def stage(self):
-        self.readback.subscribe(self.done.get, event_type='value')
-        self.setpoint.subscribe(self.done.get, event_type='value')
-        super().stage()
-
-    def unstage(self, **kwargs):
-        self.readback.clear_subs(self.done.get)
-        self.setpoint.clear_subs(self.done.get)
-        super().unstage()
 
     @auto_heater.sub_value
     def _subscribe_auto_heater(self, value=None, **kwargs):
@@ -255,7 +210,6 @@ class LS336Device(Device):
     process_record = Component(EpicsSignal, "read.PROC", kind="omitted")
 
     read_all = Component(EpicsSignal, "readAll.PROC", kind="omitted")
-    # TODO: serial = Component(AsynRecord, "serial")
     serial = Component(AsynRecord, "serial", kind="omitted")
 
     track_vaporizer = Component(TrackingSignal, value=True, kind="config")
