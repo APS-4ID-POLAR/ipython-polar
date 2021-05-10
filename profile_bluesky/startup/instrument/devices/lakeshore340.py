@@ -100,6 +100,11 @@ class LS340_LoopBase(PVPositionerSoftDone):
     def egu(self):
         return self.units.get(as_string=True)
 
+    def stop(self, *, success=False):
+        if success is False:
+            self.setpoint.put(self._position)
+        super().stop(success=success)
+
     def pause(self):
         self.setpoint.put(self._position, wait=True)
 
@@ -112,21 +117,15 @@ class LS340_LoopBase(PVPositionerSoftDone):
 class LS340_LoopControl(LS340_LoopBase):
     """ Control specific """
 
-    # TODO: why FormattedComponent!?!?
-    readback = FormattedComponent(EpicsSignalRO, "{prefix}Control",
-                                  kind="normal")
-    sensor = FormattedComponent(EpicsSignal, "{prefix}Ctl_sel",
-                                kind="config")
+    readback = Component(EpicsSignalRO, "Control", kind="normal")
+    sensor = Component(EpicsSignal, "Ctl_sel", kind="config")
 
 
 class LS340_LoopSample(LS340_LoopBase):
     """ Sample specific """
 
-    # TODO: why FormattedComponent!?!?
-    readback = FormattedComponent(EpicsSignalRO, "{prefix}Sample",
-                                  kind="hinted")
-    sensor = FormattedComponent(EpicsSignal, "{prefix}Spl_sel",
-                                kind="config")
+    readback = Component(EpicsSignalRO, "Sample", kind="hinted")
+    sensor = Component(EpicsSignal, "Spl_sel", kind="config")
 
 
 class LS340Device(Device):
