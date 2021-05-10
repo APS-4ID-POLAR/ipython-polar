@@ -60,7 +60,7 @@ class PVPositionerSoftDone(PVPositioner):
     done = Component(Signal, value=True)
     done_value = True
 
-    tolerance = Component(Signal, value=0.001)
+    tolerance = Component(Signal, value=1)  # Value always updated during init.
     report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
