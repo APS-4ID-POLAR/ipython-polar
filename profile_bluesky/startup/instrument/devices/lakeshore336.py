@@ -120,6 +120,11 @@ class LS336_LoopControl(PVPositionerSoftDone):
     def pause(self):
         self.setpoint.put(self._position)
 
+    def move(self, position, **kwargs):
+        # Need to update the target.
+        self.target.put(position)
+        return super().move(position, **kwargs)
+
     @auto_heater.sub_value
     def _subscribe_auto_heater(self, value=None, **kwargs):
         if value:
