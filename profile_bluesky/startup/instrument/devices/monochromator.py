@@ -35,12 +35,13 @@ class KohzuPositioner(PVPositionerSoftDone):
                  name=None, read_attrs=None, configuration_attrs=None,
                  parent=None, egu="", **kwargs):
 
-        # TODO: Ugly... but works.
-        _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI", name="tmp")
-        _theta_pv_signal.wait_for_connection()
-        self._theta_pv = _theta_pv_signal.get(as_string=True)
-        _theta_pv_signal.destroy()
-        _theta_pv_signal = None
+        def get_th_pv():
+            _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI",
+                                             name="tmp")
+            _theta_pv_signal.wait_for_connection()
+            return _theta_pv_signal.get(as_string=True)
+
+        self._theta_pv = get_th_pv()
 
         super().__init__(
             prefix, limits=limits, readback_pv=readback_pv,
