@@ -23,10 +23,10 @@ class EnergySignal(Signal):
     """
     def get(self, **kwargs):
         """ Uses the mono as the standard beamline energy. """
-        self._readback = mono.energy.get(**kwargs)
+        self._readback = mono.energy.readback.get(**kwargs)
         return self._readback
 
-    def set(self, position, *, wait=True, timeout=None, settle_time=None,
+    def set(self, position, *, wait=False, timeout=None, settle_time=None,
             moved_cb=None):
 
         # In case nothing needs to be moved, just create a finished status
@@ -34,9 +34,10 @@ class EnergySignal(Signal):
         status.set_finished()
 
         # Mono
-        if abs(self.get()-position) > mono.energy.tolerance:
-            mono_status = mono.energy.set(position, timeout=timeout,
-                                          settle_time=settle_time)
+        if abs(self.get()-position) > mono.energy.tolerance.get():
+            mono_status = mono.energy.set(
+                position, wait=wait, timeout=timeout, moved_cb=moved_cb
+            )
             status = AndStatus(status, mono_status)
 
         # Phase retarders
@@ -44,7 +45,7 @@ class EnergySignal(Signal):
             if pr.tracking.get():
                 pr_status = pr.energy.move(
                     position, wait=wait, timeout=timeout, moved_cb=moved_cb
-                    )
+                )
                 status = AndStatus(status, pr_status)
 
         # Undulator
@@ -52,7 +53,7 @@ class EnergySignal(Signal):
             und_pos = position + undulator.downstream.energy.offset.get()
             und_status = undulator.downstream.energy.move(
                 und_pos, wait=wait, timeout=timeout, moved_cb=moved_cb
-                )
+            )
             status = AndStatus(status, und_status)
 
         if wait:
