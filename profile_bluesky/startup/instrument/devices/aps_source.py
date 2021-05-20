@@ -10,7 +10,8 @@ from .util_components import TrackingSignal, DoneSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, AndStatus, wait as status_wait
-
+from ophyd.utils import InvalidState
+from threading import Thread
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -44,6 +45,7 @@ class UndulatorEnergy(PVPositioner):
         self.tolerance = 0.002
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
+        self._status_obj_list = []
 
     @deadband.sub_value
     def _change_tolerance(self, value=None, **kwargs):
@@ -56,41 +58,61 @@ class UndulatorEnergy(PVPositioner):
 
     def move(self, position, wait=True, **kwargs):
 
+        status = Status(self)
+
         # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
-            status = Status(self)
             status.set_finished()
         # Otherwise -> let's move!
         else:
+            thread = Thread(target=self._move, args=(position, status),
+                            kwargs=kwargs)
+            thread.start()
 
-            # Applies backlash if needed.
-            if position > self.readback.get():
-                # Go to backlash position, wait until it gets there.
-                # TODO: is there a way to run these two actions without
-                # blocking? The undulator would still move to the backlash
-                # position, then final position, but the user would be able to
-                # use the terminal.
-
-                first_pos_status = super().move(position + self.backlash.get(),
-                                                wait=False, **kwargs)
-                first_click_status = self.parent.start_button.set(1)
-                first_status = AndStatus(first_pos_status, first_click_status)
-                status_wait(first_status)
-
-            timeout = kwargs.pop('timeout', 120)
-            pos_status = super().move(position, wait=False, timeout=timeout,
-                                      **kwargs)
-            click_status = self.parent.start_button.set(1)
-            status = AndStatus(pos_status, click_status)
-
-        self.done.get()
         if wait:
             status_wait(status)
 
         return status
 
+    def _move(self, position, status_obj, **kwargs):
+
+        self._status_obj_list.append(status_obj)
+
+        # Applies backlash if needed.
+        if position > self.readback.get():
+            first_pos_status = super().move(position + self.backlash.get(),
+                                            wait=False, **kwargs)
+            first_click_status = self.parent.start_button.set(1)
+            self.done.get()
+            first_status = AndStatus(first_pos_status, first_click_status)
+            self._status_obj_list.append(first_status)
+            status_wait(first_status)
+
+        if not status_obj.done:
+            timeout = kwargs.pop('timeout', 120)
+            pos_status = super().move(position, wait=False, timeout=timeout,
+                                      **kwargs)
+
+            click_status = self.parent.start_button.set(1)
+            self.done.get()
+            second_status = AndStatus(pos_status, click_status)
+            self._status_obj_list.append(second_status)
+            status_wait(second_status)
+            self._set_status_finished(status_obj)
+
+    def _set_status_finished(self, status=None):
+        """ Quietly sets all status as finished"""
+        status_list = (status) if status else self._status_obj_list
+        for status in status_list:
+            try:
+                status.set_finished()
+            except InvalidState:
+                pass
+
     def stop(self, *, success=False):
         self.parent.stop_button.put(1)
+        self._set_status_finished()
+        self._status_obj_list = []
         super().stop(success=success)
 
 
