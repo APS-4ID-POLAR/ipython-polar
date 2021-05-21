@@ -27,21 +27,28 @@ class MonoFeedback(Device):
 
 
 class KohzuPositioner(PVPositionerSoftDone):
-    stop_signal = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
-                                     kind="omitted")
-    stop_value = 1
+    stop_theta = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
+                                    kind="omitted")
+    stop_y = FormattedComponent(EpicsSignal, "{_y_pv}.STOP",
+                                kind="omitted")
+    stop_z = FormattedComponent(EpicsSignal, "{_z_pv}.STOP",
+                                kind="omitted")
+
+    actuate = Component(EpicsSignal, "KohzuPutBO", kind="omitted")
+    actuate_value = 1
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
                  name=None, read_attrs=None, configuration_attrs=None,
                  parent=None, egu="", **kwargs):
 
-        def get_th_pv():
-            _theta_pv_signal = EpicsSignalRO(f"{prefix}KohzuThetaPvSI",
-                                             name="tmp")
-            _theta_pv_signal.wait_for_connection()
-            return _theta_pv_signal.get(as_string=True)
+        def get_motor_pv(label):
+            _pv_signal = EpicsSignalRO(f"{prefix}Kohzu{label}PvSI", name="tmp")
+            _pv_signal.wait_for_connection()
+            return _pv_signal.get(as_string=True)
 
-        self._theta_pv = get_th_pv()
+        self._theta_pv = get_motor_pv("Theta")
+        self._y_pv = get_motor_pv("Y")
+        self._z_pv = get_motor_pv("Z")
 
         super().__init__(
             prefix, limits=limits, readback_pv=readback_pv,
@@ -49,6 +56,11 @@ class KohzuPositioner(PVPositionerSoftDone):
             configuration_attrs=configuration_attrs, parent=parent, egu=egu,
             **kwargs
         )
+
+    def stop(self, *, success=False):
+        for motor in ["theta", "y", "z"]:
+            getattr(self, f"stop_{motor}").put(1, wait=False)
+        super().stop(success=success)
 
 
 class Monochromator(KohzuSeqCtl_Monochromator):
@@ -87,7 +99,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     def calibrate_energy(self, value):
         """Calibrate the mono energy.
-
         Parameters
         ----------
         value: float
@@ -99,5 +110,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 
 mono = Monochromator('4idb:', name='mono')
-mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
+# TODO: not needed because of the mono.energy.actuate?
+# mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
 sd.baseline.append(mono)
