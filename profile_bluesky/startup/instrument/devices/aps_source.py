@@ -6,7 +6,7 @@ __all__ = ['aps', 'undulator']
 
 from apstools.devices import ApsMachineParametersDevice, ApsUndulator
 from ..framework import sd
-from .util_components import TrackingSignal, DoneSignal
+from .util_components import TrackingSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, wait as status_wait
@@ -37,83 +37,105 @@ class UndulatorEnergy(PVPositioner):
     backlash = Component(Signal, value=0.25, kind='config')
     offset = Component(Signal, value=0, kind='config')
 
-    actuate = Component(EpicsSignal, ".SPMG", kind='omitted',
+    # Buttons
+    actuate = Component(EpicsSignal, "Start.VAL", kind='omitted',
                         put_complete=True)
     actuate_value = 3
 
-    stop_signal = Component(EpicsSignal, ".STOP", kind='omitted',
+    stop_signal = Component(EpicsSignal, "Stop.VAL", kind='omitted',
                             put_complete=True)
     stop_value = 1
 
-    done = Component(DoneSignal, value=0, kind='omitted')
-    done_value = 1
+    # TODO: Does this work!?!?
+    # done = Component(DoneSignal, value=0, kind='omitted')
+    # done_value = 1
+    done = Component(EpicsSignal, "Busy.VAL", kind="omitted")
+    done_value = 0
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.tolerance = 0.002
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
-        self._status_obj_list = []
+        self._status_obj = Status(self)
 
     @deadband.sub_value
     def _change_tolerance(self, value=None, **kwargs):
         if value:
             self.tolerance = value
 
-    @done.sub_value
-    def _move_changed(self, **kwargs):
-        super()._move_changed(**kwargs)
+    # TODO: This is unnecessary if use done EpicsSignal.
+    # @done.sub_value
+    # def _move_changed(self, **kwargs):
+    #     super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
+        """
+        Moves the undulator energy.
 
-        status = Status(self)
+        Currently, the backlash has to be handled within Bluesky. The actual
+        motion is done by `self._move` using threading. kwargs are passed to
+        PVPositioner.move().
+
+        Parameters
+        ----------
+        position : float
+            Position to move to
+        wait : boolean, optional
+            Flag to block the execution until motion is completed.
+
+        Returns
+        -------
+        status : Status
+        """
+
+        self._status_obj = Status(self)
 
         # If position is in the the deadband -> do nothing.
         if abs(position - self.readback.get()) <= self.tolerance:
-            status.set_finished()
+            self._status_obj.set_finished()
+
         # Otherwise -> let's move!
         else:
-            thread = Thread(target=self._move, args=(position, status),
+            thread = Thread(target=self._move, args=(position,),
                             kwargs=kwargs)
             thread.start()
 
         if wait:
-            status_wait(status)
+            status_wait(self._status_obj)
 
-        return status
+        return self._status_obj
 
-    def _move(self, position, status_obj, **kwargs):
+    def _move(self, position, **kwargs):
+        """
+        Moves undulator.
 
-        self._status_obj_list.append(status_obj)
+        This is meant to the ran using threading, so the move will block by
+        construction.
+        """
 
         # Applies backlash if needed.
         if position > self.readback.get():
             self._move_and_wait(position + self.backlash.get(), **kwargs)
 
-        if not status_obj.done:
+        # Check if stop was requested during first part of the motion.
+        if not self._status_obj.done:
             self._move_and_wait(position, **kwargs)
-            self._set_status_finished(status_obj)
+            self._finish_status()
 
     def _move_and_wait(self, position, **kwargs):
         status = super().move(position, wait=False, **kwargs)
-        self.done.get()
-        self._status_obj_list.append(status)
         status_wait(status)
 
-    def _set_status_finished(self, status=None):
-        """ Quietly sets all status as finished"""
-        status_list = (status) if status else self._status_obj_list
-        for status in status_list:
-            try:
-                status.set_finished()
-            except InvalidState:
-                pass
+    def _finish_status(self):
+        try:
+            self._status_obj.set_finished()
+        except InvalidState:
+            pass
 
     def stop(self, *, success=False):
-        self.parent.stop_button.put(1)
-        self._set_status_finished()
-        self._status_obj_list = []
         super().stop(success=success)
+        self._finish_status()
 
 
 class MyUndulator(ApsUndulator):
@@ -121,13 +143,18 @@ class MyUndulator(ApsUndulator):
     Undulator setup.
 
     Differences from `apstools` standard:
-    - energy is a PVPositioner.
+    - `energy` is a PVPositioner.
+    - `start_button`, `stop_button` and `device_status` go into `energy`.
     - Has a flag used to track the mono energy.
     - Has an interactive undulator_setup.
     """
 
     energy = Component(UndulatorEnergy, '')
     tracking = Component(TrackingSignal, value=False, kind='config')
+
+    start_button = None
+    stop_button = None
+    device_status = None
 
     def undulator_setup(self):
         """Interactive setup of usual undulator parameters."""
