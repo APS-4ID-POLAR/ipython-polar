@@ -42,8 +42,7 @@ class UndulatorEnergy(PVPositioner):
                         put_complete=True)
     actuate_value = 3
 
-    stop_signal = Component(EpicsSignal, "Stop.VAL", kind='omitted',
-                            put_complete=True)
+    stop_signal = Component(EpicsSignal, "Stop.VAL", kind='omitted')
     stop_value = 1
 
     # TODO: Does this work!?!?
