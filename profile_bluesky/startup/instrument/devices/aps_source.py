@@ -9,7 +9,7 @@ from ..framework import sd
 from .util_components import TrackingSignal, DoneSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
-from ophyd.status import Status, AndStatus, wait as status_wait
+from ophyd.status import Status, wait as status_wait
 from ophyd.utils import InvalidState
 from threading import Thread
 from ..session_logs import logger
@@ -36,6 +36,14 @@ class UndulatorEnergy(PVPositioner):
     deadband = Component(Signal, value=0.002, kind='config')
     backlash = Component(Signal, value=0.25, kind='config')
     offset = Component(Signal, value=0, kind='config')
+
+    actuate = Component(EpicsSignal, ".SPMG", kind='omitted',
+                        put_complete=True)
+    actuate_value = 3
+
+    stop_signal = Component(EpicsSignal, ".STOP", kind='omitted',
+                            put_complete=True)
+    stop_value = 1
 
     done = Component(DoneSignal, value=0, kind='omitted')
     done_value = 1
@@ -80,25 +88,17 @@ class UndulatorEnergy(PVPositioner):
 
         # Applies backlash if needed.
         if position > self.readback.get():
-            first_pos_status = super().move(position + self.backlash.get(),
-                                            wait=False, **kwargs)
-            first_click_status = self.parent.start_button.set(1)
-            self.done.get()
-            first_status = AndStatus(first_pos_status, first_click_status)
-            self._status_obj_list.append(first_status)
-            status_wait(first_status)
+            self._move_and_wait(position + self.backlash.get(), **kwargs)
 
         if not status_obj.done:
-            timeout = kwargs.pop('timeout', 120)
-            pos_status = super().move(position, wait=False, timeout=timeout,
-                                      **kwargs)
-
-            click_status = self.parent.start_button.set(1)
-            self.done.get()
-            second_status = AndStatus(pos_status, click_status)
-            self._status_obj_list.append(second_status)
-            status_wait(second_status)
+            self._move_and_wait(position, **kwargs)
             self._set_status_finished(status_obj)
+
+    def _move_and_wait(self, position, **kwargs):
+        status = super().move(position, wait=False, **kwargs)
+        self.done.get()
+        self._status_obj_list.append(status)
+        status_wait(status)
 
     def _set_status_finished(self, status=None):
         """ Quietly sets all status as finished"""
