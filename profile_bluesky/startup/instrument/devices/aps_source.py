@@ -70,15 +70,18 @@ class UndulatorEnergy(PVPositioner):
     def move(self, position, wait=True, **kwargs):
         """
         Moves the undulator energy.
+
         Currently, the backlash has to be handled within Bluesky. The actual
         motion is done by `self._move` using threading. kwargs are passed to
         PVPositioner.move().
+
         Parameters
         ----------
         position : float
             Position to move to
         wait : boolean, optional
             Flag to block the execution until motion is completed.
+
         Returns
         -------
         status : Status
@@ -104,6 +107,7 @@ class UndulatorEnergy(PVPositioner):
     def _move(self, position, **kwargs):
         """
         Moves undulator.
+
         This is meant to the ran using threading, so the move will block by
         construction.
         """
