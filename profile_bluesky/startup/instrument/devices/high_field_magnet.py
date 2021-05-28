@@ -87,6 +87,12 @@ class AMIController(PVPositioner):
 
     stop_signal = pause_button
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make the default alias for the readback the name of the
+        # positioner itself as in EpicsMotor.
+        self.readback.name = self.name
+
     @property
     def egu(self):
         return self.units.get(as_string=True)

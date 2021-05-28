@@ -59,6 +59,10 @@ class UndulatorEnergy(PVPositioner):
         self.setpoint.subscribe(self.done.get)
         self._status_obj = Status(self)
 
+        # Make the default alias for the readback the name of the
+        # positioner itself as in EpicsMotor.
+        self.readback.name = self.name
+
     @deadband.sub_value
     def _change_tolerance(self, value=None, **kwargs):
         if value:

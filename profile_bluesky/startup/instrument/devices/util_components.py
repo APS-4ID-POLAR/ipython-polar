@@ -97,6 +97,10 @@ class PVPositionerSoftDone(PVPositioner):
                          configuration_attrs=configuration_attrs,
                          parent=parent, egu=egu, **kwargs)
 
+        # Make the default alias for the readback the name of the
+        # positioner itself as in EpicsMotor.
+        self.readback.name = self.name
+
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
 
