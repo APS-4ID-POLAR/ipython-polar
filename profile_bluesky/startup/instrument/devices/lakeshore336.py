@@ -7,7 +7,7 @@ from ophyd import Component, Device, Staged
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsSignalWithRBV
 from ophyd import FormattedComponent, PVPositioner
 from ophyd.status import wait as status_wait
-from .extra_signals import DoneSignal, TrackingSignal
+from .util_components import DoneSignal, TrackingSignal
 
 from instrument.session_logs import logger
 logger.info(__file__)
