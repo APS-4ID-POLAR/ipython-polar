@@ -114,7 +114,7 @@ class UndulatorEnergy(PVPositioner):
         """
         Moves undulator.
 
-        This is meant to the be ran using threading, so the move will block by
+        This is meant to run using threading, so the move will block by
         construction.
         """
 
