@@ -114,3 +114,11 @@ class PVPositionerSoftDone(PVPositioner):
             tolerance = rb if rb >= sp else sp
 
         self.tolerance.put(tolerance)
+
+    def _setup_move(self, position):
+        '''Move and do not wait until motion is complete (asynchronous)'''
+        self.log.debug('%s.setpoint = %s', self.name, position)
+        self.setpoint.put(position, wait=False)
+        if self.actuate is not None:
+            self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
+            self.actuate.put(self.actuate_value, wait=False)
