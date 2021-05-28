@@ -15,13 +15,13 @@ class GEController(PVPositionerSoftDone):
     """ General controller as a PVPositioner """
 
     # configuration
-    units = Component(EpicsSignalWithRBV, "{self.prefix}Units", kind="config")
-    control = Component(EpicsSignalWithRBV, "{self.prefix}Control",
+    units = Component(EpicsSignalWithRBV, "Units", kind="config")
+    control = Component(EpicsSignalWithRBV, "Control",
                         kind="config")
-    slew_mode = Component(EpicsSignalWithRBV, "{self.prefix}SlewMode",
+    slew_mode = Component(EpicsSignalWithRBV, "SlewMode",
                           kind="config")
-    slew = Component(EpicsSignalWithRBV, "{self.prefix}Slew", kind="config")
-    effort = Component(EpicsSignalRO, "{self.prefix}Effort_RBV",
+    slew = Component(EpicsSignalWithRBV, "Slew", kind="config")
+    effort = Component(EpicsSignalRO, "Effort_RBV",
                        auto_monitor=True, kind="config")
 
     def __init__(self, *args, timeout=60*60*10, **kwargs):
