@@ -67,7 +67,7 @@ class PVPositionerSoftDone(PVPositioner):
         """
         Called when readback changes (EPICS CA monitor event).
         """
-        diff = self.readback.get() - self.setpoint.get()
+        diff = self.readback.get() - getattr(self, self._target_attr).get()
         dmov = abs(diff) <= self.tolerance.get()
         if self.report_dmov_changes.get() and dmov != self.done.get():
             logger.debug(f"{self.name} reached: {dmov}")
@@ -85,22 +85,28 @@ class PVPositionerSoftDone(PVPositioner):
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
                  name=None, read_attrs=None, configuration_attrs=None,
-                 parent=None, egu="", tolerance=None, **kwargs):
+                 parent=None, egu="", tolerance=None, target_attr="setpoint",
+                 **kwargs):
 
         self._setpoint_pv = setpoint_pv
         self._readback_pv = readback_pv
+        self._target_attr = target_attr
 
         super().__init__(prefix=prefix, limits=limits, name=name,
                          read_attrs=read_attrs,
                          configuration_attrs=configuration_attrs,
                          parent=parent, egu=egu, **kwargs)
 
+        # Make the default alias for the readback the name of the
+        # positioner itself as in EpicsMotor.
+        self.readback.name = self.name
+
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
 
         if tolerance is None:
-            self.readback.wait_for_connection()
-            self.setpoint.wait_for_connection()
+            self.readback.wait_for_connection(timeout=5.0)
+            self.setpoint.wait_for_connection(timeout=5.0)
 
             rb = self.readback.precision
             sp = self.setpoint.precision

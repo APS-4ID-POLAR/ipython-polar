@@ -4,16 +4,16 @@ Kepko power supply
 
 __all__ = ['kepko']
 
-from ophyd import Component, FormattedComponent, Device, PVPositioner, Kind
+from ophyd import Component, FormattedComponent, Device, Kind
 from ophyd import EpicsSignal, EpicsSignalRO
 from ..framework import sd
-from .util_components import DoneSignal
+from .util_components import PVPositionerSoftDone
 
 from ..session_logs import logger
 logger.info(__file__)
 
 
-class LocalPositioner(PVPositioner):
+class LocalPositioner(PVPositionerSoftDone):
     """ Voltage/Current positioner """
 
     readback = FormattedComponent(
@@ -26,26 +26,10 @@ class LocalPositioner(PVPositioner):
         kind='normal', labels=('kepko', 'magnet')
         )
 
-    done = Component(DoneSignal, value=0, kind='omitted')
-    done_value = 1
-
     def __init__(self, *args, progtype, **kwargs):
         self._type = progtype
-        super().__init__(*args, **kwargs)
-        # TODO: This seems good, but may need to be tested.
-        self.tolerance = 0.02
-
-        self.readback.subscribe(self.done.get)
-        self.setpoint.subscribe(self.done.get)
-
-    @done.sub_value
-    def _move_changed(self, **kwargs):
-        super()._move_changed(**kwargs)
-
-    def move(self, *args, **kwargs):
-        status = super().move(*args, **kwargs)
-        self.done.get()
-        return status
+        # TODO: This tolerance seems good, but may need to be tested.
+        super().__init__(*args, tolerance=0.02, **kwargs)
 
 
 class KepkoController(Device):

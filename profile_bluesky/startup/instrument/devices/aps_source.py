@@ -23,7 +23,8 @@ class UndulatorEnergy(PVPositioner):
     """
     Undulator energy positioner.
 
-    Main purpose this being a PVPositioner is to handle the undulator backlash.
+    Always move the undulator to final position from the high to low energy
+    direction, by applying a backlash (hysteresis) correction as needed.
     """
 
     # Position
@@ -57,6 +58,10 @@ class UndulatorEnergy(PVPositioner):
         self.readback.subscribe(self.done.get)
         self.setpoint.subscribe(self.done.get)
         self._status_obj = Status(self)
+
+        # Make the default alias for the readback the name of the
+        # positioner itself as in EpicsMotor.
+        self.readback.name = self.name
 
     @deadband.sub_value
     def _change_tolerance(self, value=None, **kwargs):
@@ -109,7 +114,7 @@ class UndulatorEnergy(PVPositioner):
         """
         Moves undulator.
 
-        This is meant to the ran using threading, so the move will block by
+        This is meant to run using threading, so the move will block by
         construction.
         """
 

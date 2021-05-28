@@ -17,7 +17,6 @@ class EnergySignal(Signal):
 
     """
     Beamline energy.
-
     Here it is setup so that the monochromator is the beamline energy, but note
     that this can be changed.
     """

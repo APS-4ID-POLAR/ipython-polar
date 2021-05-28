@@ -99,7 +99,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
     def calibrate_energy(self, value):
         """Calibrate the mono energy.
-
         Parameters
         ----------
         value: float
@@ -111,5 +110,6 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 
 mono = Monochromator('4idb:', name='mono')
-mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
+# TODO: not needed because of the mono.energy.actuate?
+# mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
 sd.baseline.append(mono)
