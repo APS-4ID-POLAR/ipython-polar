@@ -101,8 +101,8 @@ class PVPositionerSoftDone(PVPositioner):
         self.setpoint.subscribe(self.cb_setpoint)
 
         if tolerance is None:
-            self.readback.wait_for_connection()
-            self.setpoint.wait_for_connection()
+            self.readback.wait_for_connection(timeout=5.0)
+            self.setpoint.wait_for_connection(timeout=5.0)
 
             rb = self.readback.precision
             sp = self.setpoint.precision
