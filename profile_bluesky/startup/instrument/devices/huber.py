@@ -71,6 +71,10 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     energy_update_calc_flag = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.read_attrs += "x y z baseth basetth ath achi atth".split()
+
     @property
     def _calc_energy_update_permitted(self):
         """return boolean `True` if permitted."""
@@ -119,11 +123,4 @@ fourc.calc.physical_axis_names = {'omega': 'theta',
                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
-
-# TODO: This is a rough workaround...
-for attr in ("x", "y", "z", "baseth", "basetth", "ath", "achi", "atth",
-             "tablex", "tabley"):
-    getattr(fourc, attr).kind = "normal"
-fourc.energy.kind = "omitted"
-
 sd.baseline.append(fourc)
