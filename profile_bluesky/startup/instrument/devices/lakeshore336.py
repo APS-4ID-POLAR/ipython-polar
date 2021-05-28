@@ -8,7 +8,7 @@ from ophyd import (Component, FormattedComponent, Device, EpicsSignal, Signal,
 from ophyd.status import wait as status_wait
 from .util_components import TrackingSignal, PVPositionerSoftDone
 
-from instrument.session_logs import logger
+from ..session_logs import logger
 logger.info(__file__)
 
 
