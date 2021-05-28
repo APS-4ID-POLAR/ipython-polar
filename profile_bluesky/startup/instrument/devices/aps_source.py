@@ -22,7 +22,9 @@ sd.baseline.append(aps)
 class UndulatorEnergy(PVPositioner):
     """
     Undulator energy positioner.
-    Main purpose this being a PVPositioner is to handle the undulator backlash.
+
+    Always move the undulator to final position from the high to low energy
+    direction, by applying a backlash (hysteresis) correction as needed.
     """
 
     # Position
@@ -70,15 +72,18 @@ class UndulatorEnergy(PVPositioner):
     def move(self, position, wait=True, **kwargs):
         """
         Moves the undulator energy.
+
         Currently, the backlash has to be handled within Bluesky. The actual
         motion is done by `self._move` using threading. kwargs are passed to
         PVPositioner.move().
+
         Parameters
         ----------
         position : float
             Position to move to
         wait : boolean, optional
             Flag to block the execution until motion is completed.
+
         Returns
         -------
         status : Status
@@ -104,7 +109,8 @@ class UndulatorEnergy(PVPositioner):
     def _move(self, position, **kwargs):
         """
         Moves undulator.
-        This is meant to the ran using threading, so the move will block by
+
+        This is meant to the be ran using threading, so the move will block by
         construction.
         """
 
@@ -135,6 +141,7 @@ class UndulatorEnergy(PVPositioner):
 class MyUndulator(ApsUndulator):
     """
     Undulator setup.
+
     Differences from `apstools` standard:
     - `energy` is a PVPositioner.
     - `start_button`, `stop_button` and `device_status` go into `energy`.
