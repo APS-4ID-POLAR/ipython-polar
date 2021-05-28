@@ -8,7 +8,7 @@ from .lakeshore336 import LS336Device
 from .lakeshore340 import LS340Device
 from ..framework import sd
 
-from instrument.session_logs import logger
+from ..session_logs import logger
 logger.info(__file__)
 
 # Lakeshore 336
