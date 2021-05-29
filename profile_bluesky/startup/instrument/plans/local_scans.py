@@ -107,7 +107,7 @@ def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
 
 
 def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
-        fixq=False, md=None, **kwargs):
+        fixq=False, md=None):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -184,14 +184,13 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
             *args,
             per_step=per_step,
             md=_md,
-            **kwargs
             )
 
     return (yield from _inner_lup())
 
 
 def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
-          fixq=False, md=None, **kwargs):
+          fixq=False, md=None):
     """
     Scan over one multi-motor trajectory.
 
@@ -269,15 +268,14 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
             detectors + extras,
             *args,
             per_step=per_step,
-            md=_md,
-            **kwargs
+            md=_md
             )
 
     return (yield from _inner_ascan())
 
 
 def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
-           fixq=False, md=None, **kwargs):
+           fixq=False, md=None):
 
     if detectors is None:
         detectors = counters.detectors
