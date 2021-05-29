@@ -8,7 +8,7 @@ from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv, rd
 from bluesky.preprocessors import relative_set_decorator
-from ..devices import (scalerd, pr_setup, mag6t, undulator,
+from ..devices import (scalerd, pr_setup, mag6t, undulator, fourc,
                        pr1, pr2, pr3, energy, qxscan_params)
 from .local_preprocessors import (configure_counts_decorator,
                                   stage_dichro_decorator,
@@ -27,7 +27,15 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
-def _collect_extras(escan_flag):
+class LocalFlag:
+    dichro = False
+    fixq = False
+
+
+flag = LocalFlag()
+
+
+def _collect_extras(escan_flag, fourc_flag):
 
     extras = counters.extra_devices.copy()
 
@@ -40,26 +48,27 @@ def _collect_extras(escan_flag):
             if pr_track:
                 extras.append(pr.th)
 
+    if fourc_flag:
+        extras.append(fourc)
+
     return extras
 
 
-def dichro_steps(detectors, motors, take_reading):
+def dichro_steps(devices_to_read, take_reading):
 
     pr_pos = yield from rd(pr_setup.positioner)
     offset = yield from rd(pr_setup.offset)
-
+    devices_to_read += [pr_setup.positioner]
     for sign in pr_setup.dichro_steps:
         yield from mv(pr_setup.positioner, pr_pos + sign*offset)
-        yield from take_reading(list(detectors) + list(motors) +
-                                [pr_setup.positioner])
+        yield from take_reading(devices_to_read)
 
-    # TODO: This step is unnecessary if the pr motor is used.
     yield from mv(pr_setup.positioner, pr_pos)
 
 
-def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
+def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     """
-    Inner loop for dichro scans.
+    Inner loop for fixQ and dichro scans.
 
     Parameters
     ----------
@@ -77,13 +86,28 @@ def one_dichro_step(detectors, step, pos_cache, take_reading=trigger_and_read):
         Defaults to `trigger_and_read`
     """
 
-    motors = step.keys()
+    devices_to_read = list(step.keys()) + list(detectors)
     yield from move_per_step(step, pos_cache)
-    yield from dichro_steps(detectors, motors, take_reading)
+
+    if flag.fixq:
+        # Pseudomotors `.get()` return a PseudoSingleTuple, but we want only
+        # the setpoint.
+        hkl_pos = {
+            fourc.h: fourc.h.get().setpoint,
+            fourc.k: fourc.k.get().setpoint,
+            fourc.l: fourc.l.get().setpoint,
+        }
+        devices_to_read += [fourc]
+        yield from move_per_step(hkl_pos, hkl_pos)
+
+    if flag.dichro:
+        yield from dichro_steps(devices_to_read, take_reading)
+    else:
+        yield from take_reading(devices_to_read)
 
 
 def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
-        md=None, **kwargs):
+        fixq=False, md=None, **kwargs):
     """
     Scan over one multi-motor trajectory relative to current position.
 
@@ -113,6 +137,8 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    fixq : boolean, optional
+        Flag to fix the hkl position. Particularly used for energy scan.
     md : dictionary, optional
         Metadata to be added to the run start.
     kwargs :
@@ -126,12 +152,16 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     if detectors is None:
         detectors = counters.detectors
 
+    flag.dichro = dichro
+    flag.fixq = fixq
+    per_step = one_local_step if fixq or dichro else None
+
     # This allows passing "time" without using the keyword.
     if len(args) % 3 == 2 and time is None:
         time = args[-1]
         args = args[:-1]
 
-    extras = yield from _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args, "fourc" in str(args))
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
@@ -152,7 +182,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         yield from rel_scan(
             detectors + extras,
             *args,
-            per_step=one_dichro_step if dichro else None,
+            per_step=per_step,
             md=_md,
             **kwargs
             )
@@ -160,8 +190,8 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     return (yield from _inner_lup())
 
 
-def ascan(*args, time=None, detectors=None, lockin=False,
-          dichro=False, md=None, **kwargs):
+def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
+          fixq=False, md=None, **kwargs):
     """
     Scan over one multi-motor trajectory.
 
@@ -191,6 +221,8 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         dichro scan. Note that this will switch the x-ray polarization at every
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
+    fixq : boolean, optional
+        Flag to fix the hkl position. Particularly used for energy scan.
     md : dictionary, optional
         Metadata to be added to the run start.
     kwargs :
@@ -204,12 +236,16 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     if detectors is None:
         detectors = counters.detectors
 
+    flag.dichro = dichro
+    flag.fixq = fixq
+    per_step = one_local_step if fixq or dichro else None
+
     # This allows passing "time" without using the keyword.
     if len(args) % 3 == 2 and time is None:
         time = args[-1]
         args = args[:-1]
 
-    extras = yield from _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args, "fourc" in str(args))
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
@@ -232,7 +268,7 @@ def ascan(*args, time=None, detectors=None, lockin=False,
         yield from scan(
             detectors + extras,
             *args,
-            per_step=one_dichro_step if dichro else None,
+            per_step=per_step,
             md=_md,
             **kwargs
             )
@@ -240,19 +276,21 @@ def ascan(*args, time=None, detectors=None, lockin=False,
     return (yield from _inner_ascan())
 
 
-def qxscan(edge_energy, time=None, detectors=None, lockin=False,
-           dichro=False, md=None, **kwargs):
+def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
+           fixq=False, md=None, **kwargs):
 
     if detectors is None:
         detectors = counters.detectors
 
-    per_step = one_dichro_step if dichro else None
+    flag.dichro = dichro
+    flag.fixq = fixq
+    per_step = one_local_step if fixq or dichro else None
 
     # Get energy argument and extras
     energy_list = yield from rd(qxscan_params.energy_list)
     args = (energy, array(energy_list) + edge_energy)
 
-    extras = yield from _collect_extras(energy in args)
+    extras = yield from _collect_extras(energy in args, "fourc" in str(args))
 
     # Setup count time
     factor_list = yield from rd(qxscan_params.factor_list)
@@ -286,7 +324,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False,
     @extra_devices_decorator(extras)
     def _inner_qxscan():
         yield from list_scan(
-            detectors + extras, *args, per_step=per_step, md=_md, **kwargs
+            detectors + extras, *args, per_step=per_step, md=_md
             )
 
         # put original times back.
