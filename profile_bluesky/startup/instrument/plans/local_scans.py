@@ -129,6 +129,9 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     time : float, optional
         If a number is passed, it will modify the counts over time. All
         detectors need to have a .preset_monitor signal.
+    detectors : list, optional
+        List of detectors to be used in the scan. If None, will use the
+        detectors defined in `counters.detectors`.
     lockin : boolean, optional
         Flag to do a lock-in scan. Please run pr_setup.config() prior do a
         lock-in scan.
@@ -141,8 +144,6 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         Flag to fix the hkl position. Particularly used for energy scan.
     md : dictionary, optional
         Metadata to be added to the run start.
-    kwargs :
-        Passed to `bluesky.plans.rel_scan`.
 
     See Also
     --------
@@ -212,6 +213,9 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     time : float, optional
         If a number is passed, it will modify the counts over time. All
         detectors need to have a .preset_monitor signal.
+    detectors : list, optional
+        List of detectors to be used in the scan. If None, will use the
+        detectors defined in `counters.detectors`.
     lockin : boolean, optional
         Flag to do a lock-in scan. Please run pr_setup.config() prior do a
         lock-in scan
@@ -224,8 +228,7 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
         Flag to fix the hkl position. Particularly used for energy scan.
     md : dictionary, optional
         Metadata to be added to the run start.
-    kwargs :
-        Passed to `bluesky.plans.scan`.
+
     See Also
     --------
     :func:`bluesky.plans.scan`
@@ -276,6 +279,41 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
 
 def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
            fixq=False, md=None):
+    """
+    Energy scan with fixed delta_K steps.
+
+    WARNING: please run qxscan_params.setup() before using this plan! It will
+    use the parameters set in qxscan_params to determine the energy points.
+
+    Parameters
+    ----------
+    edge_energy : float
+        Absorption edge energy. The parameters in qxscan_params offset by this
+        energy.
+    time : float, optional
+        If a number is passed, it will modify the counts over time. All
+        detectors need to have a .preset_monitor signal.
+    detectors : list, optional
+        List of detectors to be used in the scan. If None, will use the
+        detectors defined in `counters.detectors`.
+    lockin : boolean, optional
+        Flag to do a lock-in scan. Please run pr_setup.config() prior do a
+        lock-in scan
+    dichro : boolean, optional
+        Flag to do a dichro scan. Please run pr_setup.config() prior do a
+        dichro scan. Note that this will switch the x-ray polarization at every
+        point using the +, -, -, + sequence, thus increasing the number of
+        points by a factor of 4
+    fixq : boolean, optional
+        Flag to fix the hkl position. Particularly used for energy scan.
+    md : dictionary, optional
+        Metadata to be added to the run start.
+
+    See Also
+    --------
+    :func:`bluesky.plans.scan`
+    :func:`lup`
+    """
 
     if detectors is None:
         detectors = counters.detectors
