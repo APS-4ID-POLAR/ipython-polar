@@ -173,6 +173,18 @@ class PRSetup():
     offset = None
     dichro_steps = [1, -1, -1, 1]
 
+    def __repr__(self):
+
+        pos_name = self.positioner.name if self.positioner else "None"
+
+        return ("Phase retarder settings\n"
+                f" Selected PR = {pos_name}\n"
+                f" Offset = {self.offset}\n"
+                f" Steps for dichro scan = {self.dichro_steps}\n")
+
+    def __str__(self):
+        return self.__repr__()
+
     def __call__(self):
 
         print('Setup of the phase retarders for dichro scans.')
