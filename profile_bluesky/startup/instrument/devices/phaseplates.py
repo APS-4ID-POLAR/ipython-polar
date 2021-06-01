@@ -16,8 +16,8 @@ from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
 # cannot read. See: https://github.com/bluesky/ophyd/issues/930
-from epics import utils3
-utils3.EPICS_STR_ENCODING = "latin-1"
+from epics import utils
+utils.EPICS_STR_ENCODING = "latin-1"
 
 logger.info(__file__)
 
@@ -172,6 +172,31 @@ class PRSetup():
     positioner = None
     offset = None
     dichro_steps = [1, -1, -1, 1]
+
+    def __repr__(self):
+
+        tracked = ""
+        for pr in [pr1, pr2, pr3]:
+            if pr.tracking.get():
+                tracked += f"{pr.name} "
+
+        oscillate = self.positioner.name if self.positioner else "None"
+        offset = self.offset.name if self.offset else "None"
+        try:
+            pzt_center = self.offset.parent.center.get()
+        except AttributeError:
+            pzt_center = "None"
+
+        return ("Phase retarder settings\n"
+                f"  Tracking PRs = {tracked}\n"
+                f"  Oscillating PR = {oscillate}\n"
+                f"  Offset positioner = {offset}\n"
+                f"  Offset value = {self.offset.get()}\n"
+                f"  PZT center = {pzt_center}\n"
+                f"  Steps for dichro scan = {self.dichro_steps}\n")
+
+    def __str__(self):
+        return self.__repr__()
 
     def __call__(self):
 

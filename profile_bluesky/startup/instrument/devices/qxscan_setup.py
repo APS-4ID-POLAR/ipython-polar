@@ -63,10 +63,57 @@ class QxscanParams(Device):
     pre_edge = Component(PreEdgeDevice)
     edge = Component(EdgeDevice)
     post_edge = Component(PostEdgeDevice)
-    energy_list = Component(Signal, value=0)
-    factor_list = Component(Signal, value=0)
+    energy_list = Component(Signal, value=[0])
+    factor_list = Component(Signal, value=[0])
 
-    def setup(self):
+    def __repr__(self):
+
+        params = self._make_params_dict()
+
+        output = "Qxscan setup parameters\n"
+
+        output += "-- Pre-edge --\n"
+        output += ("  Number of regions = "
+                   f"{params['pre_edge']['num_regions']}\n")
+        for i in range(1, params['pre_edge']['num_regions']+1):
+            output += f"  Region {i}:\n"
+            key = f"region{i}"
+            output += ("    energy start = "
+                       f"{params['pre_edge'][key]['Estart']}\n")
+            output += f"    energy step = {params['pre_edge'][key]['Estep']}\n"
+            output += ("    time factor = "
+                       f"{params['pre_edge'][key]['TimeFactor']}\n\n")
+
+        output += "-- Edge --\n"
+        output += f"    energy start = {params['edge']['Estart']} eV\n"
+        output += f"    energy step = {params['edge']['Estep']} eV\n"
+        output += f"    energy end = {params['edge']['Eend']} eV\n"
+        output += f"    k end = {sqrt(constant*params['edge']['Eend'])} A^-1\n"
+        output += f"    time factor = {params['edge']['TimeFactor']}\n\n"
+
+        output += "-- Post-edge --\n"
+        output += ("  Number of regions = "
+                   f"{params['post_edge']['num_regions']}\n")
+        for i in range(1, params['post_edge']['num_regions']+1):
+            output += f"  Region {i}:\n"
+            key = f"region{i}"
+            output += f"    k end = {params['post_edge'][key]['Kend']} A^-1\n"
+            output += ("    k step = "
+                       f"{params['post_edge'][key]['Kstep']} A^-1\n")
+            output += ("    time factor = "
+                       f"{params['post_edge'][key]['TimeFactor']}\n\n")
+
+        output += f"Number of points = {len(self.energy_list.get())}\n"
+        output += "Final relative energy = {:0.3f} eV".format(
+            max(self.energy_list.get())*1000.
+        )
+
+        return output
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __call__(self):
         print('Defining the energy range and steps for qxscan')
         print('All energies are relative to the absorption edge!')
 
