@@ -9,18 +9,17 @@ from ophyd import Component, FormattedComponent
 from ophyd import PseudoSingle
 from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
 from bluesky.suspenders import SuspendBoolLow
-from apstools.diffractometer import DiffractometerMixin
 from ..framework import RE
 from ..framework import sd
 import gi
 gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
-from hkl.diffract import E4CV
+from hkl.geometries import E4CV
 from ..session_logs import logger
 logger.info(__file__)
 
 
-class FourCircleDiffractometer(DiffractometerMixin, E4CV):
+class FourCircleDiffractometer(E4CV):
     """
     E4CV: huber diffractometer in 4-circle vertical geometry with energy.
 
