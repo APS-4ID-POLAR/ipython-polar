@@ -175,11 +175,19 @@ class PRSetup():
 
     def __repr__(self):
 
-        pos_name = self.positioner.name if self.positioner else "None"
+        tracked = ""
+        for pr in [pr1, pr2, pr3]:
+            if pr.tracking.get():
+                tracked += f"{pr.name} "
+
+        oscillate = self.positioner.name if self.positioner else "None"
+        offset = self.offset.name if self.offset else "None"
 
         return ("Phase retarder settings\n"
-                f" Selected PR = {pos_name}\n"
-                f" Offset = {self.offset}\n"
+                f"  Tracking PRs = {tracked}\n"
+                f"  Oscillating PR = {oscillate}\n"
+                f"  Offset positioner = {offset}\n"
+                f"  Offset value = {self.offset.get()}\n"
                 f" Steps for dichro scan = {self.dichro_steps}\n")
 
     def __str__(self):
