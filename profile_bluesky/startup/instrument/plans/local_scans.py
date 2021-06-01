@@ -305,7 +305,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
     fixq : boolean, optional
-        Flag to fix the hkl position. Particularly used for energy scan.
+        Flag to fix the hkl position.
     md : dictionary, optional
         Metadata to be added to the run start.
 
