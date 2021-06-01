@@ -182,13 +182,18 @@ class PRSetup():
 
         oscillate = self.positioner.name if self.positioner else "None"
         offset = self.offset.name if self.offset else "None"
+        try:
+            pzt_center = self.offset.parent.center.get()
+        except AttributeError:
+            pzt_center = "None"
 
         return ("Phase retarder settings\n"
                 f"  Tracking PRs = {tracked}\n"
                 f"  Oscillating PR = {oscillate}\n"
                 f"  Offset positioner = {offset}\n"
                 f"  Offset value = {self.offset.get()}\n"
-                f" Steps for dichro scan = {self.dichro_steps}\n")
+                f"  PZT center = {pzt_center}\n"
+                f"  Steps for dichro scan = {self.dichro_steps}\n")
 
     def __str__(self):
         return self.__repr__()
