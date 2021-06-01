@@ -147,7 +147,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     md : dictionary, optional
         Metadata to be added to the run start.
 
-    See Alsos
+    See Also
     --------
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
