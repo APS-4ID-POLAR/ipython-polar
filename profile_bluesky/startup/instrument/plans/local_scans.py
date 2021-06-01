@@ -141,11 +141,13 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
     fixq : boolean, optional
-        Flag to fix the hkl position. Particularly used for energy scan.
+        Flag for fixQ scans. If True, it will fix the diffractometer hkl
+        position during the scan. This is particularly useful for energy scan.
+        Note that hkl is moved ~after~ the other motors!
     md : dictionary, optional
         Metadata to be added to the run start.
 
-    See Also
+    See Alsos
     --------
     :func:`bluesky.plans.rel_scan`
     :func:`ascan`
@@ -225,7 +227,9 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
     fixq : boolean, optional
-        Flag to fix the hkl position. Particularly used for energy scan.
+        Flag for fixQ scans. If True, it will fix the diffractometer hkl
+        position during the scan. This is particularly useful for energy scan.
+        Note that hkl is moved ~after~ the other motors!
     md : dictionary, optional
         Metadata to be added to the run start.
 
@@ -305,7 +309,9 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
         point using the +, -, -, + sequence, thus increasing the number of
         points by a factor of 4
     fixq : boolean, optional
-        Flag to fix the hkl position.
+        Flag for fixQ scans. If True, it will fix the diffractometer hkl
+        position during the scan. Note that hkl is moved ~after~ the other
+        motors!
     md : dictionary, optional
         Metadata to be added to the run start.
 
