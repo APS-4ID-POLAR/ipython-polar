@@ -72,7 +72,7 @@ class QxscanParams(Device):
 
         output = "Qxscan setup parameters\n"
 
-        output += "-- Pre-edge --"
+        output += "-- Pre-edge --\n"
         output += ("  Number of regions = "
                    f"{params['pre_edge']['num_regions']}\n")
         for i in range(1, params['pre_edge']['num_regions']+1):
@@ -84,14 +84,14 @@ class QxscanParams(Device):
             output += ("    time factor = "
                        f"{params['pre_edge'][key]['TimeFactor']}\n\n")
 
-        output += "-- Edge --"
+        output += "-- Edge --\n"
         output += f"    energy start = {params['edge']['Estart']} eV\n"
         output += f"    energy step = {params['edge']['Estep']} eV\n"
         output += f"    energy end = {params['edge']['Eend']} eV\n"
         output += f"    k end = {sqrt(constant*params['edge']['Eend'])} A^-1"
         output += f"    time factor = {params['edge']['TimeFactor']}\n\n"
 
-        output += "-- Post-edge --"
+        output += "-- Post-edge --\n"
         output += ("  Number of regions = "
                    f"{params['post_edge']['num_regions']}\n")
         for i in range(1, params['post_edge']['num_regions']+1):
