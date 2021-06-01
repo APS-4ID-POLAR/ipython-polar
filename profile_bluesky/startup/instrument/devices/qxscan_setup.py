@@ -105,7 +105,7 @@ class QxscanParams(Device):
 
         output += f"Number of points = {len(self.energy_list.get())}\n"
         output += "Final relative energy = {:0.3f} eV".format(
-            max(self.energy_list)*1000.
+            max(self.energy_list.get())*1000.
         )
 
         return output
