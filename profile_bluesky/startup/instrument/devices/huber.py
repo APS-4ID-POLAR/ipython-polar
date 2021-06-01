@@ -5,9 +5,8 @@ Diffractometer motors
 
 __all__ = ['fourc']
 
-from ophyd import Component, FormattedComponent
-from ophyd import PseudoSingle
-from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
+from ophyd import (Component, FormattedComponent, PseudoSingle, Kind,
+                   EpicsSignal, EpicsSignalRO, EpicsMotor, Signal)
 from bluesky.suspenders import SuspendBoolLow
 from ..framework import RE
 from ..framework import sd
@@ -70,6 +69,16 @@ class FourCircleDiffractometer(E4CV):
     energy_update_calc_flag = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
 
+    # TODO: This is needed to prevent busy plotting.
+    @property
+    def hints(self):
+        fields = []
+        for _, component in self._get_components_of_kind(Kind.hinted):
+            if (~Kind.normal & Kind.hinted) & component.kind:
+                c_hints = component.hints
+                fields.extend(c_hints.get('fields', []))
+        return {'fields': fields}
+
 
 fourc = FourCircleDiffractometer('4iddx:', name='fourc')
 fourc.calc.physical_axis_names = {'omega': 'theta',
@@ -80,8 +89,7 @@ sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
 
 # TODO: This is a rough workaround...
-for attr in ("x", "y", "z", "baseth", "basetth", "ath", "achi", "atth",
-             "tablex", "tabley"):
+for attr in "x y z baseth basetth ath achi atth tablex tabley".split():
     getattr(fourc, attr).kind = "normal"
 fourc.energy.kind = "omitted"
 
