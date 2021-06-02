@@ -57,10 +57,11 @@ class PVPositionerSoftDone(PVPositioner):
                                   kind="hinted", auto_monitor=True)
     setpoint = FormattedComponent(EpicsSignal, "{prefix}{_setpoint_pv}",
                                   kind="normal", put_complete=True)
-    done = Component(Signal, value=True)
+    done = Component(Signal, value=True, kind="config")
     done_value = True
 
-    tolerance = Component(Signal, value=1)  # Value always updated during init.
+    # tolerance always updated during init.
+    tolerance = Component(Signal, value=1, kind="config")
     report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
