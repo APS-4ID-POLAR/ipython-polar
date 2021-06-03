@@ -109,8 +109,8 @@ class PVPositionerSoftDone(PVPositioner):
             self.readback.wait_for_connection(timeout=5.0)
             self.setpoint.wait_for_connection(timeout=5.0)
 
-            rb = self.readback.precision
-            sp = self.setpoint.precision
+            rb = 10**(-1*self.readback.precision)
+            sp =  10**(-1*self.setpoint.precision)
 
             tolerance = rb if rb >= sp else sp
 
