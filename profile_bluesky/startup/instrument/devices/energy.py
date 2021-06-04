@@ -33,11 +33,10 @@ class EnergySignal(Signal):
         status.set_finished()
 
         # Mono
-        if abs(self.get()-position) > mono.energy.tolerance.get():
-            mono_status = mono.energy.set(
-                position, wait=wait, timeout=timeout, moved_cb=moved_cb
-            )
-            status = AndStatus(status, mono_status)
+        mono_status = mono.energy.set(
+            position, wait=wait, timeout=timeout, moved_cb=moved_cb
+        )
+        status = AndStatus(status, mono_status)
 
         # Phase retarders
         for pr in [pr1, pr2, pr3]:
