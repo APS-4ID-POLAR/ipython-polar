@@ -79,10 +79,12 @@ class UserCalc(Device):
 
 
 absorption_calc = UserCalc('4id:userCalc9', name='absorption_calc')
-absorption_calc.scan.put(2)
+# TODO: this times out frequently during startup
+# absorption_calc.scan.put(2)
 
 normalize_calc = UserCalc('4id:userCalc10', name='normalize_calc')
-normalize_calc.scan.put(2)
+# TODO: this times out frequently during startups
+# normalize_calc.scan.put(2)
 
 sd.baseline.append(absorption_calc)
 sd.baseline.append(normalize_calc)
