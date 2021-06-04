@@ -7,6 +7,7 @@ from ophyd import (
     Component, FormattedComponent, Signal, EpicsSignal, EpicsSignalRO,
     PVPositioner
 )
+from ophyd.status import Status
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -61,7 +62,7 @@ class PVPositionerSoftDone(PVPositioner):
     done_value = True
 
     # tolerance always updated during init.
-    tolerance = Component(Signal, value=1, kind="config")
+    tolerance = Component(Signal, value=None, kind="config")
     report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
@@ -117,8 +118,19 @@ class PVPositionerSoftDone(PVPositioner):
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
-        self.cb_setpoint()
-        self.cb_readback()
+
+    def move(self, position, wait=True, timeout=None, moved_cb=None):
+        _diff = abs(position - getattr(self, self._target_attr).get())
+        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+                      10**(-1*self.precision))
+        if _diff <= _tolerance:
+            status = Status()
+            status.set_finished()
+        else:
+            status = super().move(
+                position, wait=wait, timeout=timeout, moved_cb=moved_cb
+            )
+        return status
 
     @property
     def precision(self):
