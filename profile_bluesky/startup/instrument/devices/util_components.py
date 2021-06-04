@@ -69,7 +69,9 @@ class PVPositionerSoftDone(PVPositioner):
         Called when readback changes (EPICS CA monitor event).
         """
         diff = self.readback.get() - getattr(self, self._target_attr).get()
-        dmov = abs(diff) <= self.tolerance.get()
+        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+                      10**(-1*self.precision))
+        dmov = abs(diff) <= _tolerance
         if self.report_dmov_changes.get() and dmov != self.done.get():
             logger.debug(f"{self.name} reached: {dmov}")
         self.done.put(dmov)
@@ -104,16 +106,6 @@ class PVPositionerSoftDone(PVPositioner):
 
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
-
-        if tolerance is None:
-            self.readback.wait_for_connection(timeout=5.0)
-            self.setpoint.wait_for_connection(timeout=5.0)
-
-            rb = 10**(-1*self.readback.precision)
-            sp =  10**(-1*self.setpoint.precision)
-
-            tolerance = rb if rb >= sp else sp
-
         self.tolerance.put(tolerance)
 
     def _setup_move(self, position):
@@ -123,3 +115,7 @@ class PVPositionerSoftDone(PVPositioner):
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
+
+    @property
+    def precision(self):
+        return self.setpoint.precision
