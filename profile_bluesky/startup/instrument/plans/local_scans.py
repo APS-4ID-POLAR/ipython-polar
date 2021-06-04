@@ -91,27 +91,11 @@ def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from move_per_step(step, pos_cache)
 
     if flag.fixq:
-        # Pseudomotors `.get()` return a PseudoSingleTuple, but we want only
-        # the setpoint.
-#        hkl_pos = {
-#            fourc.h: fourc.h.get().readback,
-#            fourc.k: fourc.k.get().readback,
-#            fourc.l: fourc.l.get().readback,
-#        }
         devices_to_read += [fourc]
-        
-        # print(flag.hkl_pos)
-        
-        # yield from move_per_step(flag.hkl_pos, hkl_pos)
-        
         args = (fourc.h, flag.hkl_pos[fourc.h],
                 fourc.k, flag.hkl_pos[fourc.k],
                 fourc.l, flag.hkl_pos[fourc.l])
-        
-        # print(args)
-        
         yield from bps_mv(*args)
-
 
     if flag.dichro:
         yield from dichro_steps(devices_to_read, take_reading)
