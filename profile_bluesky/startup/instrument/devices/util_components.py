@@ -7,6 +7,7 @@ from ophyd import (
     Component, FormattedComponent, Signal, EpicsSignal, EpicsSignalRO,
     PVPositioner
 )
+from ophyd.status import Status
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -61,7 +62,7 @@ class PVPositionerSoftDone(PVPositioner):
     done_value = True
 
     # tolerance always updated during init.
-    tolerance = Component(Signal, value=1, kind="config")
+    tolerance = Component(Signal, value=None, kind="config")
     report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
@@ -69,7 +70,9 @@ class PVPositionerSoftDone(PVPositioner):
         Called when readback changes (EPICS CA monitor event).
         """
         diff = self.readback.get() - getattr(self, self._target_attr).get()
-        dmov = abs(diff) <= self.tolerance.get()
+        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+                      10**(-1*self.precision))
+        dmov = abs(diff) <= _tolerance
         if self.report_dmov_changes.get() and dmov != self.done.get():
             logger.debug(f"{self.name} reached: {dmov}")
         self.done.put(dmov)
@@ -104,22 +107,31 @@ class PVPositionerSoftDone(PVPositioner):
 
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
-
-        if tolerance is None:
-            self.readback.wait_for_connection(timeout=5.0)
-            self.setpoint.wait_for_connection(timeout=5.0)
-
-            rb = self.readback.precision
-            sp = self.setpoint.precision
-
-            tolerance = rb if rb >= sp else sp
-
         self.tolerance.put(tolerance)
 
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
         self.log.debug('%s.setpoint = %s', self.name, position)
         self.setpoint.put(position, wait=False)
+        if self._target_attr != "setpoint":
+            getattr(self, self._target_attr).put(position, wait=False)
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
+
+    def move(self, position, wait=True, timeout=None, moved_cb=None):
+        _diff = abs(position - getattr(self, self._target_attr).get())
+        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+                      10**(-1*self.precision))
+        if _diff <= _tolerance:
+            status = Status()
+            status.set_finished()
+        else:
+            status = super().move(
+                position, wait=wait, timeout=timeout, moved_cb=moved_cb
+            )
+        return status
+
+    @property
+    def precision(self):
+        return self.setpoint.precision

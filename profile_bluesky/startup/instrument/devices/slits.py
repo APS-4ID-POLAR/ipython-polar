@@ -60,6 +60,8 @@ sd.baseline.append(wbslt)
 enslt = SlitDevice('4iddx:', 'enslt',
                    {'top': 'm1', 'bot': 'm2', 'out': 'm3', 'inb': 'm4'},
                    1)
+enslt.vcen.tolerance.put(0.003)
+enslt.vsize.tolerance.put(0.009)
 sd.baseline.append(enslt)
 
 # 8C incident slit

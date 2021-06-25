@@ -281,17 +281,18 @@ class PRSetup():
                             try:
                                 msg = "\tOffset (in degrees)"
                                 msg += f"({_current['offset']}): "
-                                offset = float(input(msg))
+                                offset = input(msg)
                                 if offset == '':
                                     offset = str(_current['offset'])
                                 _positioner.parent.offset_degrees.put(
-                                        float(offset))
+                                        float(offset)
+                                        )
                                 break
                             except ValueError:
                                 print('Must be a number.')
 
                         # if PZT is used, then get the center.
-                        if method == "pzt":
+                        if method.lower() == "pzt":
                             # Get offset signal
                             self.offset = _positioner.parent.offset_microns
                             # Get the PZT center.

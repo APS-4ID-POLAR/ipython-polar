@@ -30,6 +30,7 @@ logger.info(__file__)
 class LocalFlag:
     dichro = False
     fixq = False
+    hkl_pos = {}
 
 
 flag = LocalFlag()
@@ -90,15 +91,11 @@ def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     yield from move_per_step(step, pos_cache)
 
     if flag.fixq:
-        # Pseudomotors `.get()` return a PseudoSingleTuple, but we want only
-        # the setpoint.
-        hkl_pos = {
-            fourc.h: fourc.h.get().setpoint,
-            fourc.k: fourc.k.get().setpoint,
-            fourc.l: fourc.l.get().setpoint,
-        }
         devices_to_read += [fourc]
-        yield from move_per_step(hkl_pos, hkl_pos)
+        args = (fourc.h, flag.hkl_pos[fourc.h],
+                fourc.k, flag.hkl_pos[fourc.k],
+                fourc.l, flag.hkl_pos[fourc.l])
+        yield from bps_mv(*args)
 
     if flag.dichro:
         yield from dichro_steps(devices_to_read, take_reading)
@@ -158,6 +155,12 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
     flag.dichro = dichro
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
+    if fixq:
+        flag.hkl_pos = {
+            fourc.h: fourc.h.get().setpoint,
+            fourc.k: fourc.k.get().setpoint,
+            fourc.l: fourc.l.get().setpoint,
+        }
 
     # This allows passing "time" without using the keyword.
     if len(args) % 3 == 2 and time is None:
@@ -245,6 +248,12 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     flag.dichro = dichro
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
+    if fixq:
+        flag.hkl_pos = {
+            fourc.h: fourc.h.get().setpoint,
+            fourc.k: fourc.k.get().setpoint,
+            fourc.l: fourc.l.get().setpoint,
+        }
 
     # This allows passing "time" without using the keyword.
     if len(args) % 3 == 2 and time is None:
@@ -327,6 +336,12 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
     flag.dichro = dichro
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
+    if fixq:
+        flag.hkl_pos = {
+            fourc.h: fourc.h.get().setpoint,
+            fourc.k: fourc.k.get().setpoint,
+            fourc.l: fourc.l.get().setpoint,
+        }
 
     # Get energy argument and extras
     energy_list = yield from rd(qxscan_params.energy_list)

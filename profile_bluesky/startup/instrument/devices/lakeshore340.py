@@ -108,11 +108,6 @@ class LS340_LoopBase(PVPositionerSoftDone):
     def pause(self):
         self.setpoint.put(self._position, wait=True)
 
-    def move(self, position, **kwargs):
-        # Need to update the target.
-        self.target.put(position)
-        return super().move(position, **kwargs)
-
 
 class LS340_LoopControl(LS340_LoopBase):
     """ Control specific """

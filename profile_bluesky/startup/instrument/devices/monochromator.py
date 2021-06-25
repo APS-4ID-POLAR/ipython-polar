@@ -31,8 +31,8 @@ class KohzuPositioner(PVPositionerSoftDone):
                                     kind="omitted")
     stop_y = FormattedComponent(EpicsSignal, "{_y_pv}.STOP",
                                 kind="omitted")
-    stop_z = FormattedComponent(EpicsSignal, "{_z_pv}.STOP",
-                                kind="omitted")
+    # stop_z = FormattedComponent(EpicsSignal, "{_z_pv}.STOP",
+    #                             kind="omitted")
 
     actuate = Component(EpicsSignal, "KohzuPutBO", kind="omitted")
     actuate_value = 1
@@ -48,7 +48,7 @@ class KohzuPositioner(PVPositionerSoftDone):
 
         self._theta_pv = get_motor_pv("Theta")
         self._y_pv = get_motor_pv("Y")
-        self._z_pv = get_motor_pv("Z")
+        # self._z_pv = get_motor_pv("Z")
 
         super().__init__(
             prefix, limits=limits, readback_pv=readback_pv,
@@ -58,7 +58,8 @@ class KohzuPositioner(PVPositionerSoftDone):
         )
 
     def stop(self, *, success=False):
-        for motor in ["theta", "y", "z"]:
+        # for motor in ["theta", "y", "z"]:
+        for motor in ["theta", "y"]:
             getattr(self, f"stop_{motor}").put(1, wait=False)
         super().stop(success=success)
 

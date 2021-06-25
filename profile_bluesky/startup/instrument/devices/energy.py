@@ -33,11 +33,10 @@ class EnergySignal(Signal):
         status.set_finished()
 
         # Mono
-        if abs(self.get()-position) > mono.energy.tolerance.get():
-            mono_status = mono.energy.set(
-                position, wait=wait, timeout=timeout, moved_cb=moved_cb
-            )
-            status = AndStatus(status, mono_status)
+        mono_status = mono.energy.set(
+            position, wait=wait, timeout=timeout, moved_cb=moved_cb
+        )
+        status = AndStatus(status, mono_status)
 
         # Phase retarders
         for pr in [pr1, pr2, pr3]:
@@ -62,10 +61,12 @@ class EnergySignal(Signal):
 
     def stop(self, *, success=False):
         """
-        Stops all energy related devices regardless if it's tracking or not.
+        Stops only energy devices that are tracking.
         """
-        for positioner in [mono, pr1, pr2, pr3, undulator.downstream]:
-            positioner.energy.stop(success=success)
+        mono.energy.stop(success=success)
+        for positioner in [pr1, pr2, pr3, undulator.downstream]:
+            if positioner.tracking.get():
+                positioner.energy.stop(success=success)
 
 
 energy = EnergySignal(name='energy', value=10, kind='hinted')
