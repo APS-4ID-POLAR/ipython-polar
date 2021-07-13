@@ -62,7 +62,7 @@ class PVPositionerSoftDone(PVPositioner):
     done_value = True
 
     # tolerance always updated during init.
-    tolerance = Component(Signal, value=None, kind="config")
+    tolerance = Component(Signal, value=-1, kind="config")
     report_dmov_changes = Component(Signal, value=False, kind="omitted")
 
     def cb_readback(self, *args, **kwargs):
@@ -70,7 +70,7 @@ class PVPositionerSoftDone(PVPositioner):
         Called when readback changes (EPICS CA monitor event).
         """
         diff = self.readback.get() - getattr(self, self._target_attr).get()
-        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+        _tolerance = (self.tolerance.get() if self.tolerance.get() >= 0 else
                       10**(-1*self.precision))
         dmov = abs(diff) <= _tolerance
         if self.report_dmov_changes.get() and dmov != self.done.get():
@@ -107,7 +107,8 @@ class PVPositionerSoftDone(PVPositioner):
 
         self.readback.subscribe(self.cb_readback)
         self.setpoint.subscribe(self.cb_setpoint)
-        self.tolerance.put(tolerance)
+        if tolerance:
+            self.tolerance.put(tolerance)
 
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
@@ -121,7 +122,7 @@ class PVPositionerSoftDone(PVPositioner):
 
     def move(self, position, wait=True, timeout=None, moved_cb=None):
         _diff = abs(position - getattr(self, self._target_attr).get())
-        _tolerance = (self.tolerance.get() if self.tolerance.get() else
+        _tolerance = (self.tolerance.get() if self.tolerance.get() >= 0 else
                       10**(-1*self.precision))
         if _diff <= _tolerance:
             status = Status()
