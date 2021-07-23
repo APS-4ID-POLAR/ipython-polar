@@ -1,5 +1,8 @@
 """ Vortex with Xspress"""
 
+from ophyd.areadetector.detectors import Xspress3Detector
+from ophyd.areadetector.trigger_mixins import SingleTrigger
+
 from ophyd import (EpicsSignal, EpicsSignalRO, DerivedSignal, Signal, Device,
                    Component, FormattedComponent, Kind, DynamicDeviceComponent)
 from ophyd.status import AndStatus, Status
@@ -237,29 +240,10 @@ def _totals(attr_fix, id_range):
     return defn
 
 
-class Xspress3VortexBase(Device):
+class Xspress3VortexBase(Xspress3Detector, SingleTrigger):
 
     # Total corrected counts of each ROI
     corrected_counts = DynamicDeviceComponent(_totals('roi', range(1, 33)))
-
-    # Buttons
-    Acquire_button = Component(EpicsSignal, 'det1:Acquire', trigger_value=1,
-                               kind='omitted')
-
-    Erase_button = Component(EpicsSignal, 'det1:ERASE', kind='omitted')
-
-    # State
-    State = Component(EpicsSignal, 'det1:DetectorState_RBV', string=True,
-                      kind='config')
-
-    # Config
-    # AcquireTime
-    preset_monitor = Component(EpicsSignal, 'det1:AcquireTime', kind='config')
-    NumImages = Component(EpicsSignal, 'det1:NumImages', kind='config')
-    TriggerMode = Component(EpicsSignal, 'det1:TriggerMode', kind='config')
-
-    # TriggerMode, 1:internal, 3: TTL veto only
-    # AcquireMode = 'step'  #step: trigger once and read roi pvs only, frame:
 
     def __init__(self, prefix, *, configuration_attrs=None,
                  read_attrs=None, **kwargs):
@@ -268,26 +252,6 @@ class Xspress3VortexBase(Device):
                          **kwargs)
 
         self._enabled_rois = []
-        # initialize hdf5 folers
-        # set 4 or 1 xsp channels,  Xspress3Channel
-        # xspCh1 = Xspress3Channel(channel_num=1)
-        # xspCh2 = Xspress3Channel(channel_num=2)...
-        # define number of roi
-        # roi1 = Xspress3ROI(1)
-        # MCA1ROI:1:Total_RBV  # channel-1, roi-1
-        # MCA1ROI:2:Total_RBV  # channel-1, roi-2
-
-    def stage(self, *args, **kwargs):  # need to separate, hdf5 saving or none.
-        super().stage(*args, **kwargs)
-        # if frame mode: hdf5:
-        #   S4QX4:HDF1:Capture # 0/1: done/capture, this needs to be 1 before
-        # acquiring to save hdf files
-        #   put default det1:NumImages, det1:AcquireTime
-        # else:
-        #   det1:NumImages=1, det1:AcquireTime
-
-    def unstage(self, *args, **kwargs):
-        super().unstage(*args, **kwargs)
 
     def set_roi(self, index, ev_low, ev_size, name='', channels=None):
         """
@@ -307,12 +271,6 @@ class Xspress3VortexBase(Device):
         channels : iterable
             List with channel numbers to be changed.
         """
-
-        # make a function Edge2Emission(AbsEdge) --> returns primary emission
-        # energy
-        # 1st argument for roi1, 2nd for roi2...
-        # 'S4QX4:MCA1ROI:1:Total_RBV'  # roi1 of channel 1
-        # 'S4QX4:MCA1ROI:2:Total_RBV'  # roi1 of channel 2
 
         if not channels:
             channels = range(1, self._num_channels+1)
@@ -381,22 +339,6 @@ class Xspress3VortexBase(Device):
             roi = getattr(self.corrected_counts, 'roi{:02d}'.format(ind))
             roi.kind = Kind.omitted
 
-    def trigger(self):
-
-        # Monitor timestamps
-        state_status = None
-        for i in range(1, self._num_channels+1):
-            _status = getattr(self, f'Ch{i}')._status_done()
-            if state_status:
-                state_status = AndStatus(state_status, _status)
-            else:
-                state_status = _status
-
-        # Click the Acquire_button
-        button_status = super().trigger()
-
-        return AndStatus(state_status, button_status)
-
     def unload(self):
         """
         Remove detector from baseline and run .destroy()
@@ -438,3 +380,72 @@ class Xspress3Vortex1Ch(Xspress3VortexBase):
     Ch1 = Component(Xspress3Channel, '', chnum=1)
 
     _num_channels = 1
+
+
+# FROM NSLS2
+# def trigger(self):
+#      if self._staged != Staged.yes:
+#          raise RuntimeError("not staged")
+
+#      self._status = DeviceStatus(self)
+#      self.settings.erase.put(1)
+#      self._acquisition_signal.put(1, wait=False)
+#      trigger_time = ttime.time()
+
+#      for sn in self.read_attrs:
+#          if sn.startswith('channel') and '.' not in sn:
+#              ch = getattr(self, sn)
+#              self.dispatch(ch.name, trigger_time)
+
+#      self._abs_trigger_count += 1
+#      return self._status
+
+# class XspressTrigger(BlueskyInterface):
+#     """Base class for trigger mixin classes
+#     Subclasses must define a method with this signature:
+#     `acquire_changed(self, value=None, old_value=None, **kwargs)`
+#     """
+#     # TODO **
+#     # count_time = self.settings.acquire_period
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         # settings
+#         self._status = None
+#         self._acquisition_signal = self.settings.acquire
+#         self._abs_trigger_count = 0
+
+#     def stage(self):
+#         self._abs_trigger_count = 0
+#         self._acquisition_signal.subscribe(self._acquire_changed)
+#         return super().stage()
+
+#     def unstage(self):
+#         ret = super().unstage()
+#         self._acquisition_signal.clear_sub(self._acquire_changed)
+#         self._status = None
+#         return ret
+
+#     def _acquire_changed(self, value=None, old_value=None, **kwargs):
+#         "This is called when the 'acquire' signal changes."
+#         if self._status is None:
+#             return
+#         if (old_value == 1) and (value == 0):
+#             # Negative-going edge means an acquisition just finished.
+#             self._status._finished()
+
+#     def trigger(self):
+#         if self._staged != Staged.yes:
+#             raise RuntimeError("not staged")
+
+#         self._status = DeviceStatus(self)
+#         self._acquisition_signal.put(1, wait=False)
+#         trigger_time = ttime.time()
+
+#         for sn in self.read_attrs:
+#             if sn.startswith('channel') and '.' not in sn:
+#                 ch = getattr(self, sn)
+#                 self.dispatch(ch.name, trigger_time)
+
+#         self._abs_trigger_count += 1
+#         return self._status
