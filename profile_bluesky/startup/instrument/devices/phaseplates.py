@@ -23,7 +23,7 @@ logger.info(__file__)
 
 
 class MicronsSignal(DerivedSignal):
-    '''A signal that converts the offset from degrfor iees to microns'''
+    '''A signal that converts the offset from degrees to microns'''
 
     def __init__(self, parent_attr, *, parent=None, **kwargs):
         degrees_signal = getattr(parent, parent_attr)
