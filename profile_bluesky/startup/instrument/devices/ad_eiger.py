@@ -20,7 +20,7 @@ from ophyd.areadetector.trigger_mixins import SingleTrigger
 # from ophyd.areadetector.filestore_mixins import (
 #     FileStoreHDF5Single, FileStoreHDF5SingleIterativeWrite
 # )
-
+# from apstools.devices import AD_EpicsHdf5FileName
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
@@ -34,6 +34,10 @@ image_folder = "/tmp"  # in production, use a directory on your system
 #
 # class LocalHDF5Plugin(HDF5Plugin, FileStoreHDF5SingleIterativeWrite):
 #     pass
+# class LocalHDF5Plugin(HDF5Plugin, AD_EpicsHdf5FileName):
+#     pass
+# see: https://github.com/BCDA-APS/apstools/blob/0d3a7a2ca2305bc6a5d32be1def333f14352f07e/apstools/devices.py#L2016
+
 
 class LocalEigerDetector(EigerDetector, SingleTrigger):
 
