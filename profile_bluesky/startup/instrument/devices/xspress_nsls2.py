@@ -4,11 +4,12 @@ import time as ttime
 from collections import OrderedDict
 
 from ophyd import (Signal, EpicsSignal, EpicsSignalRO, DerivedSignal, SignalRO,
-                   Component, FormattedComponent, DynamicDeviceComponent)
+                   Component, FormattedComponent, DynamicDeviceComponent, Kind)
 from ophyd.areadetector.detectors import Xspress3Detector, ADBase
 from ophyd.device import BlueskyInterface, Staged
 from ophyd.status import DeviceStatus
 
+from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -260,8 +261,6 @@ class Xspress3Trigger(BlueskyInterface):
     Subclasses must define a method with this signature:
     `acquire_changed(self, value=None, old_value=None, **kwargs)`
     """
-    # TODO **
-    # count_time = self.settings.acquire_period
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -289,6 +288,7 @@ class Xspress3Trigger(BlueskyInterface):
             # Negative-going edge means an acquisition just finished.
             self._status._finished()
 
+    # TODO: I think this will not work...
     def trigger(self):
         if self._staged != Staged.yes:
             raise RuntimeError("not staged")
@@ -297,10 +297,8 @@ class Xspress3Trigger(BlueskyInterface):
         self._acquisition_signal.put(1, wait=False)
         trigger_time = ttime.time()
 
-        for sn in self.read_attrs:
-            if sn.startswith('channel') and '.' not in sn:
-                ch = getattr(self, sn)
-                self.dispatch(ch.name, trigger_time)
+        for _, ch in self.channels:
+            self.dispatch(ch.name, trigger_time)
 
         self._abs_trigger_count += 1
         return self._status
@@ -315,10 +313,12 @@ class TotalSignal(SignalRO):
 
     def get(self, **kwargs):
         values_list = []
-        for ch_num in range(1, self.root._num_channels+1):
+        for _, ch in self.root.channels.items():
             values_list.append(
-                getattr(self.root, 'Ch{}.rois.roi{:02d}').format(
-                    ch_num, self.roi_index))
+                getattr(ch.rois, 'roi{:02d}').format(
+                    self.roi_index
+                ).get(**kwargs)
+            )
 
         return sum(values_list)
 
@@ -339,17 +339,11 @@ class Xspress3DetectorBase(Xspress3Detector, Xspress3Trigger):
     rewindable = Component(Signal, value=False,
                            doc='Xspress3 cannot safely be rewound in bluesky')
 
-    # XF:03IDC-ES{Xsp:1}           C1_   ...
-    # channel1 = Component(Xspress3Channel, 'C1_', channel_num=1)
+    # Add channels:
+    # ch1 = Component(Xspress3Channel, '', channel_num=1)
 
     def __init__(self, prefix, *, read_attrs=None, configuration_attrs=None,
                  name=None, parent=None, **kwargs):
-
-        if read_attrs is None:
-            read_attrs = ['channel1', ]
-
-        if configuration_attrs is None:
-            configuration_attrs = ['channel1.rois', 'settings']
 
         super().__init__(prefix, read_attrs=read_attrs,
                          configuration_attrs=configuration_attrs,
@@ -360,26 +354,151 @@ class Xspress3DetectorBase(Xspress3Detector, Xspress3Trigger):
                        for attr in self._sub_devices}
 
         # filter those sub-devices, just giving channels
-        channels = {dev.channel_num: dev
-                    for _, dev in sub_devices.items()
-                    if isinstance(dev, Xspress3Channel)
-                    }
+        channels = {
+            dev.channel_num: dev for _, dev in sub_devices.items() if
+            isinstance(dev, Xspress3Channel)
+        }
 
         # make an ordered dictionary with the channels in order
         self._channels = OrderedDict(sorted(channels.items()))
+        self._num_channels = len(self._channels.keys())
 
     @property
     def channels(self):
         return self._channels.copy()
 
     @property
-    def all_rois(self):
-        for ch_num, channel in self._channels.items():
-            for roi in channel.all_rois:
-                yield roi
-
-    @property
     def enabled_rois(self):
         for roi in self.all_rois:
             if roi.enable.get():
                 yield roi
+
+    def _toggle_roi(self, index, channels=None, enable=True):
+        if channels is None:
+            channels = range(1, self._num_channels+1)
+
+        if isinstance(index, (int, float)):
+            index = (int(index), )
+
+        action = 'enable' if enable else 'disable'
+
+        for ind in index:
+            if ind > MAX_NUM_ROIS:
+                raise ValueError(f"Maximum ROI index is {MAX_NUM_ROIS}, but "
+                                 f"{ind} was entered.")
+
+            for ch in channels:
+                channel = self.channels[ch]
+                getattr(channel.rois, 'roi{:02d}.{}'.format(ind, action))()
+
+            roi_cnt = getattr(self.total_counts, 'roi{:02d}'.format(ind))
+            roi_cnt.kind = Kind.normal if enable else Kind.omitted
+
+    def set_roi(self, index, ev_low, ev_size, name='', channels=None,
+                enable=True):
+        """
+        Set up the same ROI configuration for selected channels
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        ev_low : int
+            low eV setting.
+        ev_size : int
+            size eV setting.
+        name : str, optional
+            ROI name, if nothing is passed it will keep the current name.
+        channels : iterable
+            List with channel numbers to be changed.
+        """
+
+        # make a function Edge2Emission(AbsEdge) --> returns primary emission
+        # energy
+        # 1st argument for roi1, 2nd for roi2...
+        # 'S4QX4:MCA1ROI:1:Total_RBV'  # roi1 of channel 1
+        # 'S4QX4:MCA1ROI:2:Total_RBV'  # roi1 of channel 2
+
+        if channels is None:
+            channels = range(1, self._num_channels+1)
+
+        self._toggle_roi(index, channels=channels, enable=enable)
+
+        for ch in channels:
+            self.channels[ch].set_roi(index, ev_low, ev_size, name=name)
+
+    def enable_roi(self, index, channels=None):
+        """
+        Enable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
+        self._toggle_roi(index, channels=channels, enable=True)
+
+    def disable_roi(self, index, channels=None):
+        """
+        Disable ROI(s).
+
+        Parameters
+        ----------
+        index : int or list of int
+            ROI index. It can be passed as an integer or an iterable with
+            integers.
+        channels : iterable, optional
+            List with channel numbers to be changed. If None, all channels will
+            be used.
+        """
+        self._toggle_roi(index, channels=channels, enable=False)
+
+    def unload(self):
+        """
+        Remove detector from baseline and run .destroy()
+        """
+        sd.baseline.remove(self)
+        self.destroy()
+
+    def select_plot_channels(self, rois):
+        """
+        Selects channels to plot
+
+        Parameters
+        ----------
+        rois : int or iterable of ints
+            ROI number.
+        """
+        if isinstance(rois, int):
+            rois = (rois, )
+
+        for roi_num in range(1, MAX_NUM_ROIS+1):
+            roi = getattr(self.total_counts, 'roi{:02d}'.format(roi_num))
+            if roi_num in rois:
+                roi.kind = Kind.hinted
+            elif roi.kind == Kind.hinted:
+                roi.kind = Kind.normal
+
+
+class Xspress3Vortex4Ch(Xspress3DetectorBase):
+
+    # Channels
+    ch1 = Component(Xspress3Channel, '', chnum=1)
+    ch2 = Component(Xspress3Channel, '', chnum=2)
+    ch3 = Component(Xspress3Channel, '', chnum=3)
+    ch4 = Component(Xspress3Channel, '', chnum=4)
+
+    _num_channels = 4
+
+
+class Xspress3Vortex1Ch(Xspress3DetectorBase):
+
+    # Channels
+    ch1 = Component(Xspress3Channel, '', chnum=1)
+
+    _num_channels = 1
