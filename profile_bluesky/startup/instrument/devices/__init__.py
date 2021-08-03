@@ -2,6 +2,7 @@
 local, custom Device definitions
 """
 
+from .ad_eiger import *
 from .apd import *
 from .aps_source import *
 from .cyberstar import *
