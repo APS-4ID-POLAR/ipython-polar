@@ -12,11 +12,11 @@ https://github.com/NSLS-II-CHX/profile_collection/blob/de6e03125a16f27f87cbce245
 """
 
 from time import time as ttime
-from ophyd import EigerDetectorCam, ADComponent, DetectorBase, Staged
+from ophyd import (EigerDetectorCam, ADComponent, DetectorBase, Staged,
+                   EpicsSignal)
 from ophyd.status import wait as status_wait, SubscriptionStatus
 from ophyd.areadetector.plugins import (
-        HDF5Plugin_V34, ImagePlugin_V34, ROIPlugin_V34, StatsPlugin_V34,
-        NetCDFPlugin_V34, FilePlugin_V34
+    ImagePlugin_V34, ROIPlugin_V34, StatsPlugin_V34
 )
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import (
@@ -27,6 +27,7 @@ from ophyd.areadetector.filestore_mixins import (
 # )
 from apstools.devices import AD_EpicsHdf5FileName
 # from os.path import 
+from bluesky.plan_stubs import mv
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -48,25 +49,33 @@ TEST_IMAGE_DIR = "eiger/%Y/%m/%d/"
 # EigerDetectorCam inherits FileBase, which contains a couple of PVs that were
 # removed from AD after V22: file_number_sync, file_number_write,
 # pool_max_buffers
+_REMOVE_FROM_CONFIG = (
+    "file_number_sync", # Removed
+    "file_number_write", # Removed
+    "pool_max_buffers", # Removed
+    "configuration_names", # numpy.array
+    "stream_hdr_appendix", # numpy.array
+    "stream_img_appendix", # numpy.array
+)
+
 class myEigerCam(EigerDetectorCam):
     file_number_sync = None
     file_number_write = None
     pool_max_buffers = None
-
-
-class myHdf5EpicsIterativeWriter(
-    AD_EpicsHdf5FileName,
-    FileStoreIterativeWrite
-):
-    ...
-
-
-class myHDF5FileNames(HDF5Plugin_V34, myHdf5EpicsIterativeWriter):
-    ...
-
-# TODO: Not sure this will work, may need to change the AD_EpicsHdf5FileName
-class myNetCDFFileNames(NetCDFPlugin_V34, myHdf5EpicsIterativeWriter):
-    ...
+    
+    wait_for_plugins = ADComponent(EpicsSignal, 'WaitForPlugins', string=True,
+                                   kind='config')
+    
+    file_path = ADComponent(
+            EpicsSignal, 'FilePath', string=True, kind='config'
+    )
+    
+    _default_configuration_attrs = tuple(
+        item for item in EigerDetectorCam.component_names if item not in
+        _REMOVE_FROM_CONFIG
+    )
+    
+    _default_read_attrs = ("num_images_counter", )
 
 
 class myTrigger(TriggerBase):
@@ -121,7 +130,7 @@ class myTrigger(TriggerBase):
         
         def check_value(*, old_value, value, **kwargs):
             "Return True when detector is done"
-            return (value == "Idle" or value == "Acquisition aborted")
+            return (value == "Ready" or value == "Acquisition aborted")
         status_wait(SubscriptionStatus(self.cam.status_message, check_value))
         
         self.save_images_off()
@@ -148,7 +157,7 @@ class myTrigger(TriggerBase):
 class LocalEigerDetector(myTrigger, DetectorBase):
     
     _html_docs = ['EigerDoc.html']
-    cam = ADComponent(myEigerCam, 'cam1:')
+    cam = ADComponent(myEigerCam, 'cam1:', kind="normal")
 
     # Image -- Not sure this one is needed...
     image = ADComponent(ImagePlugin_V34, 'image1:')
@@ -182,3 +191,29 @@ class LocalEigerDetector(myTrigger, DetectorBase):
         
         self.cam.fw_enable.put("Disable")
         status_wait(SubscriptionStatus(self.cam.fw_state, check_value))
+
+    def alignment_on(self, time=0.1):
+        """Plan to start detector in alignment"""
+        
+        self.save_images_off() # TODD: make RE manage this!!
+        
+#        _stage_signals = (self.cam.manual_trigger, self.cam.num_triggers,
+#                          self.cam.trigger_mode, self.cam.trigger_exposure)
+#
+#        _stash = {}
+#        for sig in _stage_signals:
+#            _stash[sig] = sig.get()
+
+        yield from mv(
+            self.cam.manual_trigger, "Disable",
+            self.cam.num_triggers, 1e6,
+            self.cam.trigger_mode, "Internal Enable",
+            self.cam.trigger_exposure, time,
+        )
+       
+        yield from mv(self.cam.acquire, 1)
+
+    def alignment_off(self):
+        """Plan to start detector in alignment"""
+
+        yield from mv(self.cam.acquire, 0)

@@ -35,11 +35,13 @@ def load_eiger(pv = "dp_eiger_xrd92:"):
     eiger.cam.manual_trigger.put("Disable")
     eiger.cam.trigger_mode.put("Internal Enable")
     eiger.cam.acquire.put(0)
+    eiger.cam.wait_for_plugins.put("Yes")
     eiger.setup_manual_trigger()
 #    eiger.netcdf.file_path(join(EIGER_FILES_ROOT, TEST_IMAGE_DIR))
 #    eiger.netcdf.file_name.put("image")
 #    eiger.netcdf.file_template.put("%s%s_%5.5.nc")
     eiger.cam.fw_compression.put("Enable")
+    eiger.cam.fw_num_images_per_file.put(1)
     eiger.save_images_off()
     # eiger.cam.file_path.put(join(EIGER_FILES_ROOT, TEST_IMAGE_DIR))
     
