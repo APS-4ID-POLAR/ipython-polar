@@ -59,8 +59,6 @@ class LocalTrigger(TriggerBase):
     """
     _status_type = ADTriggerStatus
 
-    save_images_flag = ADComponent(Signal, False, kind="omitted")
-
     def __init__(self, *args, image_name=None, **kwargs):
         super().__init__(*args, **kwargs)
         if image_name is None:
@@ -217,6 +215,8 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
     stats2 = Component(StatsPlugin_V34, "Stats2:", kind="normal")
     stats3 = Component(StatsPlugin_V34, "Stats3:", kind="normal")
     stats4 = Component(StatsPlugin_V34, "Stats4:", kind="normal")
+    
+    save_images_flag = Component(Signal, value=False, kind="omitted")
 
     def align_on(self, time=0.1):
         """Start detector in alignment mode"""
@@ -253,7 +253,7 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
             _remove_from_cam_config
         ]
 
-        self.read_attrs += ["num_images_counter"]
+        self.cam.read_attrs += ["num_images_counter"]
 
         for name in self.component_names:
             comp = getattr(self, name)
