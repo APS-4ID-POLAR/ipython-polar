@@ -2,14 +2,19 @@
 Eiger area detector
 """
 
+from pathlib import PurePath
 from time import time as ttime
+from types import SimpleNamespace
 from ophyd import (Component, ADComponent, EigerDetectorCam, DetectorBase,
-                   Staged, EpicsSignal, Signal, Kind)
+                   Staged, EpicsSignal, Signal, Kind, device)
+from ophyd.areadetector.base import EpicsSignalWithRBV
+from ophyd.signal import EpicsSignalRO
 from ophyd.status import wait as status_wait, SubscriptionStatus
 from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
-
+from ophyd.areadetector.filestore_mixins import FileStoreBase
 from ophyd.utils.epics_pvs import set_and_wait
+from os.path import join
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -143,10 +148,63 @@ class LocalTrigger(TriggerBase):
         )
 
 
+# Based on NSLS2-CHX
+class EigerSimulatedFilePlugin(device, FileStoreBase):
+    sequence_id = ADComponent(EpicsSignalRO, 'SequenceId')
+    file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True)
+    file_write_name_pattern = ADComponent(EpicsSignalWithRBV, 'FWNamePattern',
+                                          string=True)
+    file_write_images_per_file = ADComponent(EpicsSignalWithRBV,
+                                             'FWNImagesPerFile')
+    current_run_start_uid = Component(Signal, value='', add_prefix=())
+    enable = SimpleNamespace(get=lambda: True)
+
+    def __init__(self, *args, **kwargs):
+        self.sequence_id_offset = 1
+        # This is changed for when a datum is a slice
+        # also used by ophyd
+        self.filestore_spec = "AD_EIGER2"
+        self.frame_num = None
+        super().__init__(*args, **kwargs)
+        self._datum_kwargs_map = dict()  # store kwargs for each uid
+
+    def stage(self):
+        filename = self.file_write_pattern.get()
+        write_path = join(self.write_path_template, filename)
+        set_and_wait(self.file_path, write_path)
+        super().stage()
+        fn = (PurePath(self.file_path.get()) / filename)
+        ipf = int(self.file_write_images_per_file.get())
+        # logger.debug("Inserting resource with filename %s", fn)
+        self._fn = fn
+        res_kwargs = {'images_per_file': ipf}
+        self._generate_resource(res_kwargs)
+
+    def generate_datum(self, key, timestamp, datum_kwargs):
+        # The detector keeps its own counter which is uses label HDF5
+        # sub-files.  We access that counter via the sequence_id
+        # signal and stash it in the datum.
+
+        # det writes to the NEXT one
+        seq_id = int(self.sequence_id_offset) + int(self.sequence_id.get())
+        datum_kwargs.update({'seq_id': seq_id})
+        if self.frame_num is not None:
+            datum_kwargs.update({'frame_num': self.frame_num})
+        return super().generate_datum(key, timestamp, datum_kwargs)
+
+
 class LocalEigerDetector(LocalTrigger, DetectorBase):
 
     _html_docs = ['EigerDoc.html']
     cam = Component(LocalEigerCam, 'cam1:', kind="normal")
+
+    file = Component(
+        EigerSimulatedFilePlugin, suffix='cam1:',
+        write_path_template='/local/home/dpuser/test_gilberto/',
+        read_path_template=('/home/beams17/POLAR/data/gilberto/'
+                            'test_gilberto/'),
+        # root='/nsls2/xf11id1/'
+    )
 
     # ROIs
     roi1 = Component(ROIPlugin_V34, 'ROI1:', kind="config")
