@@ -6,7 +6,7 @@ from pathlib import PurePath
 from time import time as ttime
 from types import SimpleNamespace
 from ophyd import (Component, ADComponent, EigerDetectorCam, DetectorBase,
-                   Staged, EpicsSignal, Signal, Kind, device)
+                   Staged, EpicsSignal, Signal, Kind, Device)
 from ophyd.areadetector.base import EpicsSignalWithRBV
 from ophyd.signal import EpicsSignalRO
 from ophyd.status import wait as status_wait, SubscriptionStatus
@@ -31,13 +31,10 @@ class LocalEigerCam(EigerDetectorCam):
     file_number_write = None
     pool_max_buffers = None
 
-    wait_for_plugins = ADComponent(EpicsSignal, 'WaitForPlugins', string=True,
-                                   kind='config')
-
-    file_path = ADComponent(
-            EpicsSignal, 'FilePath', string=True, kind='config'
-    )
-
+    wait_for_plugins = ADComponent(EpicsSignal, 'WaitForPlugins', string=True)
+    file_path = ADComponent(EpicsSignal, 'FilePath', string=True)
+    create_directory = ADComponent(EpicsSignal, "CreateDirectory")
+    
     # _default_configuration_attrs = tuple(
     #     item for item in EigerDetectorCam.component_names if item not in
     #     _REMOVE_FROM_CONFIG
@@ -147,7 +144,7 @@ class LocalTrigger(TriggerBase):
 
 
 # Based on NSLS2-CHX
-class EigerSimulatedFilePlugin(device, FileStoreBase):
+class EigerSimulatedFilePlugin(Device, FileStoreBase):
     sequence_id = ADComponent(EpicsSignalRO, 'SequenceId')
     file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True)
     file_write_name_pattern = ADComponent(EpicsSignalWithRBV, 'FWNamePattern',
@@ -161,20 +158,24 @@ class EigerSimulatedFilePlugin(device, FileStoreBase):
         self.sequence_id_offset = 1
         # This is changed for when a datum is a slice
         # also used by ophyd
-        self.filestore_spec = "AD_EIGER2"
+        self.filestore_spec = "AD_EIGER"
         self.frame_num = None
         super().__init__(*args, **kwargs)
         self._datum_kwargs_map = dict()  # store kwargs for each uid
 
     def stage(self):
-        filename = self.file_write_pattern.get()
+        filename = self.file_write_name_pattern.get()
         write_path = join(self.write_path_template, filename)
-        set_and_wait(self.file_path, write_path)
+        # Need a / in the end otherwise the set_and_wait fails.
+        set_and_wait(self.file_path, write_path+"/")
+
+        # self._fp = (PurePath(self.file_path.get()) / filename)
+        self._fn = (PurePath(join(self.read_path_template, filename)) /
+                    filename)
+
         super().stage()
-        fn = (PurePath(self.file_path.get()) / filename)
+        
         ipf = int(self.file_write_images_per_file.get())
-        # logger.debug("Inserting resource with filename %s", fn)
-        self._fn = fn
         res_kwargs = {'images_per_file': ipf}
         self._generate_resource(res_kwargs)
 
@@ -192,6 +193,10 @@ class EigerSimulatedFilePlugin(device, FileStoreBase):
 
 
 class LocalEigerDetector(LocalTrigger, DetectorBase):
+    
+    _default_configuration_attrs = ('roi1', 'roi2', 'roi3', 'roi4')
+    _default_read_attrs = ('cam', 'file', 'stats1', 'stats2', 'stats3',
+                           'stats4')
 
     _html_docs = ['EigerDoc.html']
     cam = Component(LocalEigerCam, 'cam1:', kind="normal")
@@ -239,18 +244,42 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
         # Some of the attributes return numpy arrays which Bluesky doesn't
         # accept: configuration_names, stream_hdr_appendix,
         # stream_img_appendix.
-        _remove_from_cam_config = (
+        _remove_from_config = (
             "file_number_sync",  # Removed
             "file_number_write",  # Removed
             "pool_max_buffers",  # Removed
             "configuration_names",  # numpy.array
             "stream_hdr_appendix",  # numpy.array
             "stream_img_appendix",  # numpy.array
+            "dim0_sa",  # numpy.array
+            "dim1_sa",  # numpy.array
+            "dim2_sa",  # numpy.array
+            "nd_attributes_macros",  # numpy.array
+            "dimensions",  # numpy.array
+            'asyn_pipeline_config',
+            'dim0_sa',
+            'dim1_sa',
+            'dim2_sa',
+            'dimensions',
+            'histogram',
+            'ts_max_value',
+            'ts_mean_value',
+            'ts_min_value',
+            'ts_net',
+            'ts_sigma',
+            'ts_sigma_xy',
+            'ts_sigma_y',
+            'ts_total',
+            'ts_timestamp',
+            'ts_centroid_total',
+            'ts_eccentricity',
+            'ts_orientation',
+            'histogram_x',
         )
 
         self.cam.configuration_attrs += [
             item for item in EigerDetectorCam.component_names if item not in
-            _remove_from_cam_config
+            _remove_from_config
         ]
 
         self.cam.read_attrs += ["num_images_counter"]
@@ -259,7 +288,8 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
             comp = getattr(self, name)
             if isinstance(comp, (ROIPlugin_V34, StatsPlugin_V34)):
                 comp.configuration_attrs += [
-                    item for item in comp.component_names
+                    item for item in comp.component_names if item not in
+                    _remove_from_config
                 ]
             if isinstance(comp, StatsPlugin_V34):
                 comp.total.kind = Kind.hinted
@@ -271,7 +301,9 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
         self.cam.trigger_mode.put("Internal Enable")
         self.cam.acquire.put(0)
         self.cam.wait_for_plugins.put("Yes")
+        self.cam.create_directory.put(-1)
         self.cam.fw_compression.put("Enable")
         self.cam.fw_num_images_per_file.put(1)
         self.setup_manual_trigger()
+        self.save_images_flag.put(True)
         self.save_images_off()
