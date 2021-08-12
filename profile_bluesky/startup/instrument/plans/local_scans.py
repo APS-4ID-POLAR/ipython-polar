@@ -2,7 +2,7 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv', 'mvr', 'qxscan']
+__all__ = ['lup', 'ascan', 'mv', 'mvr', 'qxscan', 'dichro_steps']
 
 from bluesky.plans import rel_scan, scan, list_scan
 from bluesky.plan_stubs import trigger_and_read, move_per_step
