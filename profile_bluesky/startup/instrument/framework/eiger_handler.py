@@ -1,80 +1,54 @@
-""" 
-Handler for EIGER files.
-
-+ Have to modify the one from eiger_io because that one expects the file name
-to be '{}_{}_master.h5'.format(self._base_path, seq_id).
 """
-
-from eiger_io.fs_handler_dask import (
-    EigerHandlerDask, PIMSDask, EIGER_MD_LAYOUT
-)
+Modified Eiger handler -> APS seems to use a different file naming.
+"""
+from glob import glob
+from pathlib import Path
+import dask.array
 import h5py
-import dask.array as da
+from area_detector_handlers.eiger import EigerHandler
 
 
-def _load_eiger_images(master_path):
-    ''' load images from EIGER data using fpath.
-        This separation is made from the handler to allow for some code that unfortunately depended
-            on this step. (which used to be in EigerImages)
-        master_path : the full filename of the path
-    '''
-    with h5py.File(master_path, 'r') as f:
+class MyEigerHandler(EigerHandler):
+    
+    def __call__(self, image_num):
+        '''
+        This returns data contained in the file.
+
+        Parameters
+        ----------
+        image_num int
+            Image number as read from eiger.cam.num_images_counter
+        Returns
+        -------
+            A dask array
+        '''
+
+        fpath = Path(
+            f'{self._file_prefix}_data_'
+            f'{1 + (image_num // self._images_per_file):06d}.h5'
+        ).absolute()
+        
         try:
-            # Eiger firmware v1.3.0 and onwards
-            _entry = f['entry']['data']
+            file = self._files[fpath]
         except KeyError:
-            _entry = f['entry']          # Older firmwares
-    
-        # TODO : perhaps remove the metadata eventually
-        md = dict()
-        md = {k: f[v][()] for k, v in EIGER_MD_LAYOUT.items()}
-        # the pixel mask from the eiger contains:
-        # 1  -- gap
-        # 2  -- dead
-        # 4  -- under-responsive
-        # 8  -- over-responsive
-        # 16 -- noisy
-        pixel_mask = md['pixel_mask']
-        md['binary_mask'] = (pixel_mask == 0)
-        md['framerate'] = 1./md['frame_time']
-    
-        # TODO : Return a multi-dimensional PIMS seq.
-        # this is the logic that creates the linked dask array
-        elements = list()
-        key_names = sorted(list(_entry.keys()))
-        for keyname in key_names:
-            #print(f"{keyname}")
-            val = _entry[keyname]
-            elements.append(da.from_array(val, chunks=val.chunks))
-    
-        res = da.concatenate(elements)
+            file = h5py.File(fpath, 'r')
+            self._files[fpath] = file
+        
+        da = dask.array.from_array(file['entry/data/data'])[
+            image_num % self._images_per_file
+        ]
 
-    return res, md
+        return da.reshape((1,) + da.shape) # TODO: Why is this needed!?
 
 
-class MyEigerHandlerDask(EigerHandlerDask):
-    
-    # this is on a per event level
-    # Left seq_id in args because it will probably break something else...
-    def __call__(self, seq_id, frame_num=None):
-        master_path = '{}_master.h5'.format(self._base_path)
-
-        data, md = _load_eiger_images(master_path)
-        # PIMS subclass using Dask
-        # this gives metadata and also makes the assumption when
-        # to run .compute() for dask array
-        ret = PIMSDask(data, md=md)
-        if frame_num is not None:
-            ret = ret[frame_num]
-        return ret
-
-    def get_file_list(self, datum_kwargs):
-        ''' get the file list.
-            Receives a list of datum_kwargs for each datum
+    def get_file_list(self, datum_kwargs_gen):
+        '''
+        Get the file list.
+        Receives a list of datum_kwargs for each datum.
         '''
         filenames = []
-        for dm_kw in datum_kwargs:
-            filename = '{}_master.h5'.format(self._base_path)
-            filenames.append(filename)
+        for dm_kw in datum_kwargs_gen:
+            new_filenames = glob(f'{self._file_prefix}_*')
+            filenames.extend(new_filenames)
 
         return filenames

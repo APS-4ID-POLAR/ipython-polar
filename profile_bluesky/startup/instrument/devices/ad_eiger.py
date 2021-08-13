@@ -145,13 +145,13 @@ class LocalTrigger(TriggerBase):
 
 # Based on NSLS2-CHX
 class EigerSimulatedFilePlugin(Device, FileStoreBase):
-    sequence_id = ADComponent(EpicsSignalRO, 'SequenceId')
     file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True)
     file_write_name_pattern = ADComponent(EpicsSignalWithRBV, 'FWNamePattern',
                                           string=True)
     file_write_images_per_file = ADComponent(EpicsSignalWithRBV,
                                              'FWNImagesPerFile')
     current_run_start_uid = Component(Signal, value='', add_prefix=())
+    num_images_counter = ADComponent(EpicsSignalRO, 'NumImagesCounter_RBV')
     enable = SimpleNamespace(get=lambda: True)
 
     def __init__(self, *args, **kwargs):
@@ -185,10 +185,7 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
         # signal and stash it in the datum.
 
         # det writes to the NEXT one
-        seq_id = int(self.sequence_id_offset) + int(self.sequence_id.get())
-        datum_kwargs.update({'seq_id': seq_id})
-        if self.frame_num is not None:
-            datum_kwargs.update({'frame_num': self.frame_num})
+        datum_kwargs.update({'image_num': self.num_images_counter.get()})
         return super().generate_datum(key, timestamp, datum_kwargs)
 
 
