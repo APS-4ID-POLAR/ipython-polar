@@ -7,7 +7,6 @@ from ophyd import (
     Component, FormattedComponent, Signal, EpicsSignal, EpicsSignalRO,
     PVPositioner
 )
-from ophyd.status import Status
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -110,7 +109,7 @@ class PVPositionerSoftDone(PVPositioner):
         """
         Called when readback changes (EPICS CA monitor event).
         """
-        diff = self.readback.get() - getattr(self, self._target_attr).get()
+        diff = self.readback.get() - self._target.get()
         _tolerance = (self.tolerance.get() if self.tolerance.get() >= 0 else
                       10**(-1*self.precision))
         dmov = abs(diff) <= _tolerance
@@ -133,9 +132,10 @@ class PVPositionerSoftDone(PVPositioner):
 
         self._setpoint_pv = setpoint_pv
         self._readback_pv = readback_pv
-        self._target_attr = target_attr
 
         super().__init__(prefix=prefix, **kwargs)
+        
+        self._target = getattr(self, target_attr)
 
         # Make the default alias for the readback the name of the
         # positioner itself as in EpicsMotor.
@@ -146,26 +146,14 @@ class PVPositionerSoftDone(PVPositioner):
         if tolerance:
             self.tolerance.put(tolerance)
 
+
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
         self.log.debug('%s.setpoint = %s', self.name, position)
         self.setpoint.put(position, wait=False)
-        if self._target_attr != "setpoint":
-            getattr(self, self._target_attr).put(position, wait=False)
+        if self._target != self.setpoint:
+            self._target.put(position, wait=False)
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
-
-    def move(self, position, wait=True, timeout=None, moved_cb=None):
-        """Move the positioner if the new position is outside the tolerance."""
-        _diff = abs(position - getattr(self, self._target_attr).get())
-        _tolerance = (self.tolerance.get() if self.tolerance.get() >= 0 else
-                      10**(-1*self.precision))
-        if _diff <= _tolerance:
-            status = Status()
-            status.set_finished()
-        else:
-            status = super().move(
-                position, wait=wait, timeout=timeout, moved_cb=moved_cb
-            )
-        return status
+        self.cb_readback() # This is needed to force the first check.
