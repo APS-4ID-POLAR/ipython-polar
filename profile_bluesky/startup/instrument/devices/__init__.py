@@ -17,6 +17,7 @@ from .high_field_magnet import *
 from .monochromator import *
 from .phaseplates import *
 from .qxscan_setup import *
+from .nanopositioner import *
 from .ruby_motors import *
 from .scaler import *
 from .slits import *
