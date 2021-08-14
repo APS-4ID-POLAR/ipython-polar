@@ -134,7 +134,7 @@ class PVPositionerSoftDone(PVPositioner):
         self._readback_pv = readback_pv
 
         super().__init__(prefix=prefix, **kwargs)
-        
+
         self._target = getattr(self, target_attr)
 
         # Make the default alias for the readback the name of the
@@ -146,7 +146,6 @@ class PVPositionerSoftDone(PVPositioner):
         if tolerance:
             self.tolerance.put(tolerance)
 
-
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
         self.log.debug('%s.setpoint = %s', self.name, position)
@@ -156,4 +155,4 @@ class PVPositionerSoftDone(PVPositioner):
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
-        self.cb_readback() # This is needed to force the first check.
+        self.cb_readback()  # This is needed to force the first check.
