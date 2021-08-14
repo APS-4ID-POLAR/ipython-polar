@@ -13,7 +13,7 @@ from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreBase
 from ophyd.utils.epics_pvs import set_and_wait
-from os.path import join
+from os.path import join, isdir
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -135,8 +135,6 @@ class LocalTrigger(TriggerBase):
 class EigerSimulatedFilePlugin(Device, FileStoreBase):
     """
     Using the filename from EPICS.
-
-    TODO: This is a bit dangerous, as it may overwrite scans!
     """
     seq_id = ADComponent(EpicsSignalRO, "SequenceId")
     file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True)
@@ -152,31 +150,45 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
         self.filestore_spec = "AD_EIGER"
         super().__init__(*args, **kwargs)
         self.enable.subscribe(self._set_kind)
-        
+        self._base_name = None
+
     def _set_kind(self, value, **kwargs):
         if value in (True, 1, "on", "enable"):
-            self.kind="normal"
+            self.kind = "normal"
         else:
-            self.kind="omitted"
-            
+            self.kind = "omitted"
+
+    @property
+    def base_name(self):
+        return (f'seqid_{self.seq_id.get()+1}' if self._base_name is None else
+                self._base_name)
+
+    @base_name.setter
+    def base_name(self, value):
+        self._base_name = value
+
     # This is the part to change if a different file scheme is chosen.
     def make_write_read_paths(self):
-        base_name = f'seqid_{self.seq_id.get()+1}'
-        write_path = join(self.write_path_template, base_name + "/")
-        read_path = join(self.read_path_template, base_name, base_name)
-        return base_name, write_path, read_path
+        write_path = join(self.write_path_template, self.base_name + "/")
+        read_path = join(
+            self.read_path_template, self.base_name, self.base_name
+        )
+        return write_path, read_path
 
     def stage(self):
         # Only save images if the enable is on...
         if self.enable.get() in (True, 1, "on", "enable"):
             self.parent.save_images_on()
-            base_name, write_path, read_path = self.make_write_read_paths()
-            set_and_wait(self.file_write_name_pattern, base_name)
+            write_path, read_path = self.make_write_read_paths()
+            if isdir(write_path):
+                raise OSError(f"{write_path} exists! Please be sure that"
+                              f"{self.base_name} has not been used!")
+            set_and_wait(self.file_write_name_pattern, self.base_name)
             set_and_wait(self.file_path, write_path)
             self._fn = PurePath(read_path)
-    
+
             super().stage()
-    
+
             ipf = int(self.file_write_images_per_file.get())
             res_kwargs = {'images_per_file': ipf}
             self._generate_resource(res_kwargs)
