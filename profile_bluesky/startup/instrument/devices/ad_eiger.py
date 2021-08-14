@@ -61,7 +61,7 @@ class LocalTrigger(TriggerBase):
         self.cam.stage_sigs["manual_trigger"] = "Enable"
         self.cam.stage_sigs["num_images"] = 1
         self.cam.stage_sigs["num_exposures"] = 1
-        self.cam.stage_sigs["num_triggers"] = 1e6
+        self.cam.stage_sigs["num_triggers"] = int(1e5)
 
     def stage(self):
         # Make sure that detector is not armed.
@@ -70,9 +70,6 @@ class LocalTrigger(TriggerBase):
         # The trigger button does not track that the detector is done, so
         # the image_count is used. Not clear it's the best choice.
         self._image_count.subscribe(self._acquire_changed)
-        # Only save images if the save_images_flag is on...
-        if self.save_images_flag.get() in (True, 1, "on", "enable"):
-            self.save_images_on()
         set_and_wait(self.cam.acquire, 1)
 
     def unstage(self):
@@ -149,29 +146,40 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
                                              'FWNImagesPerFile')
     current_run_start_uid = Component(Signal, value='', add_prefix=())
     num_images_counter = ADComponent(EpicsSignalRO, 'NumImagesCounter_RBV')
-    save_images_flag = Component(Signal, value=False, kind="omitted")
+    enable = Component(Signal, value=False, kind="omitted")
 
     def __init__(self, *args, **kwargs):
         self.filestore_spec = "AD_EIGER"
         super().__init__(*args, **kwargs)
-
+        self.enable.subscribe(self._set_kind)
+        
+    def _set_kind(self, value, **kwargs):
+        if value in (True, 1, "on", "enable"):
+            self.kind="normal"
+        else:
+            self.kind="omitted"
+            
     # This is the part to change if a different file scheme is chosen.
     def make_write_read_paths(self):
-        base_name = f'seqid_{self.seq_id.get()}'
+        base_name = f'seqid_{self.seq_id.get()+1}'
         write_path = join(self.write_path_template, base_name + "/")
         read_path = join(self.read_path_template, base_name, base_name)
-        return write_path, read_path
+        return base_name, write_path, read_path
 
     def stage(self):
-        write_path, read_path = self.make_write_read_paths()
-        set_and_wait(self.file_path, write_path)
-        self._fn = PurePath(read_path)
-
-        super().stage()
-
-        ipf = int(self.file_write_images_per_file.get())
-        res_kwargs = {'images_per_file': ipf}
-        self._generate_resource(res_kwargs)
+        # Only save images if the enable is on...
+        if self.enable.get() in (True, 1, "on", "enable"):
+            self.parent.save_images_on()
+            base_name, write_path, read_path = self.make_write_read_paths()
+            set_and_wait(self.file_write_name_pattern, base_name)
+            set_and_wait(self.file_path, write_path)
+            self._fn = PurePath(read_path)
+    
+            super().stage()
+    
+            ipf = int(self.file_write_images_per_file.get())
+            res_kwargs = {'images_per_file': ipf}
+            self._generate_resource(res_kwargs)
 
     def generate_datum(self, key, timestamp, datum_kwargs):
         """Using the num_images_counter to pick image from scan."""
@@ -289,6 +297,6 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
         self.cam.create_directory.put(-1)
         self.cam.fw_compression.put("Enable")
         self.cam.fw_num_images_per_file.put(1)
-        self.file.save_images_flag.put(True)
+        self.file.enable.put(True)
         self.setup_manual_trigger()
         self.save_images_off()
