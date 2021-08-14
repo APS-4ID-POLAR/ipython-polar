@@ -160,30 +160,30 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
 
     @property
     def base_name(self):
-        return (f'seqid_{self.seq_id.get()+1}' if self._base_name is None else
-                self._base_name)
+        return 'seqid_{}' if self._base_name is None else self._base_name
 
     @base_name.setter
     def base_name(self, value):
-        self._base_name = value
+        self._base_name = value.replace("$id", "{}")
 
     # This is the part to change if a different file scheme is chosen.
     def make_write_read_paths(self):
-        write_path = join(self.write_path_template, self.base_name + "/")
+        _base_name = self.base_name.format(self.seq_id.get() + 1)
+        write_path = join(self.write_path_template, _base_name + "/")
         read_path = join(
-            self.read_path_template, self.base_name, self.base_name
+            self.read_path_template, self.base_name, _base_name
         )
-        return write_path, read_path
+        return _base_name, write_path, read_path
 
     def stage(self):
         # Only save images if the enable is on...
         if self.enable.get() in (True, 1, "on", "enable"):
             self.parent.save_images_on()
-            write_path, read_path = self.make_write_read_paths()
+            _base_name, write_path, read_path = self.make_write_read_paths()
             if isdir(write_path):
                 raise OSError(f"{write_path} exists! Please be sure that"
                               f"{self.base_name} has not been used!")
-            set_and_wait(self.file_write_name_pattern, self.base_name)
+            set_and_wait(self.file_write_name_pattern, _base_name)
             set_and_wait(self.file_path, write_path)
             self._fn = PurePath(read_path)
 
