@@ -20,6 +20,8 @@ from .local_preprocessors import (configure_counts_decorator,
                                   stage_ami_decorator,
                                   extra_devices_decorator)
 from ..utils import counters
+from ..devices.ad_eiger import LocalEigerDetector
+from ..framework import RE
 from numpy import array
 
 try:
@@ -158,10 +160,6 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`bluesky.plans.scan`
     :func:`lup`
     """
-
-    if detectors is None:
-        detectors = counters.detectors
-
     flag.dichro = dichro
     flag.fixq = fixq
     if per_step is None:
@@ -178,7 +176,14 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
         time = args[-1]
         args = args[:-1]
 
+    if detectors is None:
+        detectors = counters.detectors
+
     extras = yield from _collect_extras(energy in args, "fourc" in str(args))
+
+    for det in detectors + extras:
+        if isinstance(det, LocalEigerDetector):
+            det.file.base_name = f"scan{RE.md['scan_id']}"
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
@@ -334,9 +339,6 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
     :func:`bluesky.plans.scan_nd`
     """
 
-    if detectors is None:
-        detectors = counters.detectors
-
     flag.dichro = dichro
     flag.fixq = fixq
     if per_step is None:
@@ -354,7 +356,14 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
         time = args[-1]
         args = args[:-1]
 
+    if detectors is None:
+        detectors = counters.detectors
+
     extras = yield from _collect_extras(energy in args, "fourc" in str(args))
+
+    for det in detectors + extras:
+        if isinstance(det, LocalEigerDetector):
+            det.file.base_name = f"scan{RE.md['scan_id']}"
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
