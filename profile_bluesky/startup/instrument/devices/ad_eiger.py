@@ -21,7 +21,7 @@ EIGER_FILES_ROOT = '/local/home/dpuser/test_gilberto/'
 BLUESKY_FILES_ROOT = '/home/beams17/POLAR/data/gilberto/test_gilberto/'
 
 
-# EigerDetectorCam inherits FileBase, which contains a couple of PVs that were
+# EigerDetectorCam inherits FileBase, which contains a few PVs that were
 # removed from AD after V22: file_number_sync, file_number_write,
 # pool_max_buffers.
 class LocalEigerCam(EigerDetectorCam):
@@ -37,13 +37,6 @@ class LocalEigerCam(EigerDetectorCam):
 class LocalTrigger(TriggerBase):
     """
     This trigger mixin class takes one acquisition per trigger.
-    Examples
-    --------
-    >>> class SimDetector(SingleTrigger):
-    ...     pass
-    >>> det = SimDetector('..pv..')
-    # optionally, customize name of image
-    >>> det = SimDetector('..pv..', image_name='fast_detector_image')
     """
     _status_type = ADTriggerStatus
 
@@ -109,26 +102,6 @@ class LocalTrigger(TriggerBase):
         if value > old_value:  # There is a new image!
             self._status.set_finished()
             self._status = None
-
-    def save_images_on(self):
-        def check_value(*, old_value, value, **kwargs):
-            "Return True when file writter is enabled"
-            return value == "ready"
-
-        self.cam.fw_enable.put("Enable")
-        status_wait(
-            SubscriptionStatus(self.cam.fw_state, check_value, timeout=10)
-        )
-
-    def save_images_off(self):
-        def check_value(*, old_value, value, **kwargs):
-            "Return True when file writter is enabled"
-            return value == "disabled"
-
-        self.cam.fw_enable.put("Disable")
-        status_wait(
-            SubscriptionStatus(self.cam.fw_state, check_value, timeout=10)
-        )
 
 
 # Based on NSLS2-CHX
@@ -304,6 +277,26 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
             if isinstance(comp, StatsPlugin_V34):
                 comp.total.kind = Kind.hinted
                 comp.read_attrs += ["max_value", "min_value"]
+
+    def save_images_on(self):
+        def check_value(*, old_value, value, **kwargs):
+            "Return True when file writter is enabled"
+            return value == "ready"
+
+        self.cam.fw_enable.put("Enable")
+        status_wait(
+            SubscriptionStatus(self.cam.fw_state, check_value, timeout=10)
+        )
+
+    def save_images_off(self):
+        def check_value(*, old_value, value, **kwargs):
+            "Return True when file writter is enabled"
+            return value == "disabled"
+
+        self.cam.fw_enable.put("Disable")
+        status_wait(
+            SubscriptionStatus(self.cam.fw_state, check_value, timeout=10)
+        )
 
     def default_settings(self):
         self.cam.num_triggers.put(1)
