@@ -227,6 +227,11 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
     stats3 = Component(StatsPlugin_V34, "Stats3:")
     stats4 = Component(StatsPlugin_V34, "Stats4:")
 
+    # Make this compatible with other detectors
+    @property
+    def preset_monitor(self):
+        return self.cam.trigger_exposure
+
     def align_on(self, time=0.1):
         """Start detector in alignment mode"""
         self.save_images_off()
