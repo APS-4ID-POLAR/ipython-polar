@@ -5,7 +5,7 @@ Modifed bluesky scans
 __all__ = ['lup', 'ascan', 'mv', 'mvr', 'grid_scan', 'rel_grid_scan', 'qxscan',
            'dichro_steps']
 
-from bluesky.plans import scan, list_scan, bp_grid_scan
+from bluesky.plans import scan, list_scan, grid_scan as bp_grid_scan
 from bluesky.plan_stubs import (
     trigger_and_read, move_per_step, mv as bps_mv, rd
 )
@@ -183,7 +183,7 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
 
     for det in detectors + extras:
         if isinstance(det, LocalEigerDetector):
-            det.file.base_name = f"scan{RE.md['scan_id']}"
+            det.file.base_name = f"scan{RE.md['scan_id'] + 1}"
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
@@ -352,7 +352,7 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
         }
 
     # This allows passing "time" without using the keyword.
-    if len(args) % 3 == 2 and time is None:
+    if len(args) % 4 == 1 and time is None:
         time = args[-1]
         args = args[:-1]
 
@@ -363,7 +363,7 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
 
     for det in detectors + extras:
         if isinstance(det, LocalEigerDetector):
-            det.file.base_name = f"scan{RE.md['scan_id']}"
+            det.file.base_name = f"scan{RE.md['scan_id'] + 1}"
 
     # TODO: The md handling might go well in a decorator.
     # TODO: May need to add reference to stream.
