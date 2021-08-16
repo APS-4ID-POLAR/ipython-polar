@@ -51,6 +51,7 @@ class TrackingSignal(Signal):
 class PVPositionerSoftDone(PVPositioner):
     """
     PVPositioner that uses an internal "done" signal.
+
     Parameters
     ----------
     prefix : str, optional
@@ -72,6 +73,7 @@ class PVPositionerSoftDone(PVPositioner):
         passed in this variable.
     kwargs :
         Passed to `ophyd.PVPositioner`
+
     Attributes
     ----------
     setpoint : Signal
@@ -166,4 +168,5 @@ class PVPositionerSoftDone(PVPositioner):
             status = super().move(
                 position, wait=wait, timeout=timeout, moved_cb=moved_cb
             )
+
         return status
