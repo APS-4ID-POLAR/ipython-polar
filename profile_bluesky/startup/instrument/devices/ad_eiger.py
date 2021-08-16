@@ -82,8 +82,6 @@ class LocalTrigger(TriggerBase):
             )
         )
 
-        self.save_images_off()
-
     def trigger(self):
         "Trigger one acquisition."
         if self._staged != Staged.yes:
@@ -110,9 +108,10 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
     Using the filename from EPICS.
     """
     seq_id = ADComponent(EpicsSignalRO, "SequenceId")
-    file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True)
+    file_path = ADComponent(EpicsSignalWithRBV, 'FilePath', string=True,
+                            put_complete=True)
     file_write_name_pattern = ADComponent(EpicsSignalWithRBV, 'FWNamePattern',
-                                          string=True)
+                                          string=True, put_complete=True)
     file_write_images_per_file = ADComponent(EpicsSignalWithRBV,
                                              'FWNImagesPerFile')
     current_run_start_uid = Component(Signal, value='', add_prefix=())
@@ -151,20 +150,23 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
     def stage(self):
         # Only save images if the enable is on...
         if self.enable.get() in (True, 1, "on", "enable"):
-            self.parent.save_images_on()
             _base_name, write_path, read_path = self.make_write_read_paths()
             if isdir(write_path):
                 raise OSError(f"{write_path} exists! Please be sure that"
                               f"{self.base_name} has not been used!")
-            set_and_wait(self.file_write_name_pattern, _base_name)
-            set_and_wait(self.file_path, write_path)
+            self.file_write_name_pattern.put(_base_name)
+            self.file_path.put(write_path)
             self._fn = PurePath(read_path)
 
+            self.parent.save_images_on()
             super().stage()
 
             ipf = int(self.file_write_images_per_file.get())
             res_kwargs = {'images_per_file': ipf}
             self._generate_resource(res_kwargs)
+
+    def unstage(self):
+        self.parent.save_images_off()
 
     def generate_datum(self, key, timestamp, datum_kwargs):
         """Using the num_images_counter to pick image from scan."""
