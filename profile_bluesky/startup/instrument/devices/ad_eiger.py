@@ -81,6 +81,9 @@ class LocalTrigger(TriggerBase):
                 self.cam.status_message, check_value, timeout=10
             )
         )
+        # This has to be here to ensure it happens after stopping the
+        # acquisition.
+        self.parent.save_images_off()
 
     def trigger(self):
         "Trigger one acquisition."
@@ -164,9 +167,6 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
             ipf = int(self.file_write_images_per_file.get())
             res_kwargs = {'images_per_file': ipf}
             self._generate_resource(res_kwargs)
-
-    def unstage(self):
-        self.parent.save_images_off()
 
     def generate_datum(self, key, timestamp, datum_kwargs):
         """Using the num_images_counter to pick image from scan."""
