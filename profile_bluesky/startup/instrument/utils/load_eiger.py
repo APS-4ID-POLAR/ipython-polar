@@ -9,14 +9,14 @@ __all__ = ['load_eiger']
 
 
 def load_eiger(pv="dp_eiger_xrd92:"):
-    
+
     print("-- Loading Eiger detector --")
     eiger = LocalEigerDetector(pv, name="eiger")
     sd.baseline.append(eiger)
 
     eiger.wait_for_connection(timeout=10)
     # This is needed otherwise .get may fail!!!
-    
+
     print("Setting up ROI and STATS defaults ...", end=" ")
     for name in eiger.component_names:
         if "roi" in name:

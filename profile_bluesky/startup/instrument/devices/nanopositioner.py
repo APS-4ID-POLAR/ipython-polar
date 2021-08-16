@@ -15,5 +15,6 @@ class NanoPositioner(MotorBundle):
     nanox = Component(EpicsMotor, 'm90', labels=('motor', 'nanopositioner'))
     nanoz = Component(EpicsMotor, 'm91', labels=('motor', 'nanopositioner'))
 
+
 nanopositioner = NanoPositioner('4iddx:', name='nanopositioner')
 sd.baseline.append(nanopositioner)

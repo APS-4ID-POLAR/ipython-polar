@@ -1,6 +1,7 @@
 """
 Modified Eiger handler -> APS seems to use a different file naming.
 """
+from os.path import getsize
 from glob import glob
 from pathlib import Path
 import dask.array
@@ -40,14 +41,20 @@ class MyEigerHandler(EigerHandler):
 
         return da.reshape((1,) + da.shape)
 
-    def get_file_list(self, datum_kwargs_gen):
+    def get_file_list(self):
         '''
         Get the file list.
-        Receives a list of datum_kwargs for each datum.
         '''
-        filenames = []
-        for dm_kw in datum_kwargs_gen:
-            new_filenames = glob(f'{self._file_prefix}_*')
-            filenames.extend(new_filenames)
+        return glob(f'{self._file_prefix}_*')
 
-        return filenames
+    def get_file_sizes(self):
+        '''
+        Get the file size.
+        Returns size in bytes.
+        '''
+        sizes = []
+        file_name = self.get_file_list()
+        for file in file_name:
+            sizes.append(getsize(file))
+
+        return sizes
