@@ -75,7 +75,7 @@ class Xspress3ROI(ADBase):
     roi_name = FormattedComponent(EpicsSignal, '{_prefix}Name', kind='config')
 
     # Enable
-    use = Component(EpicsSignal, '{_prefix}Use', kind='config', string=True)
+    enable = Component(EpicsSignal, '{_prefix}Use', kind='config', string=True)
 
     @property
     def ad_root(self):
