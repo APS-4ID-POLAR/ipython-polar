@@ -11,7 +11,6 @@ from ophyd import (
 )
 from ophyd.utils import set_and_wait
 from ophyd.status import Status
-from .util_components import PVPositionerSoftDone
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
@@ -28,62 +27,13 @@ class MonoFeedback(Device):
                       labels=('mono',), put_complete=True)
 
 
-#class KohzuPositioner(PVPositionerSoftDone):
-#    stop_theta = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
-#                                    kind="omitted")
-#    stop_y = FormattedComponent(EpicsSignal, "{_y_pv}.STOP",
-#                                kind="omitted")
-#    # stop_z = FormattedComponent(EpicsSignal, "{_z_pv}.STOP",
-#    #                             kind="omitted")
-#
-#    actuate = Component(EpicsSignal, "KohzuPutBO", kind="omitted")
-#    actuate_value = 1
-#    
-#
-#    def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
-#                 name=None, read_attrs=None, configuration_attrs=None,
-#                 parent=None, egu="", **kwargs):
-#
-#        def get_motor_pv(label):
-#            _pv_signal = EpicsSignalRO(f"{prefix}Kohzu{label}PvSI", name="tmp")
-#            _pv_signal.wait_for_connection()
-#            return _pv_signal.get(as_string=True)
-#
-#        self._theta_pv = get_motor_pv("Theta")
-#        self._y_pv = get_motor_pv("Y")
-#        # self._z_pv = get_motor_pv("Z")
-#
-#        super().__init__(
-#            prefix, limits=limits, readback_pv=readback_pv,
-#            setpoint_pv=setpoint_pv, name=name, read_attrs=read_attrs,
-#            configuration_attrs=configuration_attrs, parent=parent, egu=egu,
-#            **kwargs
-#        )
-#
-#    def stop(self, *, success=False):
-#        # for motor in ["theta", "y", "z"]:
-#        for motor in ["theta", "y"]:
-#            getattr(self, f"stop_{motor}").put(1, wait=False)
-#        super().stop(success=success)
-#    
-#    def _setup_move(self, position):
-#        '''Move and do not wait until motion is complete (asynchronous)'''
-#        self.log.debug('%s.setpoint = %s', self.name, position)
-#        self.setpoint.put(position, wait=False)
-#        if self._target != self.setpoint:
-#            self._target.put(position, wait=False)
-#        if self.actuate is not None:
-#            self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
-#            self.actuate.put(self.actuate_value, wait=True)
-#        self.cb_readback()  
-
 class KohzuPositioner(PVPositioner):
-    
+
     readback = FormattedComponent(EpicsSignalRO, "{prefix}{_readback_pv}",
                                   kind="hinted", auto_monitor=True)
     setpoint = FormattedComponent(EpicsSignal, "{prefix}{_setpoint_pv}",
                                   kind="normal", put_complete=True)
-    
+
     stop_theta = FormattedComponent(EpicsSignal, "{_theta_pv}.STOP",
                                     kind="omitted")
     stop_y = FormattedComponent(EpicsSignal, "{_y_pv}.STOP",
@@ -94,17 +44,17 @@ class KohzuPositioner(PVPositioner):
     actuate = Component(EpicsSignal, "KohzuPutBO", put_complete=True,
                         kind="omitted")
     actuate_value = 1
-    
+
     done = Component(EpicsSignalRO, "KohzuThetaDmovBI", kind="omitted")
     done_value = 1  # WHY!?
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
                  name=None, read_attrs=None, configuration_attrs=None,
                  parent=None, egu="", **kwargs):
-        
+
         self._setpoint_pv = setpoint_pv
         self._readback_pv = readback_pv
-        
+
         def get_motor_pv(label):
             _pv_signal = EpicsSignalRO(f"{prefix}Kohzu{label}PvSI", name="tmp")
             _pv_signal.wait_for_connection()
@@ -113,14 +63,13 @@ class KohzuPositioner(PVPositioner):
         self._theta_pv = get_motor_pv("Theta")
         self._y_pv = get_motor_pv("Y")
         # self._z_pv = get_motor_pv("Z")
-        
 
         super().__init__(
             prefix, limits=limits, name=name, read_attrs=read_attrs,
             configuration_attrs=configuration_attrs, parent=parent, egu=egu,
             **kwargs
         )
-        
+
         # Make the default alias for the readback the name of the
         # positioner itself as in EpicsMotor.
         self.readback.name = self.name
@@ -130,7 +79,7 @@ class KohzuPositioner(PVPositioner):
         self.log.debug('%s.setpoint = %s', self.name, position)
         # self.setpoint.put(position, wait=False)
         set_and_wait(self.setpoint, position)
-        
+
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
             self.actuate.put(self.actuate_value, wait=False)
@@ -140,7 +89,7 @@ class KohzuPositioner(PVPositioner):
         for motor in ["theta", "y"]:
             getattr(self, f"stop_{motor}").put(1, wait=False)
         super().stop(success=success)
-        
+
     def move(self, position, wait=True, timeout=None, moved_cb=None):
         if abs(position - self.setpoint.get()) <= self.setpoint.tolerance:
             status = Status()
@@ -149,7 +98,7 @@ class KohzuPositioner(PVPositioner):
             status = super().move(position, wait=wait, timeout=timeout,
                                   moved_cb=moved_cb)
         return status
- 
+
 
 class Monochromator(KohzuSeqCtl_Monochromator):
     """ Tweaks from apstools mono """
