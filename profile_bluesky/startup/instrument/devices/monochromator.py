@@ -45,8 +45,8 @@ class KohzuPositioner(PVPositioner):
                         kind="omitted")
     actuate_value = 1
 
-    done = Component(EpicsSignalRO, "KohzuThetaDmovBI", kind="omitted")
-    done_value = 1  # WHY!?
+    done = Component(EpicsSignalRO, "KohzuMoving", kind="omitted")
+    done_value = 0
 
     def __init__(self, prefix, *, limits=None, readback_pv="", setpoint_pv="",
                  name=None, read_attrs=None, configuration_attrs=None,
