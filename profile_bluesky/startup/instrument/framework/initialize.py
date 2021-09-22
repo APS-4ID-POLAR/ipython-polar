@@ -38,6 +38,8 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
+from .lambda_handler import LambdaHDF5Handler
+
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -52,6 +54,8 @@ callback_db = {}
 
 # Connect with mongodb database.
 db = databroker.catalog["mongodb_config"]
+
+db.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.

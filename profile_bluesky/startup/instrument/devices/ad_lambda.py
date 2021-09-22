@@ -7,7 +7,7 @@ from ophyd.areadetector import (
     CamBase, EpicsSignalWithRBV, SingleTrigger, DetectorBase, TriggerBase
 )
 from ophyd.areadetector.trigger_mixins import ADTriggerStatus
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
+from ophyd.areadetector.filestore_mixins import FileStoreHDF5SingleIterativeWrite
 from ophyd.areadetector.plugins import (
         ROIPlugin_V34, StatsPlugin_V34, HDF5Plugin_V34, CodecPlugin_V34
 )
@@ -90,7 +90,7 @@ class Lambda250kCam(CamBase):
     pool_max_buffers = None
 
 
-class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
+class MyHDF5Plugin(FileStoreHDF5SingleIterativeWrite, HDF5Plugin_V34):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

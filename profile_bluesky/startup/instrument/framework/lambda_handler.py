@@ -8,4 +8,4 @@ class LambdaHDF5Handler(AreaDetectorHDF5SingleHandler):
 
     def __call__(self, point_number):
         da = from_array(super().__call__(point_number))
-        return da.reshape((1,) + da.shape)
+        return da
