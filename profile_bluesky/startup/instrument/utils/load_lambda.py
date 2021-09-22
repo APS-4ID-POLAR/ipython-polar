@@ -12,7 +12,7 @@ def load_lambda(pv="DP_LAMBDA250K_1:"):
 
     print("-- Loading Lambda 250k detector --")
     lambda250k = Lambda250kDetector(pv, name="lambda250k")
-    sd.baseline.append(lambda250k)
+    # sd.baseline.append(lambda250k)
 
     lambda250k.wait_for_connection(timeout=10)
     # This is needed otherwise .get may fail!!!
@@ -22,7 +22,7 @@ def load_lambda(pv="DP_LAMBDA250K_1:"):
         if "roi" in name:
             roi = getattr(lambda250k, name)
             roi.wait_for_connection(timeout=10)
-            roi.nd_array_port.put("EIG")
+            roi.nd_array_port.put("LAMBDA")
         if "stats" in name:
             stat = getattr(lambda250k, name)
             stat.wait_for_connection(timeout=10)

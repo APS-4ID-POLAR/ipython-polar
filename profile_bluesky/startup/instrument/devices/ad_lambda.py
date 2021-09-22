@@ -2,19 +2,74 @@
 Lambda area detector
 """
 
-from ophyd import ADComponent, EpicsSignalRO, Kind
+from ophyd import Component, ADComponent, EpicsSignalRO, Kind, Staged
 from ophyd.areadetector import (
-    CamBase, SignalWithRBV, SingleTrigger, DetectorBase
+    CamBase, EpicsSignalWithRBV, SingleTrigger, DetectorBase, TriggerBase
 )
-from ophyd.areadetector.common_plugins import HDF5Plugin_V34
+from ophyd.areadetector.trigger_mixins import ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5IterativeWrite
-from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
+from ophyd.areadetector.plugins import (
+        ROIPlugin_V34, StatsPlugin_V34, HDF5Plugin_V34, CodecPlugin_V34
+)
 from os.path import join
+import time as ttime
 
-LAMBDA_FILES_ROOT = "/extdisk/4idd/bluesky_images/"
-BLUESKY_FILES_ROOT = "/home/beams/POLAR/data/"
+
+LAMBDA_FILES_ROOT = "/extdisk/4idd/"
+BLUESKY_FILES_ROOT = "/home/beams/POLAR/data/bluesky_images/"
 TEST_IMAGE_DIR = "%Y/%m/%d/"
 
+
+class MySingleTrigger(TriggerBase):
+    """
+    This trigger mixin class takes one acquisition per trigger.
+    Examples
+    --------
+    >>> class SimDetector(SingleTrigger):
+    ...     pass
+    >>> det = SimDetector('..pv..')
+    # optionally, customize name of image
+    >>> det = SimDetector('..pv..', image_name='fast_detector_image')
+    """
+    _status_type = ADTriggerStatus
+
+    def __init__(self, *args, image_name=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if image_name is None:
+            image_name = '_'.join([self.name, 'image'])
+        self._image_name = image_name
+        self._monitor_status = self.cam.detector_state
+        self._sleep_time = 0.1
+
+    def stage(self):
+        self._monitor_status.subscribe(self._acquire_changed)
+        super().stage()
+
+    def unstage(self):
+        super().unstage()
+        self._monitor_status.clear_sub(self._acquire_changed)
+
+    def trigger(self):
+        "Trigger one acquisition."
+        if self._staged != Staged.yes:
+            raise RuntimeError("This detector is not ready to trigger."
+                               "Call the stage() method before triggering.")
+
+        self._status = self._status_type(self)
+        self._acquisition_signal.put(1, wait=False)
+        
+        self.dispatch(self._image_name, ttime.time())
+        return self._status
+
+    def _acquire_changed(self, value=None, old_value=None, **kwargs):
+        "This is called when the 'acquire' signal changes."
+        if self._status is None:
+            return
+        if (old_value != 0) and (value == 0):
+            # Negative-going edge means an acquisition just finished.
+            ttime.sleep(self._sleep_time)
+            self._status.set_finished()
+            self._status = None
 
 class Lambda250kCam(CamBase):
     """
@@ -26,26 +81,35 @@ class Lambda250kCam(CamBase):
     serial_number = ADComponent(EpicsSignalRO, 'SerialNumber_RBV')
     firmware_version = ADComponent(EpicsSignalRO, 'FirmwareVersion_RBV')
 
-    operating_mode = ADComponent(SignalWithRBV, 'OperatingMode')
-    energy_threshold = ADComponent(SignalWithRBV, 'EnergyThreshold')
-    dual_threshold = ADComponent(SignalWithRBV, 'DualThreshold')
+    operating_mode = ADComponent(EpicsSignalWithRBV, 'OperatingMode')
+    energy_threshold = ADComponent(EpicsSignalWithRBV, 'EnergyThreshold')
+    dual_threshold = ADComponent(EpicsSignalWithRBV, 'DualThreshold')
+    
+    file_number_sync = None
+    file_number_write = None
+    pool_max_buffers = None
 
 
 class MyHDF5Plugin(FileStoreHDF5IterativeWrite, HDF5Plugin_V34):
     pass
 
 
-class Lambda250kDetector(SingleTrigger, DetectorBase):
+class Lambda250kDetector(MySingleTrigger, DetectorBase):
+    
+    _default_configuration_attrs = ('roi', 'codec')
+    _default_read_attrs = ('cam', 'hdf1', 'stats')
 
-    cam = ADComponent(Lambda250kCam, 'cam1:')
+    cam = ADComponent(Lambda250kCam, 'cam1:', kind='normal')
     hdf1 = ADComponent(
         MyHDF5Plugin,
         "HDF1:",
         write_path_template=join(LAMBDA_FILES_ROOT, TEST_IMAGE_DIR),
         read_path_template=join(BLUESKY_FILES_ROOT, TEST_IMAGE_DIR),
+        kind='normal'
     )
     roi = ADComponent(ROIPlugin_V34, 'ROI1:')
-    stats = ADComponent(StatsPlugin_V34, 'STATS1:')
+    stats = ADComponent(StatsPlugin_V34, 'Stats1:')
+    codec = ADComponent(CodecPlugin_V34, 'Codec1:')
 
     def default_kinds(self):
 
@@ -106,3 +170,4 @@ class Lambda250kDetector(SingleTrigger, DetectorBase):
             if isinstance(comp, StatsPlugin_V34):
                 comp.total.kind = Kind.hinted
                 comp.read_attrs += ["max_value", "min_value"]
+
