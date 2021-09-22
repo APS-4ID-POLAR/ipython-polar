@@ -16,7 +16,7 @@ import time as ttime
 
 
 LAMBDA_FILES_ROOT = "/extdisk/4idd/"
-BLUESKY_FILES_ROOT = "/home/beams/POLAR/data/bluesky_images/"
+BLUESKY_FILES_ROOT = "/home/sector4/4idd/bluesky_images"
 TEST_IMAGE_DIR = "%Y/%m/%d/"
 
 
