@@ -9,7 +9,8 @@ from ophyd.areadetector import (
 from ophyd.areadetector.trigger_mixins import ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreHDF5SingleIterativeWrite
 from ophyd.areadetector.plugins import (
-        ROIPlugin_V34, StatsPlugin_V34, HDF5Plugin_V34, CodecPlugin_V34
+        ROIPlugin_V34, StatsPlugin_V34, HDF5Plugin_V34, CodecPlugin_V34,
+        ProcessPlugin_V34
 )
 from os.path import join
 import time as ttime
@@ -112,8 +113,13 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
     )
     roi = ADComponent(ROIPlugin_V34, 'ROI1:')
     stats = ADComponent(StatsPlugin_V34, 'Stats1:')
-    codec = ADComponent(CodecPlugin_V34, 'Codec1:')
-
+    codec = ADComponent(CodecPlugin_V34, 'Codec1:')    
+    proc = ADComponent(ProcessPlugin_V34, "Proc1:")
+    
+    @property
+    def preset_monitor(self):
+        return self.cam.acquire_time
+    
     def default_kinds(self):
 
         # TODO: This is setting A LOT of stuff as "configuration_attrs", should
@@ -165,7 +171,7 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
 
         for name in self.component_names:
             comp = getattr(self, name)
-            if isinstance(comp, (ROIPlugin_V34, StatsPlugin_V34)):
+            if isinstance(comp, (ROIPlugin_V34, StatsPlugin_V34, ProcessPlugin_V34)):
                 comp.configuration_attrs += [
                     item for item in comp.component_names if item not in
                     _remove_from_config

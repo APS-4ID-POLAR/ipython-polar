@@ -22,7 +22,7 @@ def load_lambda(pv="DP_LAMBDA250K_1:"):
         if "roi" in name:
             roi = getattr(lambda250k, name)
             roi.wait_for_connection(timeout=10)
-            roi.nd_array_port.put("LAMBDA")
+            roi.nd_array_port.put("PROC1")
         if "stats" in name:
             stat = getattr(lambda250k, name)
             stat.wait_for_connection(timeout=10)

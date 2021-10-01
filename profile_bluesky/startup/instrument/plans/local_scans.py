@@ -2,9 +2,9 @@
 Modifed bluesky scans
 """
 
-__all__ = ['lup', 'ascan', 'mv', 'mvr', 'qxscan']
+__all__ = ['lup', 'ascan', 'mv', 'mvr', 'qxscan', 'count']
 
-from bluesky.plans import rel_scan, scan, list_scan
+from bluesky.plans import rel_scan, scan, list_scan, count as bp_count
 from bluesky.plan_stubs import trigger_and_read, move_per_step
 from bluesky.plan_stubs import mv as bps_mv, rd
 from bluesky.preprocessors import relative_set_decorator
@@ -31,6 +31,7 @@ class LocalFlag:
     dichro = False
     fixq = False
     hkl_pos = {}
+    dichro_steps = None
 
 
 flag = LocalFlag()
@@ -57,14 +58,10 @@ def _collect_extras(escan_flag, fourc_flag):
 
 def dichro_steps(devices_to_read, take_reading):
 
-    pr_pos = yield from rd(pr_setup.positioner)
-    offset = yield from rd(pr_setup.offset)
     devices_to_read += [pr_setup.positioner]
-    for sign in pr_setup.dichro_steps:
-        yield from mv(pr_setup.positioner, pr_pos + sign*offset)
+    for pos in flag.dichro_steps:
+        yield from mv(pr_setup.positioner, pos)
         yield from take_reading(devices_to_read)
-
-    yield from mv(pr_setup.positioner, pr_pos)
 
 
 def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
@@ -101,6 +98,123 @@ def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
         yield from dichro_steps(devices_to_read, take_reading)
     else:
         yield from take_reading(devices_to_read)
+
+
+def one_local_shot(detectors, take_reading=trigger_and_read):
+    """
+    Inner loop for fixQ and dichro scans.
+
+    Parameters
+    ----------
+    detectors : iterable
+        devices to read
+    step : dict
+        mapping motors to positions in this step
+    pos_cache : dict
+        mapping motors to their last-set positions
+    take_reading : plan, optional
+        function to do the actual acquisition ::
+           def take_reading(dets, name='primary'):
+                yield from ...
+        Callable[List[OphydObj], Optional[str]] -> Generator[Msg], optional
+        Defaults to `trigger_and_read`
+    """
+
+    devices_to_read = list(detectors)
+    if flag.dichro:
+        yield from dichro_steps(devices_to_read, take_reading)
+    else:
+        yield from take_reading(devices_to_read)
+
+
+def count(detectors=None, num=1, time=None, lockin=False, dichro=False,
+          md=None):
+    """
+    Scan over one multi-motor trajectory.
+
+    This is a local version of `bluesky.plans.scan`. Note that the `per_step`
+    cannot be set here, as it is used for dichro scans.
+
+    Parameters
+    ----------
+    *args :
+        For one dimension, ``motor, start, stop, number of points``.
+        In general:
+        .. code-block:: python
+            motor1, start1, stop1,
+            motor2, start2, start2,
+            ...,
+            motorN, startN, stopN,
+            number of points
+        Motors can be any 'settable' object (motor, temp controller, etc.)
+    time : float, optional
+        If a number is passed, it will modify the counts over time. All
+        detectors need to have a .preset_monitor signal.
+    detectors : list, optional
+        List of detectors to be used in the scan. If None, will use the
+        detectors defined in `counters.detectors`.
+    lockin : boolean, optional
+        Flag to do a lock-in scan. Please run pr_setup.config() prior do a
+        lock-in scan
+    dichro : boolean, optional
+        Flag to do a dichro scan. Please run pr_setup.config() prior do a
+        dichro scan. Note that this will switch the x-ray polarization at every
+        point using the +, -, -, + sequence, thus increasing the number of
+        points by a factor of 4
+    fixq : boolean, optional
+        Flag for fixQ scans. If True, it will fix the diffractometer hkl
+        position during the scan. This is particularly useful for energy scan.
+        Note that hkl is moved ~after~ the other motors!
+    md : dictionary, optional
+        Metadata to be added to the run start.
+
+    See Also
+    --------
+    :func:`bluesky.plans.scan`
+    :func:`lup`
+    """
+    fixq = False
+    if detectors is None:
+        detectors = counters.detectors
+
+    flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+
+    flag.fixq = fixq
+    per_shot = one_local_shot if fixq or dichro else None
+
+    extras = yield from _collect_extras(False, False)
+
+    # TODO: The md handling might go well in a decorator.
+    # TODO: May need to add reference to stream.
+    _md = {'hints': {'monitor': counters.monitor, 'detectors': []}}
+    for item in detectors:
+        _md['hints']['detectors'].extend(item.hints['fields'])
+
+    if dichro:
+        _md['hints']['scan_type'] = 'dichro'
+
+    _md.update(md or {})
+
+    _md.update(md or {})
+
+    @configure_counts_decorator(detectors, time)
+    @stage_ami_decorator(False)
+    @stage_dichro_decorator(dichro, lockin)
+    @extra_devices_decorator(extras)
+    def _inner_ascan():
+        yield from bp_count(
+            detectors + extras,
+            num = num,
+            per_shot=per_shot,
+            md=_md
+            )
+
+    return (yield from _inner_ascan())
 
 
 def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
@@ -153,6 +267,12 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         detectors = counters.detectors
 
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+        
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
@@ -246,6 +366,12 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
         detectors = counters.detectors
 
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+        
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
@@ -334,6 +460,12 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
         detectors = counters.detectors
 
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+        
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
