@@ -2,12 +2,14 @@
 Lambda area detector
 """
 
-from ophyd import Component, ADComponent, EpicsSignalRO, Kind, Staged
+from ophyd import ADComponent, EpicsSignalRO, Kind, Staged
 from ophyd.areadetector import (
-    CamBase, EpicsSignalWithRBV, SingleTrigger, DetectorBase, TriggerBase
+    CamBase, EpicsSignalWithRBV, DetectorBase, TriggerBase
 )
 from ophyd.areadetector.trigger_mixins import ADTriggerStatus
-from ophyd.areadetector.filestore_mixins import FileStoreHDF5SingleIterativeWrite
+from ophyd.areadetector.filestore_mixins import (
+    FileStoreHDF5SingleIterativeWrite
+)
 from ophyd.areadetector.plugins import (
         ROIPlugin_V34, StatsPlugin_V34, HDF5Plugin_V34, CodecPlugin_V34,
         ProcessPlugin_V34
@@ -58,7 +60,6 @@ class MySingleTrigger(TriggerBase):
 
         self._status = self._status_type(self)
         self._acquisition_signal.put(1, wait=False)
-        
         self.dispatch(self._image_name, ttime.time())
         return self._status
 
@@ -71,6 +72,7 @@ class MySingleTrigger(TriggerBase):
             ttime.sleep(self._sleep_time)
             self._status.set_finished()
             self._status = None
+
 
 class Lambda250kCam(CamBase):
     """
@@ -85,7 +87,7 @@ class Lambda250kCam(CamBase):
     operating_mode = ADComponent(EpicsSignalWithRBV, 'OperatingMode')
     energy_threshold = ADComponent(EpicsSignalWithRBV, 'EnergyThreshold')
     dual_threshold = ADComponent(EpicsSignalWithRBV, 'DualThreshold')
-    
+
     file_number_sync = None
     file_number_write = None
     pool_max_buffers = None
@@ -99,7 +101,7 @@ class MyHDF5Plugin(FileStoreHDF5SingleIterativeWrite, HDF5Plugin_V34):
 
 
 class Lambda250kDetector(MySingleTrigger, DetectorBase):
-    
+
     _default_configuration_attrs = ('roi', 'codec')
     _default_read_attrs = ('cam', 'hdf1', 'stats')
 
@@ -111,15 +113,15 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
         read_path_template=join(BLUESKY_FILES_ROOT, TEST_IMAGE_DIR),
         kind='normal'
     )
-    roi = ADComponent(ROIPlugin_V34, 'ROI1:')
-    stats = ADComponent(StatsPlugin_V34, 'Stats1:')
-    codec = ADComponent(CodecPlugin_V34, 'Codec1:')    
+    roi1 = ADComponent(ROIPlugin_V34, 'ROI1:')
+    stats1 = ADComponent(StatsPlugin_V34, 'Stats1:')
+    codec = ADComponent(CodecPlugin_V34, 'Codec1:')
     proc = ADComponent(ProcessPlugin_V34, "Proc1:")
-    
+
     @property
     def preset_monitor(self):
         return self.cam.acquire_time
-    
+
     def default_kinds(self):
 
         # TODO: This is setting A LOT of stuff as "configuration_attrs", should
@@ -171,7 +173,9 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
 
         for name in self.component_names:
             comp = getattr(self, name)
-            if isinstance(comp, (ROIPlugin_V34, StatsPlugin_V34, ProcessPlugin_V34)):
+            if isinstance(
+                comp, (ROIPlugin_V34, StatsPlugin_V34, ProcessPlugin_V34)
+            ):
                 comp.configuration_attrs += [
                     item for item in comp.component_names if item not in
                     _remove_from_config
@@ -180,3 +184,5 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
                 comp.total.kind = Kind.hinted
                 comp.read_attrs += ["max_value", "min_value"]
 
+    def default_setting(self):
+        self.stage_sigs['cam.num_images'] = 1
