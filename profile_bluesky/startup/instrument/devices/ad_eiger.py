@@ -47,7 +47,6 @@ class LocalTrigger(TriggerBase):
         if image_name is None:
             image_name = '_'.join([self.name, 'image'])
         self._image_name = image_name
-        self._image_count = self.cam.array_counter
         self._acquisition_signal = self.cam.special_trigger_button
         self._delay = delay
 
@@ -92,8 +91,8 @@ class LocalTrigger(TriggerBase):
 
         @run_in_thread
         def add_delay(status_obj, delay=0.1):
-            total_sleep = self.cam.acquire_time.get() + delay
-            sleep(total_sleep)  # wait a short time
+            total_sleep = self.cam.trigger_exposure.get() + delay
+            sleep(total_sleep)
             status_obj.set_finished()
 
         self._status = self._status_type(self)
