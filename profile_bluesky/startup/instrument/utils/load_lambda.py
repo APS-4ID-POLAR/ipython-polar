@@ -13,7 +13,6 @@ def load_lambda(pv="DP_LAMBDA250K_1:"):
     lambda250k = Lambda250kDetector(pv, name="lambda250k")
 
     lambda250k.wait_for_connection(timeout=10)
-    # This is needed otherwise .get may fail!!!
 
     print("Setting up ROI and STATS defaults ...", end=" ")
     for name in lambda250k.component_names:

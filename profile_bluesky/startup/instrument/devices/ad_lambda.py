@@ -36,13 +36,13 @@ class MySingleTrigger(TriggerBase):
     """
     _status_type = ADTriggerStatus
 
-    def __init__(self, *args, image_name=None, **kwargs):
+    def __init__(self, *args, image_name=None, delay_time=0.1, **kwargs):
         super().__init__(*args, **kwargs)
         if image_name is None:
             image_name = '_'.join([self.name, 'image'])
         self._image_name = image_name
         self._monitor_status = self.cam.detector_state
-        self._sleep_time = 0.1
+        self._sleep_time = delay_time
 
     def stage(self):
         self._monitor_status.subscribe(self._acquire_changed)
@@ -94,7 +94,6 @@ class Lambda250kCam(CamBase):
 
 
 class MyHDF5Plugin(FileStoreHDF5SingleIterativeWrite, HDF5Plugin_V34):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.filestore_spec = 'AD_HDF5_lambda'
@@ -102,8 +101,12 @@ class MyHDF5Plugin(FileStoreHDF5SingleIterativeWrite, HDF5Plugin_V34):
 
 class Lambda250kDetector(MySingleTrigger, DetectorBase):
 
-    _default_configuration_attrs = ('roi', 'codec')
-    _default_read_attrs = ('cam', 'hdf1', 'stats')
+    _default_configuration_attrs = (
+        'roi1', 'roi2', 'roi3', 'roi4', 'codec'
+    )
+    _default_read_attrs = (
+        'cam', 'hdf1', 'stats1', 'stats2', 'stats3', 'stats4'
+    )
 
     cam = ADComponent(Lambda250kCam, 'cam1:', kind='normal')
     hdf1 = ADComponent(
@@ -114,7 +117,15 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
         kind='normal'
     )
     roi1 = ADComponent(ROIPlugin_V34, 'ROI1:')
+    roi2 = ADComponent(ROIPlugin_V34, 'ROI2:')
+    roi3 = ADComponent(ROIPlugin_V34, 'ROI3:')
+    roi4 = ADComponent(ROIPlugin_V34, 'ROI4:')
+
     stats1 = ADComponent(StatsPlugin_V34, 'Stats1:')
+    stats2 = ADComponent(StatsPlugin_V34, 'Stats2:')
+    stats3 = ADComponent(StatsPlugin_V34, 'Stats3:')
+    stats4 = ADComponent(StatsPlugin_V34, 'Stats4:')
+
     codec = ADComponent(CodecPlugin_V34, 'Codec1:')
     proc = ADComponent(ProcessPlugin_V34, "Proc1:")
 
@@ -184,5 +195,5 @@ class Lambda250kDetector(MySingleTrigger, DetectorBase):
                 comp.total.kind = Kind.hinted
                 comp.read_attrs += ["max_value", "min_value"]
 
-    def default_setting(self):
+    def default_settings(self):
         self.stage_sigs['cam.num_images'] = 1
