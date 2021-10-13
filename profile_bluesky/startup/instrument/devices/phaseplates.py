@@ -49,14 +49,8 @@ class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL')
     remote_readback = Component(EpicsSignalRO, 'microns')
 
-    # TODO: LocalDC readback is usually a bit different from the setpoint,
-    # check if tolerance = 0.01 is good.
-    # TODO: The value doesnt change in the MEDM screen, not sure why.
-    #localDC = Component(EpicsSignal, 'DC_read_microns',
-    #                    write_pv='DC_set_microns.VAL', auto_monitor=True,
-    #                    tolerance=0.01, put_complete=True)
-
-    localDC = Component(PVPositionerSoftDone, "", readback_pv="DC_read_microns",
+    localdc = Component(PVPositionerSoftDone, "",
+                        readback_pv="DC_read_microns",
                         setpoint_pv="DC_set_microns", tolerance=0.01)
 
     center = Component(EpicsSignal, 'AC_put_center.A', kind='config')
@@ -273,7 +267,7 @@ class PRSetup():
                                     _positioner = pr.th
                                     break
                                 elif method.lower() == 'pzt':
-                                    _positioner = pr.pzt.localDC
+                                    _positioner = pr.pzt.localdc
                                     break
                                 else:
                                     print("Only motor or pzt are acceptable "

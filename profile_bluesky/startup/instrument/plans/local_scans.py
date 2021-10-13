@@ -209,7 +209,7 @@ def count(detectors=None, num=1, time=None, lockin=False, dichro=False,
     def _inner_ascan():
         yield from bp_count(
             detectors + extras,
-            num = num,
+            num=num,
             per_shot=per_shot,
             md=_md
             )
@@ -272,7 +272,7 @@ def lup(*args, time=None, detectors=None, lockin=False, dichro=False,
         _center = pr_setup.positioner.parent.center.get()
         _steps = pr_setup.dichro_steps
         flag.dichro_steps = [_center + step*_offset for step in _steps]
-        
+
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
@@ -371,7 +371,7 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
         _center = pr_setup.positioner.parent.center.get()
         _steps = pr_setup.dichro_steps
         flag.dichro_steps = [_center + step*_offset for step in _steps]
-        
+
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
@@ -465,7 +465,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
         _center = pr_setup.positioner.parent.center.get()
         _steps = pr_setup.dichro_steps
         flag.dichro_steps = [_center + step*_offset for step in _steps]
-        
+
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
