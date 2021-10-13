@@ -9,12 +9,12 @@ __all__ = ['load_lambda']
 
 def load_lambda(pv="DP_LAMBDA250K_1:"):
 
-    print("-- Loading Lambda 250k detector --")
+    logger.info("-- Loading Lambda 250k detector --")
     lambda250k = Lambda250kDetector(pv, name="lambda250k")
 
     lambda250k.wait_for_connection(timeout=10)
 
-    print("Setting up ROI and STATS defaults ...", end=" ")
+    logger.info("Setting up ROI and STATS defaults ...", end=" ")
     for name in lambda250k.component_names:
         if "roi" in name:
             roi = getattr(lambda250k, name)
@@ -24,13 +24,13 @@ def load_lambda(pv="DP_LAMBDA250K_1:"):
             stat = getattr(lambda250k, name)
             stat.wait_for_connection(timeout=10)
             stat.nd_array_port.put(f"ROI{stat.port_name.get()[-1]}")
-    print("Done!")
+    logger.info("Done!")
 
-    print("Setting up defaults kinds ...", end=" ")
+    logger.info("Setting up defaults kinds ...", end=" ")
     lambda250k.default_kinds()
-    print("Done!")
-    print("Setting up default settings ...", end=" ")
+    logger.info("Done!")
+    logger.info("Setting up default settings ...", end=" ")
     lambda250k.default_settings()
-    print("Done!")
-    print("All done!")
+    logger.info("Done!")
+    logger.info("All done!")
     return lambda250k
