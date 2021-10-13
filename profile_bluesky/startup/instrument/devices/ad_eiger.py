@@ -13,6 +13,8 @@ from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreBase
 from ophyd.utils.epics_pvs import set_and_wait
+from apstools.utils import run_in_thread
+from time import sleep
 from os.path import join, isdir
 from ..session_logs import logger
 logger.info(__file__)
@@ -40,13 +42,14 @@ class LocalTrigger(TriggerBase):
     """
     _status_type = ADTriggerStatus
 
-    def __init__(self, *args, image_name=None, **kwargs):
+    def __init__(self, *args, image_name=None, delay=0.1, **kwargs):
         super().__init__(*args, **kwargs)
         if image_name is None:
             image_name = '_'.join([self.name, 'image'])
         self._image_name = image_name
         self._image_count = self.cam.array_counter
         self._acquisition_signal = self.cam.special_trigger_button
+        self._delay = delay
 
     def setup_manual_trigger(self):
         # Stage signals
@@ -60,14 +63,10 @@ class LocalTrigger(TriggerBase):
         # Make sure that detector is not armed.
         set_and_wait(self.cam.acquire, 0)
         super().stage()
-        # The trigger button does not track that the detector is done, so
-        # the image_count is used. Not clear it's the best choice.
-        self._image_count.subscribe(self._acquire_changed)
         set_and_wait(self.cam.acquire, 1)
 
     def unstage(self):
         super().unstage()
-        self._image_count.clear_sub(self._acquire_changed)
         set_and_wait(self.cam.acquire, 0)
 
         def check_value(*, old_value, value, **kwargs):
@@ -91,18 +90,17 @@ class LocalTrigger(TriggerBase):
             raise RuntimeError("This detector is not ready to trigger."
                                "Call the stage() method before triggering.")
 
+        @run_in_thread
+        def add_delay(status_obj, delay=0.1):
+            total_sleep = self.cam.acquire_time.get() + delay
+            sleep(total_sleep)  # wait a short time
+            status_obj.set_finished()
+
         self._status = self._status_type(self)
         self._acquisition_signal.put(1, wait=False)
         self.dispatch(self._image_name, ttime())
+        add_delay(self._status, delay=self._delay)
         return self._status
-
-    def _acquire_changed(self, value=None, old_value=None, **kwargs):
-        "This is called when the 'acquire' signal changes."
-        if self._status is None:
-            return
-        if value > old_value:  # There is a new image!
-            self._status.set_finished()
-            self._status = None
 
 
 # Based on NSLS2-CHX
