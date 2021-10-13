@@ -96,7 +96,7 @@ class Lambda250kCam(CamBase):
 class MyHDF5Plugin(FileStoreHDF5SingleIterativeWrite, HDF5Plugin_V34):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filestore_spec = 'AD_HDF5_lambda'
+        self.filestore_spec = 'AD_HDF5_Lambda250k_APSPolar'
 
 
 class Lambda250kDetector(MySingleTrigger, DetectorBase):

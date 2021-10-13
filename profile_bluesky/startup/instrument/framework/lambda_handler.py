@@ -9,7 +9,9 @@ logger.info(__file__)
 
 
 class LambdaHDF5Handler(AreaDetectorHDF5SingleHandler):
-    specs = {"AD_HDF5_lambda"} | AreaDetectorHDF5SingleHandler.specs
+    specs = (
+        {"AD_HDF5_Lambda250k_APSPolar"} | AreaDetectorHDF5SingleHandler.specs
+    )
 
     def __call__(self, point_number):
         return from_array(super().__call__(point_number))
