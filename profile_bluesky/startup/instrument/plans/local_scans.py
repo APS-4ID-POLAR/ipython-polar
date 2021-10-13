@@ -28,6 +28,7 @@ logger.info(__file__)
 
 
 class LocalFlag:
+    """Stores flags that are used to select and run local scans."""
     dichro = False
     fixq = False
     hkl_pos = {}
@@ -38,7 +39,7 @@ flag = LocalFlag()
 
 
 def _collect_extras(escan_flag, fourc_flag):
-
+    """Collect all detectors that need to be read during a scan."""
     extras = counters.extra_devices.copy()
 
     if escan_flag:
@@ -57,7 +58,12 @@ def _collect_extras(escan_flag, fourc_flag):
 
 
 def dichro_steps(devices_to_read, take_reading):
+    """
+    Switch the x-ray polarization for each scan point.
 
+    This will increase the number of points in a scan by a factor that is equal
+    to the length of the `pr_setup.dichro_steps` list.
+    """
     devices_to_read += [pr_setup.positioner]
     for pos in flag.dichro_steps:
         yield from mv(pr_setup.positioner, pos)
@@ -67,6 +73,10 @@ def dichro_steps(devices_to_read, take_reading):
 def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     """
     Inner loop for fixQ and dichro scans.
+
+    It is always called in the local plans defined here. It is used as a
+    `per_step` kwarg in Bluesky scan plans, such as `bluesky.plans.scan`. But
+    note that it requires the `LocalFlag` class.
 
     Parameters
     ----------
@@ -104,14 +114,15 @@ def one_local_shot(detectors, take_reading=trigger_and_read):
     """
     Inner loop for fixQ and dichro scans.
 
+    To be used as a `per_shot` kwarg in the Bluesky `bluesky.plans.count`.
+    It is always called in the local `count` plan defined here. It is used as a
+    `per_shot` kwarg in the Bluesky `bluesky.plans.count`. But note that it
+    requires the `LocalFlag` class.
+
     Parameters
     ----------
     detectors : iterable
         devices to read
-    step : dict
-        mapping motors to positions in this step
-    pos_cache : dict
-        mapping motors to their last-set positions
     take_reading : plan, optional
         function to do the actual acquisition ::
            def take_reading(dets, name='primary'):
@@ -127,52 +138,35 @@ def one_local_shot(detectors, take_reading=trigger_and_read):
         yield from take_reading(devices_to_read)
 
 
-def count(detectors=None, num=1, time=None, lockin=False, dichro=False,
-          md=None):
+def count(detectors=None, num=1, time=None, delay=0, lockin=False,
+          dichro=False, md=None):
     """
-    Scan over one multi-motor trajectory.
+    Take one or more readings from detectors.
 
-    This is a local version of `bluesky.plans.scan`. Note that the `per_step`
+    This is a local version of `bluesky.plans.count`. Note that the `per_shot`
     cannot be set here, as it is used for dichro scans.
 
     Parameters
     ----------
-    *args :
-        For one dimension, ``motor, start, stop, number of points``.
-        In general:
-        .. code-block:: python
-            motor1, start1, stop1,
-            motor2, start2, start2,
-            ...,
-            motorN, startN, stopN,
-            number of points
-        Motors can be any 'settable' object (motor, temp controller, etc.)
+    detectors : list, optional
+        List of 'readable' objects. If None, will use the detectors defined in
+        `counters.detectors`.
+    num : integer, optional
+        number of readings to take; default is 1
+        If None, capture data until canceled
     time : float, optional
         If a number is passed, it will modify the counts over time. All
         detectors need to have a .preset_monitor signal.
-    detectors : list, optional
-        List of detectors to be used in the scan. If None, will use the
-        detectors defined in `counters.detectors`.
-    lockin : boolean, optional
-        Flag to do a lock-in scan. Please run pr_setup.config() prior do a
-        lock-in scan
-    dichro : boolean, optional
-        Flag to do a dichro scan. Please run pr_setup.config() prior do a
-        dichro scan. Note that this will switch the x-ray polarization at every
-        point using the +, -, -, + sequence, thus increasing the number of
-        points by a factor of 4
-    fixq : boolean, optional
-        Flag for fixQ scans. If True, it will fix the diffractometer hkl
-        position during the scan. This is particularly useful for energy scan.
-        Note that hkl is moved ~after~ the other motors!
-    md : dictionary, optional
-        Metadata to be added to the run start.
-
-    See Also
-    --------
-    :func:`bluesky.plans.scan`
-    :func:`lup`
+    delay : iterable or scalar, optional
+        Time delay in seconds between successive readings; default is 0.
+    md : dict, optional
+        metadata
+    Notes
+    -----
+    If ``delay`` is an iterable, it must have at least ``num - 1`` entries or
+    the plan will raise a ``ValueError`` during iteration.
     """
+
     fixq = False
     if detectors is None:
         detectors = counters.detectors
