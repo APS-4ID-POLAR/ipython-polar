@@ -119,7 +119,7 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
     enable = Component(Signal, value=False, kind="omitted")
 
     def __init__(self, *args, **kwargs):
-        self.filestore_spec = "AD_EIGER"
+        self.filestore_spec = "AD_EIGER_APSPolar"
         super().__init__(*args, **kwargs)
         self.enable.subscribe(self._set_kind)
         self._base_name = None

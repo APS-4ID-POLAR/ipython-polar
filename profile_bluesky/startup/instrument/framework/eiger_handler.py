@@ -10,6 +10,7 @@ from area_detector_handlers.eiger import EigerHandler
 
 
 class MyEigerHandler(EigerHandler):
+    specs = {"AD_EIGER_APSPolar"}
 
     def __call__(self, image_num):
         '''
