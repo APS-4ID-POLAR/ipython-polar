@@ -90,7 +90,7 @@ class LocalTrigger(TriggerBase):
                                "Call the stage() method before triggering.")
 
         @run_in_thread
-        def add_delay(status_obj, delay=0.1):
+        def add_delay(status_obj, delay):
             total_sleep = self.cam.trigger_exposure.get() + delay
             sleep(total_sleep)
             status_obj.set_finished()
@@ -98,7 +98,7 @@ class LocalTrigger(TriggerBase):
         self._status = self._status_type(self)
         self._acquisition_signal.put(1, wait=False)
         self.dispatch(self._image_name, ttime())
-        add_delay(self._status, delay=self._delay)
+        add_delay(self._status, self._delay)
         return self._status
 
 
