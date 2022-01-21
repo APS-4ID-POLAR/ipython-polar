@@ -11,7 +11,7 @@ from ophyd import EpicsSignal, EpicsSignalRO, Signal, DerivedSignal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi, sin
-from .util_components import TrackingSignal
+from .util_components import TrackingSignal, PVPositionerSoftDone
 from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
@@ -49,12 +49,9 @@ class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL')
     remote_readback = Component(EpicsSignalRO, 'microns')
 
-    # TODO: LocalDC readback is usually a bit different from the setpoint,
-    # check if tolerance = 0.01 is good.
-    # TODO: The value doesnt change in the MEDM screen, not sure why.
-    localDC = Component(EpicsSignal, 'DC_read_microns',
-                        write_pv='DC_set_microns.VAL', auto_monitor=True,
-                        tolerance=0.01, put_complete=True)
+    localdc = Component(PVPositionerSoftDone, "",
+                        readback_pv="DC_read_microns",
+                        setpoint_pv="DC_set_microns", tolerance=0.01)
 
     center = Component(EpicsSignal, 'AC_put_center.A', kind='config')
     offset_degrees = Component(EpicsSignal, 'AC_put_offset.A',
@@ -270,7 +267,7 @@ class PRSetup():
                                     _positioner = pr.th
                                     break
                                 elif method.lower() == 'pzt':
-                                    _positioner = pr.pzt.localDC
+                                    _positioner = pr.pzt.localdc
                                     break
                                 else:
                                     print("Only motor or pzt are acceptable "
