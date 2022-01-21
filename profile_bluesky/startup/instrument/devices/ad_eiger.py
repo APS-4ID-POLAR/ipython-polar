@@ -206,8 +206,8 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
         # This is a workaround to enable setting these values in the detector
         # startup. Needed because we don't have a stable solution on where
         # these images would be.
-        self.write_path_template = self.parent.write_path_template
-        self.read_path_template = self.parent.read_path_template
+        self.write_path_template = self.parent._write_path_template
+        self.read_path_template = self.parent._read_path_template
 
     def _set_kind(self, value, **kwargs):
         if value in (True, 1, "on", "enable"):
