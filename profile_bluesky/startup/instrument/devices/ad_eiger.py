@@ -403,9 +403,9 @@ class LocalEigerDetectorBase(DetectorBase):
         self.save_images_off()
 
 
-class EigerTimeTrigger(TriggerTime, LocalEigerDetectorBase):
+class EigerDetectorTimeTrigger(TriggerTime, LocalEigerDetectorBase):
     pass
 
 
-class EigerNewImageTrigger(TriggerNewImage, LocalEigerDetectorBase):
+class EigerDetectorImageTrigger(TriggerNewImage, LocalEigerDetectorBase):
     pass
