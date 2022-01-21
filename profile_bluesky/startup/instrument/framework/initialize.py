@@ -38,6 +38,8 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
+
+# TODO: Use from polartools when available!
 from .eiger_handler import MyEigerHandler
 from .lambda_handler import LambdaHDF5Handler
 

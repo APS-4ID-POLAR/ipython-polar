@@ -39,16 +39,18 @@ logger.info(__file__)
 
 
 class LocalFlag:
+    """Stores flags that are used to select and run local scans."""
     dichro = False
     fixq = False
     hkl_pos = {}
+    dichro_steps = None
 
 
 flag = LocalFlag()
 
 
 def _collect_extras(escan_flag, fourc_flag):
-
+    """Collect all detectors that need to be read during a scan."""
     extras = counters.extra_devices.copy()
 
     if escan_flag:
@@ -81,6 +83,10 @@ def dichro_steps(devices_to_read, take_reading):
 def one_local_step(detectors, step, pos_cache, take_reading=trigger_and_read):
     """
     Inner loop for fixQ and dichro scans.
+
+    It is always called in the local plans defined here. It is used as a
+    `per_step` kwarg in Bluesky scan plans, such as `bluesky.plans.scan`. But
+    note that it requires the `LocalFlag` class.
 
     Parameters
     ----------
@@ -266,6 +272,12 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     :func:`lup`
     """
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+
     flag.fixq = fixq
     if per_step is None:
         per_step = one_local_step if fixq or dichro else None
@@ -445,6 +457,12 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
     """
 
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+
     flag.fixq = fixq
     if per_step is None:
         per_step = one_local_step if fixq or dichro else None
@@ -622,6 +640,12 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
         detectors = counters.detectors
 
     flag.dichro = dichro
+    if dichro:
+        _offset = pr_setup.offset.get()
+        _center = pr_setup.positioner.parent.center.get()
+        _steps = pr_setup.dichro_steps
+        flag.dichro_steps = [_center + step*_offset for step in _steps]
+
     flag.fixq = fixq
     per_step = one_local_step if fixq or dichro else None
     if fixq:
