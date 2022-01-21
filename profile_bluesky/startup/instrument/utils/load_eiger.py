@@ -27,19 +27,20 @@ def load_eiger(
     else:
         raise TypeError("trigger_type must be either 'time' or 'image'")
 
-    print("-- Loading Eiger detector --")
+    logger.info("-- Loading Eiger detector --")
     eiger = detector(
         pv,
         write_image_path=write_image_path,
         read_image_path=read_image_path,
         name="eiger"
     )
+
     sd.baseline.append(eiger)
 
     eiger.wait_for_connection(timeout=10)
     # This is needed otherwise .get may fail!!!
 
-    print("Setting up ROI and STATS defaults ...", end=" ")
+    logger.info("Setting up ROI and STATS defaults ...", end=" ")
     for name in eiger.component_names:
         if "roi" in name:
             roi = getattr(eiger, name)
@@ -49,13 +50,13 @@ def load_eiger(
             stat = getattr(eiger, name)
             stat.wait_for_connection(timeout=10)
             stat.nd_array_port.put(f"ROI{stat.port_name.get()[-1]}")
-    print("Done!")
+    logger.info("Done!")
 
-    print("Setting up defaults kinds ...", end=" ")
+    logger.info("Setting up defaults kinds ...", end=" ")
     eiger.default_kinds()
-    print("Done!")
-    print("Setting up default settings ...", end=" ")
+    logger.info("Done!")
+    logger.info("Setting up default settings ...", end=" ")
     eiger.default_settings()
-    print("Done!")
-    print("All done!")
+    logger.info("Done!")
+    logger.info("All done!")
     return eiger
