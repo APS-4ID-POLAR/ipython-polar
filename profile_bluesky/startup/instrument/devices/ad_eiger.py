@@ -289,7 +289,7 @@ class LocalEigerDetectorBase(DetectorBase):
     ):
         self._write_path_template = write_path_template
         self._read_path_template = read_path_template
-        super.__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     # Make this compatible with other detectors
     @property
