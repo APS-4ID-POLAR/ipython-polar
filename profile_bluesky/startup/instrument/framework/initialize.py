@@ -39,7 +39,7 @@ import bluesky.preprocessors as bpp
 import numpy as np
 
 from .eiger_handler import MyEigerHandler
-# from eiger_io.fs_handler_dask import EigerHandlerDask
+from .lambda_handler import LambdaHDF5Handler
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -56,8 +56,9 @@ callback_db = {}
 # Connect with mongodb database.
 db = databroker.catalog["mongodb_config"]
 
-# Register the handler for EIGER files
-db.register_handler("AD_EIGER", MyEigerHandler, overwrite=True)
+# Register the handler for EIGER and Lambda files
+db.register_handler("AD_EIGER_APSPolar", MyEigerHandler, overwrite=True)
+db.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
