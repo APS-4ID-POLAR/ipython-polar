@@ -1,6 +1,8 @@
 """ Loads a new eiger device """
 
-from ..devices.ad_eiger import LocalEigerDetector
+from ..devices.ad_eiger import (
+    EigerDetectorTimeTrigger, EigerDetectorImageTrigger
+)
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
@@ -8,10 +10,31 @@ logger.info(__file__)
 __all__ = ['load_eiger']
 
 
-def load_eiger(pv="dp_eiger_xrd92:"):
+def load_eiger(
+    pv="dp_eiger_xrd92:",
+    trigger_type="time",
+    write_image_path="/local/home/dpuser/test_gilberto/",
+    read_image_path="/home/beams17/POLAR/data/gilberto/test_gilberto/"
+):
+
+    if not isinstance(trigger_type, str):
+        raise TypeError("trigger_type must be either 'time' or 'image'")
+
+    if trigger_type.lower() == "time":
+        detector = EigerDetectorTimeTrigger
+    elif trigger_type.lower() == "image":
+        detector = EigerDetectorImageTrigger
+    else:
+        raise TypeError("trigger_type must be either 'time' or 'image'")
 
     logger.info("-- Loading Eiger detector --")
-    eiger = LocalEigerDetector(pv, name="eiger")
+    eiger = detector(
+        pv,
+        write_image_path=write_image_path,
+        read_image_path=read_image_path,
+        name="eiger"
+    )
+
     sd.baseline.append(eiger)
 
     eiger.wait_for_connection(timeout=10)

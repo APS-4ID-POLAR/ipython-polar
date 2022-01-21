@@ -13,12 +13,11 @@ from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreBase
 from ophyd.utils.epics_pvs import set_and_wait
+from apstools.utils import run_in_thread
+from time import sleep
 from os.path import join, isdir
 from ..session_logs import logger
 logger.info(__file__)
-
-EIGER_FILES_ROOT = '/local/home/dpuser/test_gilberto/'
-BLUESKY_FILES_ROOT = '/home/beams17/POLAR/data/gilberto/test_gilberto/'
 
 
 # EigerDetectorCam inherits FileBase, which contains a few PVs that were
@@ -34,7 +33,7 @@ class LocalEigerCam(EigerDetectorCam):
     create_directory = ADComponent(EpicsSignal, "CreateDirectory")
 
 
-class LocalTrigger(TriggerBase):
+class TriggerNewImage(TriggerBase):
     """
     This trigger mixin class takes one acquisition per trigger.
     """
@@ -105,6 +104,83 @@ class LocalTrigger(TriggerBase):
             self._status = None
 
 
+class TriggerTime(TriggerBase):
+    """
+    This trigger mixin class takes one acquisition per trigger.
+    """
+    _status_type = ADTriggerStatus
+
+    def __init__(self, *args, image_name=None, delay=0.1, **kwargs):
+        super().__init__(*args, **kwargs)
+        if image_name is None:
+            image_name = '_'.join([self.name, 'image'])
+        self._image_name = image_name
+        self._acquisition_signal = self.cam.special_trigger_button
+        self._delay = delay
+
+    @property
+    def delay(self):
+        return self._delay
+
+    @delay.setter
+    def delay(self, value):
+        try:
+            self._delay = float(value)
+        except ValueError:
+            raise ValueError("delay must be a number.")
+
+    def setup_manual_trigger(self):
+        # Stage signals
+        self.cam.stage_sigs["trigger_mode"] = "Internal Enable"
+        self.cam.stage_sigs["manual_trigger"] = "Enable"
+        self.cam.stage_sigs["num_images"] = 1
+        self.cam.stage_sigs["num_exposures"] = 1
+        self.cam.stage_sigs["num_triggers"] = int(1e5)
+
+    def stage(self):
+        # Make sure that detector is not armed.
+        set_and_wait(self.cam.acquire, 0)
+        super().stage()
+        set_and_wait(self.cam.acquire, 1)
+
+    def unstage(self):
+        super().unstage()
+        set_and_wait(self.cam.acquire, 0)
+
+        def check_value(*, old_value, value, **kwargs):
+            "Return True when detector is done"
+            return (value == "Ready" or value == "Acquisition aborted")
+
+        # When stopping the detector, it may take some time processing the
+        # images. This will block until it's done.
+        status_wait(
+            SubscriptionStatus(
+                self.cam.status_message, check_value, timeout=10
+            )
+        )
+        # This has to be here to ensure it happens after stopping the
+        # acquisition.
+        self.save_images_off()
+
+    def trigger(self):
+        "Trigger one acquisition."
+        if self._staged != Staged.yes:
+            raise RuntimeError("This detector is not ready to trigger."
+                               "Call the stage() method before triggering.")
+
+        @run_in_thread
+        def add_delay(status_obj, delay):
+            total_sleep = self.cam.trigger_exposure.get() + delay
+            sleep(total_sleep)
+            status_obj.set_finished()
+
+        self._status = self._status_type(self)
+        self._acquisition_signal.put(1, wait=False)
+        self.dispatch(self._image_name, ttime())
+        add_delay(self._status, self._delay)
+        return self._status
+
+
 # Based on NSLS2-CHX
 class EigerSimulatedFilePlugin(Device, FileStoreBase):
     """
@@ -122,10 +198,16 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
     enable = Component(Signal, value=False, kind="omitted")
 
     def __init__(self, *args, **kwargs):
-        self.filestore_spec = "AD_EIGER"
+        self.filestore_spec = "AD_EIGER_APSPolar"
         super().__init__(*args, **kwargs)
         self.enable.subscribe(self._set_kind)
         self._base_name = None
+
+        # This is a workaround to enable setting these values in the detector
+        # startup. Needed because we don't have a stable solution on where
+        # these images would be.
+        self.write_path_template = self.parent._write_path_template
+        self.read_path_template = self.parent._read_path_template
 
     def _set_kind(self, value, **kwargs):
         if value in (True, 1, "on", "enable"):
@@ -174,7 +256,7 @@ class EigerSimulatedFilePlugin(Device, FileStoreBase):
         return super().generate_datum(key, timestamp, datum_kwargs)
 
 
-class LocalEigerDetector(LocalTrigger, DetectorBase):
+class LocalEigerDetectorBase(DetectorBase):
 
     _default_configuration_attrs = ('roi1', 'roi2', 'roi3', 'roi4')
     _default_read_attrs = ('cam', 'file', 'stats1', 'stats2', 'stats3',
@@ -185,9 +267,9 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
 
     file = Component(
         EigerSimulatedFilePlugin, suffix='cam1:',
-        write_path_template=EIGER_FILES_ROOT,
-        read_path_template=BLUESKY_FILES_ROOT,
-        # root='/nsls2/xf11id1/'
+        # Paths are changed in the EigerSimulatedFilePlugin __init__
+        write_path_template="",
+        read_path_template=""
     )
 
     # ROIs
@@ -201,6 +283,13 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
     stats2 = Component(StatsPlugin_V34, "Stats2:")
     stats3 = Component(StatsPlugin_V34, "Stats3:")
     stats4 = Component(StatsPlugin_V34, "Stats4:")
+
+    def __init__(
+        self, *args, write_path_template="", read_path_template="", **kwargs
+    ):
+        self._write_path_template = write_path_template
+        self._read_path_template = read_path_template
+        super.__init__(*args, **kwargs)
 
     # Make this compatible with other detectors
     @property
@@ -312,3 +401,11 @@ class LocalEigerDetector(LocalTrigger, DetectorBase):
         self.file.enable.put(True)
         self.setup_manual_trigger()
         self.save_images_off()
+
+
+class EigerDetectorTimeTrigger(TriggerTime, LocalEigerDetectorBase):
+    pass
+
+
+class EigerDetectorImageTrigger(TriggerNewImage, LocalEigerDetectorBase):
+    pass
