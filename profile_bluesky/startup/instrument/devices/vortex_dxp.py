@@ -1,6 +1,6 @@
 """ Vortex with DXP"""
 
-from ._mca import SaturnDXP, SaturnMCA
+from ophyd.mca import SaturnDXP, SaturnMCA
 from ophyd import Staged, Device, Kind, Component, EpicsSignal
 from ophyd.status import DeviceStatus
 from ..session_logs import logger
