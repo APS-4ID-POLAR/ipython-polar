@@ -1,9 +1,16 @@
 """ Vortex with DXP"""
 
-from ophyd.mca import Saturn
-from ophyd import Staged, Device, Kind
+from ophyd.mca import SaturnDXP, SaturnMCA
+from ophyd import Staged, Device, Kind, Component, EpicsSignal
+from ophyd.status import DeviceStatus
 from ..session_logs import logger
 logger.info(__file__)
+
+
+class MySaturnMCA(SaturnMCA):
+    check_acquiring = Component(
+        EpicsSignal, 'ACQG', kind='omitted', string=False
+    )
 
 
 class SingleTrigger(Device):
@@ -18,17 +25,20 @@ class SingleTrigger(Device):
     >>> det = SimDetector('..pv..', image_name='fast_detector_image')
     """
 
+    _status_type = DeviceStatus
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._acquisition_signal = self.mca.start
+        self._status_signal = self.mca.check_acquiring
 
     def stage(self):
-        self._acquisition_signal.subscribe(self._acquire_changed)
+        self._status_signal.subscribe(self._acquire_changed)
         super().stage()
 
     def unstage(self):
         super().unstage()
-        self._acquisition_signal.clear_sub(self._acquire_changed)
+        self._status_signal.clear_sub(self._acquire_changed)
 
     def trigger(self):
         "Trigger one acquisition."
@@ -50,7 +60,7 @@ class SingleTrigger(Device):
             self._status = None
 
 
-class MySaturn(SingleTrigger, Saturn):
+class MySaturn(SingleTrigger, MySaturnMCA, SaturnDXP):
 
     @property
     def preset_monitor(self):
@@ -84,3 +94,4 @@ class MySaturn(SingleTrigger, Saturn):
     def default_settings(self):
         self.stage_sigs['mca.stop_signal'] = 1
         self.stage_sigs['mca.erase'] = 1
+        self.stage_sigs['mca.mode'] = "Real time"
