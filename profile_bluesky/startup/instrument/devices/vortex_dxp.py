@@ -60,7 +60,10 @@ class SingleTrigger(Device):
             self._status = None
 
 
-class MySaturn(SingleTrigger, MySaturnMCA, SaturnDXP):
+class MySaturn(SingleTrigger):
+
+    mca1 = Component(MySaturnMCA, "mca1")
+    dxp = Component(SaturnDXP, "dxp:")
 
     @property
     def preset_monitor(self):
