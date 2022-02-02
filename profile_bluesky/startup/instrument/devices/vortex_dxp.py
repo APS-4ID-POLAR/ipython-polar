@@ -29,8 +29,8 @@ class SingleTrigger(Device):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._acquisition_signal = self.mca.start
-        self._status_signal = self.mca.check_acquiring
+        self._acquisition_signal = self.mca1.start
+        self._status_signal = self.mca1.check_acquiring
 
     def stage(self):
         self._status_signal.subscribe(self._acquire_changed)
@@ -64,22 +64,22 @@ class MySaturn(SingleTrigger, MySaturnMCA, SaturnDXP):
 
     @property
     def preset_monitor(self):
-        return self.mca.preset_real_time
+        return self.mca1.preset_real_time
 
     def default_kinds(self):
 
         # TODO: This is setting A LOT of stuff as "configuration_attrs", should
         # be revised at some point.
 
-        self.mca.configuration_attrs += [
-            item for item in self.mca.component_names
+        self.mca1.configuration_attrs += [
+            item for item in self.mca1.component_names
         ]
 
         self.dxp.configuration_attrs += [
             item for item in self.dxp.component_names
         ]
 
-        self.mca.read_attrs = [
+        self.mca1.read_attrs = [
             "preset_real_time",
             "preset_live_time",
             "elapsed_real_time",
@@ -88,10 +88,10 @@ class MySaturn(SingleTrigger, MySaturnMCA, SaturnDXP):
             "rois.R1",
         ]
 
-        self.mca.rois.R0.count.kind = Kind.hinted
-        self.mca.rois.R1.count.kind = Kind.hinted
+        self.mca1.rois.R0.count.kind = Kind.hinted
+        self.mca1.rois.R1.count.kind = Kind.hinted
 
     def default_settings(self):
-        self.stage_sigs['mca.stop_signal'] = 1
-        self.stage_sigs['mca.erase'] = 1
-        self.stage_sigs['mca.mode'] = "Real time"
+        self.stage_sigs['mca1.stop_signal'] = 1
+        self.stage_sigs['mca1.erase'] = 1
+        self.stage_sigs['mca1.mode'] = "Real time"
