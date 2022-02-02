@@ -8,7 +8,7 @@ __all__ = [
     "bpp",
     "bps",
     "callback_db",
-    "db",
+    "cat",
     "np",
     "peaks",
     "RE",
@@ -56,15 +56,16 @@ RE.md = PersistentDict(
 callback_db = {}
 
 # Connect with mongodb database.
-db = databroker.catalog["mongodb_config"]
+# db = databroker.catalog["mongodb_config"]
+cat = databroker.catalog["4id_polar"]
 
 # Register the handler for EIGER and Lambda files
-db.register_handler("AD_EIGER_APSPolar", MyEigerHandler, overwrite=True)
-db.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
+cat.register_handler("AD_EIGER_APSPolar", MyEigerHandler, overwrite=True)
+cat.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
-callback_db["db"] = RE.subscribe(db.v1.insert)
+callback_db["db"] = RE.subscribe(cat.v1.insert)
 
 # Set up SupplementalData.
 sd = SupplementalData()
