@@ -87,12 +87,12 @@ class MySaturn(SingleTrigger):
             "preset_live_time",
             "elapsed_real_time",
             "elapsed_live_time",
-            "rois.R0",
-            "rois.R1",
+            "rois.roi0",
+            "rois.roi1",
         ]
 
-        self.mca1.rois.R0.count.kind = Kind.hinted
-        self.mca1.rois.R1.count.kind = Kind.hinted
+        self.mca1.rois.roi0.count.kind = Kind.hinted
+        self.mca1.rois.roi1.count.kind = Kind.hinted
 
     def default_settings(self):
         self.stage_sigs['mca1.stop_signal'] = 1
