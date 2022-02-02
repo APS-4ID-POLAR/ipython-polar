@@ -1,6 +1,6 @@
 """ Vortex with DXP"""
 
-from ophyd.mca import SaturnDXP, SaturnMCA
+from ._mca import SaturnDXP, SaturnMCA
 from ophyd import Staged, Device, Kind, Component, EpicsSignal
 from ophyd.status import DeviceStatus
 from ..session_logs import logger
@@ -9,7 +9,7 @@ logger.info(__file__)
 
 class MySaturnMCA(SaturnMCA):
     check_acquiring = Component(
-        EpicsSignal, 'ACQG', kind='omitted', string=False
+        EpicsSignal, '.ACQG', kind='omitted', string=False
     )
 
 
@@ -62,7 +62,7 @@ class SingleTrigger(Device):
 
 class MySaturn(SingleTrigger):
 
-    mca1 = Component(MySaturnMCA, "mca1.")
+    mca1 = Component(MySaturnMCA, "mca1")
     dxp = Component(SaturnDXP, "dxp1:")
 
     @property
