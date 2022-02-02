@@ -7,6 +7,11 @@ from ..session_logs import logger
 logger.info(__file__)
 
 
+class MySaturnDXP(SaturnDXP):
+    live_time_output = None
+    trigger_output = None
+
+
 class MySaturnMCA(SaturnMCA):
     check_acquiring = Component(
         EpicsSignal, '.ACQG', kind='omitted', string=False
@@ -63,7 +68,7 @@ class SingleTrigger(Device):
 class MySaturn(SingleTrigger):
 
     mca1 = Component(MySaturnMCA, "mca1")
-    # dxp = Component(SaturnDXP, "dxp1:")
+    dxp = Component(MySaturnDXP, "dxp1:")
 
     @property
     def preset_monitor(self):
@@ -78,9 +83,9 @@ class MySaturn(SingleTrigger):
             item for item in self.mca1.component_names
         ]
 
-        # self.dxp.configuration_attrs += [
-        #     item for item in self.dxp.component_names
-        # ]
+        self.dxp.configuration_attrs += [
+            item for item in self.dxp.component_names
+        ]
 
         self.mca1.read_attrs = [
             "preset_real_time",
@@ -97,4 +102,4 @@ class MySaturn(SingleTrigger):
     def default_settings(self):
         self.stage_sigs['mca1.stop_signal'] = 1
         self.stage_sigs['mca1.erase'] = 1
-        self.stage_sigs['mca1.mode'] = "Real time"
+        self.stage_sigs['dxp1.preset_mode'] = "Real time"
