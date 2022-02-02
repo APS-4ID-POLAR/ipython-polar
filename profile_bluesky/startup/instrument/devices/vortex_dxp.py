@@ -34,7 +34,7 @@ class SingleTrigger(Device):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._acquisition_signal = self.mca1.start
+        self._acquisition_signal = self.mca1.erase_start
         self._status_signal = self.mca1.check_acquiring
 
     def stage(self):
@@ -102,4 +102,4 @@ class MySaturn(SingleTrigger):
     def default_settings(self):
         self.stage_sigs['mca1.stop_signal'] = 1
         self.stage_sigs['mca1.erase'] = 1
-        self.stage_sigs['dxp1.preset_mode'] = "Real time"
+        self.stage_sigs['dxp.preset_mode'] = "Real time"
