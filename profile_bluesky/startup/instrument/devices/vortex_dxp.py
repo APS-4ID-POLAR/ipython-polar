@@ -62,7 +62,7 @@ class SingleTrigger(Device):
 
 class MySaturn(SingleTrigger):
 
-    mca1 = Component(MySaturnMCA, "mca1")
+    mca1 = Component(MySaturnMCA, "mca1.")
     dxp = Component(SaturnDXP, "dxp1:")
 
     @property
