@@ -128,7 +128,6 @@ class EpicsMCACallback(Device):
 
 class EpicsDXP(Device):
     '''All high-level DXP parameters for each channel'''
-    preset_mode = Component(EpicsSignal, 'PresetMode', string=True)
 
     live_time_output = Component(SignalWithRBV, 'LiveTimeOutput', string=True)
     elapsed_live_time = Component(EpicsSignal, 'ElapsedLiveTime')
@@ -156,7 +155,6 @@ class EpicsDXP(Device):
     baseline_threshold = Component(SignalWithRBV, 'BaselineThreshold')
     baseline_energy_array = Component(EpicsSignal, 'BaselineEnergyArray')
     baseline_histogram = Component(EpicsSignal, 'BaselineHistogram')
-    baseline_threshold = Component(SignalWithRBV, 'BaselineThreshold')
 
     # Misc PVs
     preamp_gain = Component(SignalWithRBV, 'PreampGain')
@@ -165,7 +163,6 @@ class EpicsDXP(Device):
     decay_time = Component(SignalWithRBV, 'DecayTime')
     max_energy = Component(SignalWithRBV, 'MaxEnergy')
     adc_percent_rule = Component(SignalWithRBV, 'ADCPercentRule')
-    max_width = Component(SignalWithRBV, 'MaxWidth')
 
     # read-only diagnostics
     triggers = Component(EpicsSignalRO, 'Triggers', lazy=True)
