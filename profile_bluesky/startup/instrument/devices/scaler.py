@@ -1,25 +1,23 @@
 
 """
-our diffractometer
+Scalers
 """
 
-__all__ = [
-    'scalerd',
-    'scalerb',
-    ]
-
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['scalerd', 'scalerb']
 
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
 from ..framework import sd
 from ophyd import Kind, Component
 import time
-from bluesky.plan_stubs import mv
+
+from ..session_logs import logger
+logger.info(__file__)
 
 
 class PresetMonitorSignal(Signal):
+    """ Signal that control the selected monitor channel """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._readback = 0
@@ -94,47 +92,40 @@ class LocalScalerCH(ScalerCH):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._monitor = self.channels.chan01  # Time is the default monitor
+        self._monitor = self.channels.chan01  # Time is the default monitor.
 
     @property
-    def hints(self):
-        fields = []
-        for component in scalerd.channels.component_names:
-            channel = getattr(scalerd.channels, component)
-            if channel.kind.value in [5, 7]:
-                if len(channel.s.name) > 0:
-                    fields.append(channel.s.name)
-        return {'fields': fields}
+    def channels_name_map(self):
+        name_map = {}
+        for channel in self.channels.component_names:
+            # as defined in self.match_names()
+            name = getattr(self.channels, channel).s.name
+            if len(name) > 0:
+                name_map[name] = channel
+        return name_map
 
-    def select_plot_channels(self, chan_names):
+    def select_plot_channels(self, chan_names=None):
 
         self.match_names()
-        name_map = {}
-        for s in self.channels.component_names:
-            scaler_channel = getattr(self.channels, s)
-            nm = scaler_channel.s.name  # as defined in self.match_names()
-            if len(nm) > 0:
-                name_map[nm] = s
+        name_map = self.channels_name_map
 
-        if chan_names is None:
+        if not chan_names:
             chan_names = name_map.keys()
 
         for ch in name_map.keys():
             try:
-                if ch in chan_names:
-                    getattr(self.channels, name_map[ch]).kind = Kind.hinted
-                else:
-                    if getattr(self.channels, name_map[ch]).kind.value != 0:
-                        getattr(self.channels, name_map[ch]).kind = Kind.normal
-                    else:
-                        getattr(self.channels, name_map[ch]).kind = Kind.omitted
+                channel = getattr(self.channels, name_map[ch])
             except KeyError:
                 raise RuntimeError("The channel {} is not configured "
                                    "on the scaler.  The named channels are "
                                    "{}".format(ch, tuple(name_map)))
+            if ch in chan_names:
+                channel.s.kind = Kind.hinted
+            else:
+                if channel.kind.value != 0:
+                    channel.s.kind = Kind.normal
 
-
-    def select_channels(self, chan_names=None):
+    def select_read_channels(self, chan_names=None):
         """Select channels based on the EPICS name PV.
 
         Parameters
@@ -146,12 +137,7 @@ class LocalScalerCH(ScalerCH):
             If *None*, select all channels named in the EPICS scaler.
         """
         self.match_names()
-        name_map = {}
-        for s in self.channels.component_names:
-            scaler_channel = getattr(self.channels, s)
-            nm = scaler_channel.s.name  # as defined in self.match_names()
-            if len(nm) > 0:
-                name_map[nm] = s
+        name_map = self.channels_name_map
 
         if chan_names is None:
             chan_names = name_map.keys()
@@ -168,70 +154,63 @@ class LocalScalerCH(ScalerCH):
         self.channels.kind = Kind.normal
         self.channels.read_attrs = list(read_attrs)
         self.channels.configuration_attrs = list(read_attrs)
-        for ch in read_attrs[1:]:
-            getattr(self.channels, ch).s.kind = Kind.hinted
-
         if len(self.hints['fields']) == 0:
             self.select_plot_channels(chan_names)
 
     @property
     def monitor(self):
-        return self._monitor
+        return self._monitor.s.name
 
     @monitor.setter
     def monitor(self, value):
-        # This takes a name such as 'chan01', intended for internal use.
-        if value in self.channels.component_names:
-            self._monitor = getattr(self.channels, value)
+        """
+        Selects the monitor channel.
 
-    def select_monitor(self, value=None):
+        Parameters
+        ----------
+        value : str
+            Can be either the name of the component channel (like 'chan01'),
+            or the name of that channel (like 'Ion Ch 1').
+        """
 
-        self.match_names()
-        name_map = {}
-        for s in self.channels.component_names:
-            scaler_channel = getattr(self.channels, s)
-            nm = scaler_channel.s.name  # as defined in self.match_names()
-            if len(nm) > 0:
-                name_map[nm] = s
+        # Check that value is a valid name.
+        name_map = self.channels_name_map
+        if value not in (set(name_map.keys()) | set(name_map.values())):
+            raise ValueError(f"Monitor must be either a channel name or the "
+                             "channel component. Valid entries are one of "
+                             f"these: {name_map.keys()}, or these: "
+                             f"{name_map.keys()}.")
 
-        current = []
-        for item in self.channels.read_attrs:
-            if item in self.channels.component_names:
-                current.append(getattr(self.channels, item).s.name)
+        # Changes value to the channel number if needed. From here on,
+        # value will always be something like 'chan01'.
+        if value in name_map.keys():
+            value = name_map[value]
 
-        if value not in current:
-            self.select_channels(current+[value])
-
-        if value is None:
-            value = name_map.keys()
-            
-        self.monitor = name_map[value]
+        # Checks/modifies the channel Kind.
+        channel = getattr(self.channels, value)
+        if channel.kind == Kind.omitted:
+            channel.kind = Kind.normal
 
         # Adjust gates
         for channel_name in self.channels.component_names:
-            channel = getattr(self.channels, channel_name)
-            if channel == self.monitor:
-                channel.gate.put(1)
-            else:
-                channel.gate.put(0)
+            chan = getattr(self.channels, channel_name)
+            target = 'Y' if chan == channel else 'N'
+            chan.gate.put(target, use_complete=True)
 
-    def SetCountTimePlan(self, value, **kwargs):
-        yield from mv(self.preset_monitor, value, **kwargs)
+        self._monitor = channel
 
 
 scalerd = LocalScalerCH('4id:scaler1', name='scalerd',
-                        labels=('detectors', 'counters'))
-scalerd.select_channels()
+                        labels=('detectors',))
+scalerd.monitor = 'Time'
+scalerd.select_read_channels()
 scalerd.select_plot_channels()
-scalerd.select_monitor('Time')
 sd.baseline.append(scalerd)
 
 scalerb = LocalScalerCH('4idb:scaler1', name='scalerb',
-                        labels=('detectors', 'counters'))
+                        labels=('detectors',))
 scalerb.channels.chan01.chname.set('Time_b')
-scalerb.select_channels()
+scalerb.monitor = 'Time_b'
+scalerb.select_read_channels()
 scalerb.select_plot_channels()
 sd.baseline.append(scalerb)
-
-# TODO: name the other channels, watch out for python keywords such as del!
-# TODO: How should we handle the scalers? What is scaler3?

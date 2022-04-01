@@ -1,20 +1,19 @@
 '''
-Other motor/counters
+Uptable motors
 '''
 
-__all__ = [
-    'uptab'
-    ]
-
-from ..session_logs import logger
-logger.info(__file__)
+__all__ = ['uptable']
 
 from ophyd import Component, MotorBundle, EpicsMotor
 from ..framework import sd
+from ..session_logs import logger
+logger.info(__file__)
+
 
 class UpTable(MotorBundle):
-    y = Component(EpicsMotor, 'm10', labels=('motor','uptable'))  # Uptable Y
-    x = Component(EpicsMotor, 'm9', labels=('motor','uptable'))  # Uptable Y
+    y = Component(EpicsMotor, 'm10', labels=('motor', 'uptable'))
+    x = Component(EpicsMotor, 'm9', labels=('motor', 'uptable'))
 
-uptab = UpTable('4iddx:',name='uptable')
-sd.baseline.append(uptab)
+
+uptable = UpTable('4iddx:', name='uptable')
+sd.baseline.append(uptable)

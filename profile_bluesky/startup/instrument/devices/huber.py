@@ -3,28 +3,22 @@
 Diffractometer motors
 """
 
-__all__ = [
-    'fourc'
-    ]
+__all__ = ['fourc']
 
+from ophyd import (Component, FormattedComponent, PseudoSingle, Kind,
+                   EpicsSignal, EpicsSignalRO, EpicsMotor, Signal)
+from bluesky.suspenders import SuspendBoolLow
+from ..framework import RE
+from ..framework import sd
+import gi
+gi.require_version('Hkl', '5.0')
+# MUST come before `import hkl`
+from hkl.geometries import E4CV
 from ..session_logs import logger
 logger.info(__file__)
 
 
-import gi
-gi.require_version('Hkl', '5.0')
-# MUST come before `import hkl`
-from hkl.diffract import E4CV
-from ophyd import Component, FormattedComponent
-from ophyd import PseudoSingle, Device
-from ophyd import EpicsSignal, EpicsSignalRO, EpicsMotor, Signal
-from bluesky.suspenders import SuspendBoolLow
-from apstools.diffractometer import DiffractometerMixin
-from ..framework import RE
-from ..framework import sd
-
-
-class FourCircleDiffractometer(DiffractometerMixin, E4CV):
+class FourCircleDiffractometer(E4CV):
     """
     E4CV: huber diffractometer in 4-circle vertical geometry with energy.
 
@@ -32,24 +26,20 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     """
 
     # HKL and 4C motors
-    h = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
-    k = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
-    l = Component(PseudoSingle, '', labels=("hkl", "fourc"), kind="hinted")
+    h = Component(PseudoSingle, '', labels=("hkl", "fourc"))
+    k = Component(PseudoSingle, '', labels=("hkl", "fourc"))
+    l = Component(PseudoSingle, '', labels=("hkl", "fourc"))
 
-    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"),
-                      kind="hinted")
-    chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"),
-                    kind="hinted")
-    phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"),
-                    kind="hinted")
-    tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"),
-                    kind="hinted")
+    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"))
+    phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"))
+    tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"))
 
     th_tth_min = Component(EpicsSignal, "userCalc1.C",
-                           labels=('diffractometer', 'limits'),
+                           labels=('fourc', 'limits'),
                            kind='config')
     th_tth_permit = Component(EpicsSignal, "userCalc1.VAL",
-                              labels=('diffractometer', 'limits'),
+                              labels=('fourc', 'limits'),
                               kind='config')
 
     # Explicitly selects the real motors
@@ -79,45 +69,15 @@ class FourCircleDiffractometer(DiffractometerMixin, E4CV):
     energy_update_calc_flag = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
 
+    # TODO: This is needed to prevent busy plotting.
     @property
-    def _calc_energy_update_permitted(self):
-        """return boolean `True` if permitted."""
-        acceptable_values = (1, "Yes", "locked", "OK", True, "On")
-        return self.energy_update_calc_flag.get() in acceptable_values
-
-    def _energy_changed(self, value=None, **kwargs):
-        '''
-        Callback indicating that the energy signal was updated.
-        .. note::
-            The `energy` signal is subscribed to this method
-            in the :meth:`Diffractometer.__init__()` method.
-        '''
-        if not self.connected:
-            logger.warning(
-                "%s not fully connected, %s.calc.energy not updated",
-                self.name, self.name)
-            return
-
-        if self._calc_energy_update_permitted:
-            self._update_calc_energy(value)
-
-    def _update_calc_energy(self, value=None, **kwargs):
-        '''
-        writes self.calc.energy from value or self.energy.
-        '''
-        if not self.connected:
-            logger.warning(
-                "%s not fully connected, %s.calc.energy not updated",
-                self.name, self.name)
-            return
-
-        # use either supplied value or get from signal
-        value = value or self.energy.get()
-
-        # energy_offset has same units as energy
-        new_calc_energy = value + self.energy_offset.get()
-        self.calc.energy = new_calc_energy
-        self._update_position()
+    def hints(self):
+        fields = []
+        for _, component in self._get_components_of_kind(Kind.hinted):
+            if (~Kind.normal & Kind.hinted) & component.kind:
+                c_hints = component.hints
+                fields.extend(c_hints.get('fields', []))
+        return {'fields': fields}
 
 
 fourc = FourCircleDiffractometer('4iddx:', name='fourc')
@@ -127,5 +87,10 @@ fourc.calc.physical_axis_names = {'omega': 'theta',
                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
+
+# TODO: This is a rough workaround...
+for attr in "x y z baseth basetth ath achi atth tablex tabley".split():
+    getattr(fourc, attr).kind = "normal"
+fourc.energy.kind = "omitted"
 
 sd.baseline.append(fourc)

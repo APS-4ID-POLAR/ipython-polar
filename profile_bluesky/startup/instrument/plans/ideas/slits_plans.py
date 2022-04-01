@@ -2,16 +2,20 @@
 Slitscan
 """
 
-__all__ = ['slitscan','slitmv']
+from ..session_logs import logger
+logger.info(__file__)
+
+__all__ = ['slitscan', 'slitmv']
 
 from bluesky.plans import list_scan
 from bluesky.plan_stubs import mv
 from numpy import linspace
 
-def slitscan(dets,positioner,start,end,numPts,md=None):
+
+def slitscan(dets, positioner, start, end, numPts, md=None):
     """
-    Bluesky plan to perform a slit scan using vcen or hcen. This assumes that all
-    motors/positioners are labeled the same way as SlitDevice.
+    Bluesky plan to perform a slit scan using vcen or hcen. This assumes that
+    all motors/positioners are labeled the same way as SlitDevice.
 
     Parameters
     -----------
@@ -19,7 +23,8 @@ def slitscan(dets,positioner,start,end,numPts,md=None):
         Detectors to be read.
 
     positioner: EpicsSignal device
-        Variable to scan. It will generally be [slit name].[vcen,hcen,vsize,hsize].
+        Variable to scan. It will generally be [slit name].[vcen,hcen,vsize,
+        hsize].
 
     start: float
         Initial position of scan.
@@ -42,12 +47,12 @@ def slitscan(dets,positioner,start,end,numPts,md=None):
 
     if 'cen' in positioner.name:
         gap = motor1.position-motor2.position
-        motor1_pos = linspace(start,end,numPts)+gap/2.
-        motor2_pos = linspace(start,end,numPts)-gap/2.
+        motor1_pos = linspace(start, end, numPts)+gap/2.
+        motor2_pos = linspace(start, end, numPts)-gap/2.
     else:
         center = (motor1.position+motor2.position)/2
-        motor1_pos = center + linspace(start,end,numPts)/2.
-        motor2_pos = center - linspace(start,end,numPts)/2.
+        motor1_pos = center + linspace(start, end, numPts)/2.
+        motor2_pos = center - linspace(start, end, numPts)/2.
 
     dets = [positioner]+dets
 
@@ -58,10 +63,10 @@ def slitscan(dets,positioner,start,end,numPts,md=None):
            }
     _md.update(md or {})
 
-    yield from list_scan(dets,motor1,motor1_pos,motor2,motor2_pos,md=_md)
+    yield from list_scan(dets, motor1, motor1_pos, motor2, motor2_pos, md=_md)
 
 
-def slitmv(positioner,value):
+def slitmv(positioner, value):
     """
     Bluesky plan to move a slit positioner. This assumes that all
     motors/positioners are labeled the same way as SlitDevice.
@@ -69,7 +74,8 @@ def slitmv(positioner,value):
     Parameters
     -----------
     positioner: EpicsSignal device
-        Variable to scan. It will generally be [slit name].[top,bot,out,inb,vcen,hcen,vsize,hsize].
+        Variable to scan. It will generally be [slit name].[top,bot,out,inb,
+        vcen,hcen,vsize,hsize].
 
     value: float
         Target position
@@ -86,15 +92,14 @@ def slitmv(positioner,value):
         gap = motor1.position-motor2.position
         motor1_pos = value+gap/2.
         motor2_pos = value-gap/2.
-        yield from mv(motor1,motor1_pos,motor2,motor2_pos)
+        yield from mv(motor1, motor1_pos, motor2, motor2_pos)
     elif 'size' in positioner.name:
         center = (motor1.position+motor2.position)/2
         motor1_pos = center + value/2
         motor2_pos = center - value/2
-        yield from mv(motor1,motor1_pos,motor2,motor2_pos)
+        yield from mv(motor1, motor1_pos, motor2, motor2_pos)
 
-    yield from mv(positioner,value)
-
+    yield from mv(positioner, value)
 
 
 # TODO: Add metadata!
