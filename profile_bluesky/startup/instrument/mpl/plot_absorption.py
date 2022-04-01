@@ -1,7 +1,7 @@
 from polartools.absorption import (load_multi_xas, load_multi_dichro,
                                    load_multi_lockin)
 from warnings import warn
-from ..framework import db
+from ..framework import cat
 from ..mpl import plt
 from ..utils import counters
 from ..session_logs import logger
@@ -64,7 +64,7 @@ def plot_xas(scans=-1, positioner=None, detector=None, monitor=None,
         monitor = counters.monitor
 
     energy, xas, _ = load_multi_xas(
-        scans, db, positioner=positioner, detector=detector, monitor=monitor,
+        scans, cat, positioner=positioner, detector=detector, monitor=monitor,
         transmission=not fluo
         )
 
@@ -133,7 +133,7 @@ def plot_lockin(scans_plus, scans_minus, positioner=None, fluo=False,
             title += f'{label}: {scans}'
 
             results.append(load_multi_lockin(
-                scans, db, positioner=positioner, transmission=not fluo
+                scans, cat, positioner=positioner, transmission=not fluo
                 ))
 
             _plot_one_xmcd(results[-1], axs[0], label)
@@ -219,7 +219,7 @@ def plot_dichro(scans_plus, scans_minus, positioner=None, detector=None,
             title += f'{label}: {scans}\n'
 
             results.append(load_multi_dichro(
-                scans, db, positioner=positioner, detector=detector,
+                scans, cat, positioner=positioner, detector=detector,
                 monitor=monitor, transmission=not fluo
                 ))
 

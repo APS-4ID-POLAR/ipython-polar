@@ -24,7 +24,9 @@ from .local_preprocessors import (configure_counts_decorator,
                                   stage_ami_decorator,
                                   extra_devices_decorator)
 from ..utils import counters
-from ..devices.ad_eiger import LocalEigerDetector
+from ..devices.ad_eiger import (
+    EigerDetectorImageTrigger, EigerDetectorTimeTrigger
+)
 from ..framework import RE
 from numpy import array
 
@@ -36,6 +38,8 @@ except ImportError:
 
 from ..session_logs import logger
 logger.info(__file__)
+
+EIGER_DETECTORS = (EigerDetectorImageTrigger, EigerDetectorTimeTrigger)
 
 
 class LocalFlag:
@@ -190,7 +194,7 @@ def count(detectors=None, num=1, time=None, delay=0, lockin=False,
     extras = yield from _collect_extras(False, False)
 
     for det in detectors + extras:
-        if isinstance(det, LocalEigerDetector):
+        if isinstance(det, EIGER_DETECTORS):
             det.file.base_name = f"scan{RE.md['scan_id'] + 1}"
 
     # TODO: The md handling might go well in a decorator.
@@ -299,7 +303,7 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     extras = yield from _collect_extras(energy in args, "fourc" in str(args))
 
     for det in detectors + extras:
-        if isinstance(det, LocalEigerDetector):
+        if isinstance(det, EIGER_DETECTORS):
             det.file.base_name = f"scan{RE.md['scan_id'] + 1}"
 
     # TODO: The md handling might go well in a decorator.
@@ -485,7 +489,7 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
     extras = yield from _collect_extras(energy in args, "fourc" in str(args))
 
     for det in detectors + extras:
-        if isinstance(det, LocalEigerDetector):
+        if isinstance(det, EIGER_DETECTORS):
             det.file.base_name = f"scan{RE.md['scan_id'] + 1}"
 
     # TODO: The md handling might go well in a decorator.
