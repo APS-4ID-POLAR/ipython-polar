@@ -22,6 +22,7 @@ from .ruby_motors import *
 from .scaler import *
 from .slits import *
 from .srs810 import *
+from .cryo_levels import *
 from .toroidal_mirror import *
 from .uptable import *
 from .user_calc import *
