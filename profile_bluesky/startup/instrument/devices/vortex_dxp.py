@@ -1,4 +1,4 @@
-""" Vortex with DXP"""
+""" Vortex with DXP """
 
 from ophyd.mca import SaturnDXP, SaturnMCA
 from ophyd import Staged, Device, Kind, Component, EpicsSignal
