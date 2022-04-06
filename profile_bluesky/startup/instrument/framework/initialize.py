@@ -37,6 +37,7 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
+# This already setup the handlers
 from polartools.load_data import load_catalog
 
 from ..session_logs import logger
