@@ -38,10 +38,9 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
-
-# TODO: Use from polartools when available!
-from .eiger_handler import MyEigerHandler
-from .lambda_handler import LambdaHDF5Handler
+from polartools.area_detector_handlers import (
+    EigerHandler, LambdaHDF5Handler
+)
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -60,8 +59,10 @@ callback_db = {}
 cat = databroker.catalog["4id_polar"]
 
 # Register the handler for EIGER and Lambda files
-cat.register_handler("AD_EIGER_APSPolar", MyEigerHandler, overwrite=True)
-cat.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
+cat.register_handler("AD_EIGER_APSPolar", EigerHandler, overwrite=True)
+cat.register_handler(
+    "AD_HDF5_Lambda250k_APSPolar", LambdaHDF5Handler, overwrite=True
+)
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
