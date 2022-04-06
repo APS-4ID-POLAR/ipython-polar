@@ -86,7 +86,7 @@ class LS336_LoopControl(PVPositionerSoftDone):
                                       kind="config", auto_monitor=True,
                                       string=True)
 
-    auto_heater = Component(TrackingSignal, value=False, kind="config")
+    auto_heater = Component(TrackingSignal, value=False, kind="omitted")
 
     # This must be modified either here, or before using auto_heater.
     _auto_ranges = None
@@ -188,7 +188,7 @@ class LoopSample(LS336_LoopControl):
         wait = kwargs.pop('wait', True)
         sample_status = super().move(position, wait=False, **kwargs)
 
-        vaporizer_position = self._get_vaporizer_position(position)
+        vaporizer_position = _get_vaporizer_position(position)
         # Will not wait for vaporizer.
         _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
 
@@ -217,4 +217,4 @@ class LS336Device(Device):
     read_all = Component(EpicsSignal, "readAll.PROC", kind="omitted")
     serial = Component(AsynRecord, "serial", kind="omitted")
 
-    track_vaporizer = Component(TrackingSignal, value=True, kind="config")
+    track_vaporizer = Component(TrackingSignal, value=True, kind="omitted")

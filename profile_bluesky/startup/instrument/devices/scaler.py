@@ -7,6 +7,7 @@ __all__ = ['scalerd', 'scalerb']
 
 from ophyd.scaler import ScalerCH
 from ophyd.signal import Signal
+from ophyd.status import Status
 from ..framework import sd
 from ophyd import Kind, Component
 import time
@@ -83,7 +84,12 @@ class PresetMonitorSignal(Signal):
 
         self._run_subs(sub_type=self.SUB_VALUE, old_value=old_value,
                        value=value, **md_for_callback)
-
+        
+    def set(self, value, *, timeout=None, settle_time=None):
+        self.put(value)
+        status = Status()
+        status.set_finished()
+        return status
 
 class LocalScalerCH(ScalerCH):
 

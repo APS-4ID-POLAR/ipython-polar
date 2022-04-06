@@ -95,7 +95,7 @@ class PVPositionerSoftDone(PVPositioner):
                                   kind="hinted", auto_monitor=True)
     setpoint = FormattedComponent(EpicsSignal, "{prefix}{_setpoint_pv}",
                                   kind="normal", put_complete=True)
-    done = Component(Signal, value=True, kind="config")
+    done = Component(Signal, value=True, kind="omitted")
     done_value = True
 
     tolerance = Component(Signal, value=-1, kind="config")

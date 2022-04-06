@@ -90,7 +90,7 @@ def _status_check(target):
     return check_pos
 
 
-def stage_ami_wrapper(plan, magnet):
+def stage_ami_wrapper(plan, magnet, turn_off=True):
     """
     Stage the AMI magnet.
 
@@ -163,7 +163,10 @@ def stage_ami_wrapper(plan, magnet):
         return (yield from plan)
 
     if magnet:
-        return (yield from finalize_wrapper(_inner_plan(), _unstage()))
+        if turn_off:
+            return (yield from finalize_wrapper(_inner_plan(), _unstage()))
+        else:
+            return (yield from _inner_plan())
     else:
         return (yield from plan)
 
