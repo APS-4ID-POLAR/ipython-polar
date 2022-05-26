@@ -46,9 +46,6 @@ class UndulatorEnergy(PVPositioner):
     stop_signal = Component(EpicsSignal, "Stop.VAL", kind='omitted')
     stop_value = 1
 
-    # TODO: Does this work!?!?
-    # done = Component(DoneSignal, value=0, kind='omitted')
-    # done_value = 1
     done = Component(EpicsSignal, "Busy.VAL", kind="omitted")
     done_value = 0
 
@@ -67,11 +64,6 @@ class UndulatorEnergy(PVPositioner):
     def _change_tolerance(self, value=None, **kwargs):
         if value:
             self.tolerance = value
-
-    # TODO: This is unnecessary if use done EpicsSignal.
-    # @done.sub_value
-    # def _move_changed(self, **kwargs):
-    #     super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
         """
