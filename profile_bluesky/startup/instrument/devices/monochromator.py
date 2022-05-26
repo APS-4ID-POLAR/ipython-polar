@@ -38,8 +38,6 @@ class KohzuPositioner(PVPositioner):
                                     kind="omitted")
     stop_y = FormattedComponent(EpicsSignal, "{_y_pv}.STOP",
                                 kind="omitted")
-    # stop_z = FormattedComponent(EpicsSignal, "{_z_pv}.STOP",
-    #                             kind="omitted")
 
     actuate = Component(EpicsSignal, "KohzuPutBO", put_complete=True,
                         kind="omitted")
@@ -62,7 +60,6 @@ class KohzuPositioner(PVPositioner):
 
         self._theta_pv = get_motor_pv("Theta")
         self._y_pv = get_motor_pv("Y")
-        # self._z_pv = get_motor_pv("Z")
 
         super().__init__(
             prefix, limits=limits, name=name, read_attrs=read_attrs,
@@ -77,7 +74,6 @@ class KohzuPositioner(PVPositioner):
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
         self.log.debug('%s.setpoint = %s', self.name, position)
-        # self.setpoint.put(position, wait=False)
         set_and_wait(self.setpoint, position)
 
         if self.actuate is not None:
@@ -85,7 +81,6 @@ class KohzuPositioner(PVPositioner):
             self.actuate.put(self.actuate_value, wait=False)
 
     def stop(self, *, success=False):
-        # for motor in ["theta", "y", "z"]:
         for motor in ["theta", "y"]:
             getattr(self, f"stop_{motor}").put(1, wait=False)
         super().stop(success=success)
@@ -147,6 +142,4 @@ class Monochromator(KohzuSeqCtl_Monochromator):
 
 
 mono = Monochromator('4idb:', name='mono')
-# TODO: not needed because of the mono.energy.actuate?
-# mono.stage_sigs['mode'] = 1  # Ensure that mono is in auto before moving.
 sd.baseline.append(mono)
