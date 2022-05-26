@@ -7,7 +7,7 @@ __all__ = ['ic1', 'ic2', 'ic3', 'ic4', 'ic5', 'ic6']
 
 from ophyd import Device, Component, FormattedComponent, EpicsMotor, Signal
 from ..framework import sd
-from .srs_amplifiers import PreAmpDevice
+from apstools.devices import SRS570_PreAmplifier
 from .scaler import scalerd
 from ..session_logs import logger
 logger.info(__file__)
@@ -17,8 +17,12 @@ class ICDeviceBase(Device):
     """ Holds basic configuration of ion chambers/photodiodes. """
 
     # SRS amplifier
-    preamp = FormattedComponent(PreAmpDevice, '4idd:A{_num}', kind='config',
-                                labels=('preamps', 'detectors',))
+    preamp = FormattedComponent(
+        SRS570_PreAmplifier,
+        '4idd:A{_num}',
+        kind='config',
+        labels=('preamps', 'detectors',)
+    )
 
     # Scaler channel name
     scaler_name = Component(Signal, value=0, kind='config')
