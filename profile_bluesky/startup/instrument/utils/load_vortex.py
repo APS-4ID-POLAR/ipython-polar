@@ -2,7 +2,6 @@
 
 from ..devices.xspress import Xspress3Vortex1Ch, Xspress3Vortex4Ch
 from ..devices.vortex_dxp import MySaturn
-from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -49,5 +48,4 @@ def load_vortex(electronic, num_channels, num_rois=2):
     else:
         raise ValueError('electronic must be "xspress3" or "dxp"')
 
-    sd.baseline.append(vortex)
     return vortex
