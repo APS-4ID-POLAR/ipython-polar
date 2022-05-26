@@ -15,6 +15,7 @@ gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.geometries import E4CV
 from ..session_logs import logger
+from hkl.user import select_diffractometer
 logger.info(__file__)
 
 
@@ -93,4 +94,5 @@ for attr in "x y z baseth basetth ath achi atth tablex tabley".split():
     getattr(fourc, attr).kind = "normal"
 fourc.energy.kind = "omitted"
 
+select_diffractometer(fourc)
 sd.baseline.append(fourc)
