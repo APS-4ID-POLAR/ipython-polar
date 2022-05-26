@@ -6,7 +6,7 @@ from apstools.synApps.asyn import AsynRecord
 from ophyd import (Component, FormattedComponent, Device, EpicsSignal, Signal,
                    EpicsSignalRO, EpicsSignalWithRBV)
 from ophyd.status import wait as status_wait
-from .util_components import TrackingSignal, PVPositionerSoftDone
+from .util_components_old import TrackingSignal, PVPositionerSoftDone
 
 from ..session_logs import logger
 logger.info(__file__)

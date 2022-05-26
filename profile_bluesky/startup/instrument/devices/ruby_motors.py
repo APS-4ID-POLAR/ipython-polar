@@ -7,12 +7,12 @@ __all__ = ['ruby']
 from ophyd import (Component, Device, EpicsMotor, EpicsSignal, EpicsSignalRO,
                    FormattedComponent)
 from ..framework import sd
-from .util_components import PVPositionerSoftDone
+from apstools.devices import PVPositionerSoftDoneWithStop
 from ..session_logs import logger
 logger.info(__file__)
 
 
-class DAC(PVPositionerSoftDone):
+class DAC(PVPositionerSoftDoneWithStop):
     """ Setup DAC as a PVPositioner """
 
     setpoint = Component(EpicsSignal, '.VAL', put_complete=True, kind='normal')

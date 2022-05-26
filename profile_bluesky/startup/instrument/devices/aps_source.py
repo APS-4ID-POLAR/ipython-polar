@@ -4,9 +4,10 @@ APS only: connect with facility information
 
 __all__ = ['aps', 'undulator']
 
-from apstools.devices import ApsMachineParametersDevice, ApsUndulator
+from apstools.devices import (
+    ApsMachineParametersDevice, ApsUndulator, TrackingSignal
+)
 from ..framework import sd
-from .util_components import TrackingSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, wait as status_wait
