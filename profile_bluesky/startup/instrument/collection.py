@@ -18,8 +18,34 @@ from .utils import *
 from .mpl import *
 
 from apstools.utils import *
-from hkl.util import *
-from hkl.user import *
+
+from hkl.util import (
+    cahkl,
+    cahkl_table,
+    calc_UB,
+    list_samples,
+    new_sample,
+    or_swap,
+    select_diffractometer,
+    set_energy,
+    setor,
+    show_sample,
+    show_selected_diffractometer,
+    update_sample,
+    wh,
+    pa,
+)
+
+from hkl.user import (
+    list_orientation_runs,
+    restore_constraints,
+    restore_energy,
+    restore_orientation,
+    restore_reflections,
+    restore_sample,
+    restore_UB,
+    run_orientation_info,
+)
 
 from polartools.absorption import (
     load_absorption,
@@ -63,7 +89,6 @@ from polartools.process_images import (
    get_spectrum,
    get_spectra,
 )
-
 
 from IPython import get_ipython
 from .utils.local_magics import LocalMagics
