@@ -4,8 +4,9 @@ Ruby spectrometer motors and controls.
 
 __all__ = ['ruby']
 
-from ophyd import (Component, Device, EpicsMotor, EpicsSignal, EpicsSignalRO,
-                   FormattedComponent)
+from ophyd import (
+    Component, Device, EpicsMotor, EpicsSignal, FormattedComponent
+)
 from ..framework import sd
 from apstools.devices import PVPositionerSoftDoneWithStop
 from ..session_logs import logger
@@ -15,15 +16,17 @@ logger.info(__file__)
 class DAC(PVPositionerSoftDoneWithStop):
     """ Setup DAC as a PVPositioner """
 
-    setpoint = Component(EpicsSignal, '.VAL', put_complete=True, kind='normal')
-    readback = Component(EpicsSignalRO, '_rbv.VAL', auto_monitor=True,
-                         kind='hinted')
-
     low_limit = Component(EpicsSignal, '.DRVL', kind='config')
     high_limit = Component(EpicsSignal, '.DRVH', kind='config')
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, tolerance=0.001, **kwargs)
+        super().__init__(
+            *args,
+            readback_pv="_rbv.VAL",
+            setpoint_pv=".VAL",
+            tolerance=0.001,
+            **kwargs
+        )
 
     @property
     def limits(self):
