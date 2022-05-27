@@ -29,7 +29,7 @@ class LocalPositioner(PVPositionerSoftDoneWithStop):
     def __init__(self, *args, progtype, **kwargs):
         self._type = progtype
         # TODO: This tolerance seems good, but may need to be tested.
-        super().__init__(*args, tolerance=0.02, **kwargs)
+        super().__init__(*args, readback_pv="1", tolerance=0.02, **kwargs)
 
 
 class KepkoController(Device):
