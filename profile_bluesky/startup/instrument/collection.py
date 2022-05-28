@@ -19,7 +19,7 @@ from .mpl import *
 
 from apstools.utils import *
 
-from hkl.util import (
+from hkl.user import (
     cahkl,
     cahkl_table,
     calc_UB,
@@ -36,7 +36,7 @@ from hkl.util import (
     pa,
 )
 
-from hkl.user import (
+from hkl.util import (
     list_orientation_runs,
     restore_constraints,
     restore_energy,
