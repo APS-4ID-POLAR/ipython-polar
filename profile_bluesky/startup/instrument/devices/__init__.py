@@ -28,4 +28,4 @@ from .uptable import *
 from .user_calc import *
 from .wavefunction_generator import *
 from .xbpm import *
-from shutters import *
+from .shutters import *
