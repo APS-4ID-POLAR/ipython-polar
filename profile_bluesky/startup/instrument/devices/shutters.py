@@ -18,16 +18,16 @@ class PolarShutter(ApsPssShutterWithStatus):
 
     # Extra info
     user_enable = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_USER_KEY"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_USER_KEY", kind="config"
     )
     aps_enable = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_APS_KEY"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_APS_KEY", kind="config"
     )
     searched = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_SEARCHED"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_SEARCHED", kind="config"
     )
     bleps = FormattedComponent(
-        EpicsSignalRO, "{self._bleps_pv}"
+        EpicsSignalRO, "{self._bleps_pv}", kind="config"
     )
 
     def __init__(self, prefix, state_pv, hutch, *args, **kwargs):
