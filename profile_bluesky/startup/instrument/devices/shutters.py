@@ -18,19 +18,19 @@ class PolarShutter(ApsPssShutterWithStatus):
 
     # Extra info
     user_enable = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_USER_KEY", kind="config"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_USER_KEY"
     )
     aps_enable = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_APS_KEY", kind="config"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_APS_KEY"
     )
     searched = FormattedComponent(
-        EpicsSignalRO, "PA:04ID:{self._hutch}_SEARCHED", kind="config"
+        EpicsSignalRO, "PA:04ID:{self._hutch}_SEARCHED"
     )
     bleps = FormattedComponent(
-        EpicsSignalRO, "{self._bleps_pv}", kind="config"
+        EpicsSignalRO, "{self._bleps_pv}"
     )
 
-    def __init__(self, prefix, state_pv, hutch, *args, **kwargs):
+    def __init__(self, prefix, state_pv, hutch, *args, timeout=20, **kwargs):
 
         # this is very specific to 4ID
         self._hutch = hutch
@@ -42,17 +42,32 @@ class PolarShutter(ApsPssShutterWithStatus):
             raise ValueError(
                 f"Invalid hutch {hutch}. It must to be 'A', 'B' or 'D'"
             )
+        self._timeout=timeout
         super().__init__(prefix, state_pv, *args, **kwargs)
+    
+    @property
+    def timeout(self):
+        return self._timeout
+    
+    @timeout.setter
+    def timeout(self, value):
+        self._timeout = float(value)
+        
+    def open(self):
+        super().open(timeout=self.timeout)
+
+    def close(self):
+        super().close(timeout=self.timeout)
 
 
 ashutter = PolarShutter(
-    "PC:04ID:FES_", "PA:04ID:FES_PERMIT", hutch="A", name="ashutter"
+    "PC:04ID:FES_", "PA:04ID:A_BEAM_PRESENT", hutch="A", name="ashutter"
 )
 bshutter = PolarShutter(
-    "PC:04ID:SBS_", "PA:04ID:SBS_PERMIT", hutch="B", name="bshutter"
+    "PC:04ID:SBS_", "PA:04ID:B_BEAM_PRESENT", hutch="B", name="bshutter"
 )
 dshutter = PolarShutter(
-    "PC:04ID:SDS_", "PA:04ID:SDS_PERMIT", hutch="D", name="dshutter"
+    "PC:04ID:SDS_", "PA:04ID:D_BEAM_PRESENT", hutch="D", name="dshutter"
 )
 
 sd.baseline.extend((ashutter, bshutter, dshutter))
