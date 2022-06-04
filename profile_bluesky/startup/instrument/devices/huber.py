@@ -31,7 +31,8 @@ class FourCircleDiffractometer(E4CV):
     k = Component(PseudoSingle, '', labels=("hkl", "fourc"))
     l = Component(PseudoSingle, '', labels=("hkl", "fourc"))
 
-    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    # theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    omega = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
     chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"))
     phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"))
     tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"))
@@ -44,7 +45,7 @@ class FourCircleDiffractometer(E4CV):
                               kind='config')
 
     # Explicitly selects the real motors
-    _real = ['theta', 'chi', 'phi', 'tth']
+    # _real = ['theta', 'chi', 'phi', 'tth']
 
     # Cryo carrier
     x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
@@ -82,10 +83,10 @@ class FourCircleDiffractometer(E4CV):
 
 
 fourc = FourCircleDiffractometer('4iddx:', name='fourc')
-fourc.calc.physical_axis_names = {'omega': 'theta',
-                                  'chi': 'chi',
-                                  'phi': 'phi',
-                                  'tth': 'tth'}
+# fourc.calc.physical_axis_names = {'omega': 'theta',
+#                                   'chi': 'chi',
+#                                   'phi': 'phi',
+#                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
 
