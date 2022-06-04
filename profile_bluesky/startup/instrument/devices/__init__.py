@@ -9,7 +9,6 @@ from .energy import *
 from .filters import *
 from .flat_mirror import *
 from .ge_controller import *
-from .huber import *
 from .ion_chambers import *
 from .kepko import *
 from .lakeshores import *
@@ -29,3 +28,4 @@ from .user_calc import *
 from .wavefunction_generator import *
 from .xbpm import *
 from .shutters import *
+from .huber import *

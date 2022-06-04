@@ -40,7 +40,7 @@ from hkl.util import (
     list_orientation_runs,
     restore_constraints,
     restore_energy,
-    restore_orientation,
+    restore_orientation as hkl_restore_orientation,
     restore_reflections,
     restore_sample,
     restore_UB,
@@ -93,3 +93,10 @@ from polartools.process_images import (
 from IPython import get_ipython
 from .utils.local_magics import LocalMagics
 get_ipython().register_magics(LocalMagics)
+
+# This is a workaround to ensure that we preserve the beamline energy and
+# the previously defined UB matrix.
+def restore_orientation(orientation, diffractometer):
+    hkl_restore_orientation(orientation, diffractometer)
+    restore_UB(orientation, diffractometer)
+    fourc.energy.put(energy.get())
