@@ -93,6 +93,7 @@ bl_energy.wait_for_connection(timeout=10)
 bl_energy.subscribe(update_energy)
 
 fourc = FourCircleDiffractometer('4iddx:', name='fourc')
+fourc.energy.put(bl_energy.get())
 # fourc.calc.physical_axis_names = {'omega': 'theta',
 #                                   'chi': 'chi',
 #                                   'phi': 'phi',
