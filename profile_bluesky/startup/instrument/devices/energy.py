@@ -5,6 +5,7 @@ __all__ = ['energy']
 
 from ophyd import Signal
 from ophyd.status import Status, AndStatus, wait as status_wait
+from time import time
 from ..framework import sd
 from .monochromator import mono
 from .aps_source import undulator
@@ -32,6 +33,8 @@ class EnergySignal(Signal):
         status = Status()
         status.set_finished()
 
+        old_value = self._readback
+
         # Mono
         mono_status = mono.energy.set(
             position, wait=wait, timeout=timeout, moved_cb=moved_cb
@@ -56,6 +59,10 @@ class EnergySignal(Signal):
 
         if wait:
             status_wait(status)
+
+        md_for_callback = {'timestamp': time()}
+        self._run_subs(sub_type=self.SUB_VALUE, old_value=old_value,
+                       value=position, **md_for_callback)
 
         return status
 
