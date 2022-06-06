@@ -47,6 +47,7 @@ class FourCircleDiffractometer(E4CV):
 
     # Explicitly selects the real motors
     # _real = ['theta', 'chi', 'phi', 'tth']
+    _real = ['omega', 'chi', 'phi', 'tth']
 
     # Cryo carrier
     x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
