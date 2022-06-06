@@ -98,5 +98,8 @@ get_ipython().register_magics(LocalMagics)
 # the previously defined UB matrix.
 def restore_orientation(orientation, diffractometer):
     hkl_restore_orientation(orientation, diffractometer)
-    restore_UB(orientation, diffractometer)
+    # There is a bug in restore_UB, this is a workaround.
+    # restore_UB(orientation, diffractometer)
+    diffractometer.UB.put(orientation["UB"])
+
     fourc.energy.put(energy.get())
