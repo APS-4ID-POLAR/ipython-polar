@@ -101,5 +101,5 @@ def restore_orientation(orientation, diffractometer):
     # There is a bug in restore_UB, this is a workaround.
     # restore_UB(orientation, diffractometer)
     diffractometer.UB.put(orientation["UB"])
-
-    fourc.energy.put(energy.get())
+    diffractometer.engine.mode = orientation["_mode"]
+    diffractometer.energy.put(energy.get())
