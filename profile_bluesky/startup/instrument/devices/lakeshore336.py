@@ -2,12 +2,10 @@
 Lakeshore 336 temperature controller EPICS version 1.0
 """
 
-from apstools.synApps.asyn import AsynRecord
-from ophyd import (Component, FormattedComponent, Device, EpicsSignal, Signal,
-                   EpicsSignalRO, EpicsSignalWithRBV)
+from ophyd import Component, FormattedComponent
 from ophyd.status import wait as status_wait
-from .util_components import TrackingSignal, PVPositionerSoftDone
-
+from apstools.devices import TrackingSignal, LakeShore336Device
+from apstools.devices.lakeshore_controllers import LakeShore336_LoopControl
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -28,63 +26,12 @@ def _get_vaporizer_position(sample_position):
     return vaporizer_position
 
 
-class LS336_LoopControl(PVPositionerSoftDone):
+class LS336_LoopControl(LakeShore336_LoopControl):
     """
     Setup for loop with heater control.
 
     The lakeshore 336 accepts up to two heaters.
     """
-
-    # position
-    # TODO: Not sure this will work. May need to separate the RO again.
-    readback = FormattedComponent(EpicsSignalRO, "{prefix}IN{loop_number}",
-                                  auto_monitor=True, kind="hinted")
-    setpoint = FormattedComponent(EpicsSignalWithRBV,
-                                  "{prefix}OUT{loop_number}:SP",
-                                  put_complete=True, kind="normal")
-    # Due to ramping the setpoint will change slowly and the readback may catch
-    # up even if the motion is not done.
-    target = Component(Signal, value=0, kind="omitted")
-
-    heater = FormattedComponent(EpicsSignalRO, "{prefix}HTR{loop_number}",
-                                auto_monitor=True, kind="normal")
-
-    # configuration
-    units = FormattedComponent(EpicsSignalWithRBV,
-                               "{prefix}IN{loop_number}:Units",
-                               kind="config")
-    pid_P = FormattedComponent(EpicsSignalWithRBV,
-                               "{prefix}P{loop_number}",
-                               kind="config")
-    pid_I = FormattedComponent(EpicsSignalWithRBV,
-                               "{prefix}I{loop_number}",
-                               kind="config")
-    pid_D = FormattedComponent(EpicsSignalWithRBV,
-                               "{prefix}D{loop_number}",
-                               kind="config")
-    ramp_rate = FormattedComponent(EpicsSignalWithRBV,
-                                   "{prefix}RampR{loop_number}",
-                                   kind="config")
-    ramp_on = FormattedComponent(EpicsSignalWithRBV,
-                                 "{prefix}OnRamp{loop_number}",
-                                 kind="config")
-
-    loop_name = FormattedComponent(EpicsSignalRO,
-                                   "{prefix}IN{loop_number}:Name_RBV",
-                                   kind="config")
-    control = FormattedComponent(EpicsSignalWithRBV,
-                                 "{prefix}OUT{loop_number}:Cntrl",
-                                 kind="config")
-    manual = FormattedComponent(EpicsSignalWithRBV,
-                                "{prefix}OUT{loop_number}:MOUT",
-                                kind="config")
-    mode = FormattedComponent(EpicsSignalWithRBV,
-                              "{prefix}OUT{loop_number}:Mode",
-                              kind="config")
-    heater_range = FormattedComponent(EpicsSignalWithRBV,
-                                      "{prefix}HTR{loop_number}:Range",
-                                      kind="config", auto_monitor=True,
-                                      string=True)
 
     auto_heater = Component(TrackingSignal, value=False, kind="config")
 
@@ -93,9 +40,9 @@ class LS336_LoopControl(PVPositionerSoftDone):
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, tolerance=0.1,
-                         target_attr="target", **kwargs)
+        super().__init__(*args, timeout=timeout, **kwargs)
         self._settle_time = 0
+        self.tolerance.put(0.1)
 
     @property
     def settle_time(self):
@@ -111,14 +58,6 @@ class LS336_LoopControl(PVPositionerSoftDone):
     @property
     def egu(self):
         return self.units.get(as_string=True)
-
-    def stop(self, *, success=False):
-        if success is False:
-            self.setpoint.put(self._position)
-        super().stop(success=success)
-
-    def pause(self):
-        self.setpoint.put(self._position)
 
     @auto_heater.sub_value
     def _subscribe_auto_heater(self, value=None, **kwargs):
@@ -157,26 +96,6 @@ class LS336_LoopControl(PVPositionerSoftDone):
             self._auto_ranges = value
 
 
-class LS336_LoopRO(Device):
-    """
-    loop3 and loop4 do not use the heaters.
-    """
-    # Set this to normal because we don't use it.
-    readback = FormattedComponent(EpicsSignalRO,
-                                  "{prefix}IN{loop_number}",
-                                  kind="normal")
-    units = FormattedComponent(EpicsSignalWithRBV,
-                               "{prefix}IN{loop_number}:Units",
-                               kind="omitted")
-    loop_name = FormattedComponent(EpicsSignalRO,
-                                   "{prefix}IN{loop_number}:Name_RBV",
-                                   kind="omitted")
-
-    def __init__(self, *args, loop_number=None, **kwargs):
-        self.loop_number = loop_number
-        super().__init__(*args, **kwargs)
-
-
 class LoopSample(LS336_LoopControl):
     """ Sample will move the vaporizer temperature if track_vaporizer=True """
 
@@ -188,7 +107,7 @@ class LoopSample(LS336_LoopControl):
         wait = kwargs.pop('wait', True)
         sample_status = super().move(position, wait=False, **kwargs)
 
-        vaporizer_position = self._get_vaporizer_position(position)
+        vaporizer_position = _get_vaporizer_position(position)
         # Will not wait for vaporizer.
         _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
 
@@ -198,7 +117,7 @@ class LoopSample(LS336_LoopControl):
         return sample_status
 
 
-class LS336Device(Device):
+class LS336Device(LakeShore336Device):
     """
     Support for Lakeshore 336 temperature controller
     """
@@ -206,15 +125,5 @@ class LS336Device(Device):
                                loop_number=1)
     loop2 = FormattedComponent(LoopSample, "{prefix}",
                                loop_number=2)
-    loop3 = FormattedComponent(LS336_LoopRO, "{prefix}",
-                               loop_number=3)
-    loop4 = FormattedComponent(LS336_LoopRO, "{prefix}", loop_number=4)
-
-    # same names as apstools.synApps._common.EpicsRecordDeviceCommonAll
-    scanning_rate = Component(EpicsSignal, "read.SCAN", kind="omitted")
-    process_record = Component(EpicsSignal, "read.PROC", kind="omitted")
-
-    read_all = Component(EpicsSignal, "readAll.PROC", kind="omitted")
-    serial = Component(AsynRecord, "serial", kind="omitted")
 
     track_vaporizer = Component(TrackingSignal, value=True, kind="config")

@@ -7,13 +7,13 @@ __all__ = ['kepko']
 from ophyd import Component, FormattedComponent, Device, Kind
 from ophyd import EpicsSignal, EpicsSignalRO
 from ..framework import sd
-from .util_components import PVPositionerSoftDone
+from apstools.devices import PVPositionerSoftDoneWithStop
 
 from ..session_logs import logger
 logger.info(__file__)
 
 
-class LocalPositioner(PVPositionerSoftDone):
+class LocalPositioner(PVPositionerSoftDoneWithStop):
     """ Voltage/Current positioner """
 
     readback = FormattedComponent(
@@ -29,7 +29,7 @@ class LocalPositioner(PVPositionerSoftDone):
     def __init__(self, *args, progtype, **kwargs):
         self._type = progtype
         # TODO: This tolerance seems good, but may need to be tested.
-        super().__init__(*args, tolerance=0.02, **kwargs)
+        super().__init__(*args, readback_pv="1", tolerance=0.02, **kwargs)
 
 
 class KepkoController(Device):

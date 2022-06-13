@@ -4,7 +4,7 @@ Slits
 __all__ = ['wbslt', 'enslt', 'inslt', 'grdslt', 'detslt', 'magslt']
 
 from ophyd import Device, FormattedComponent, EpicsMotor
-from .util_components import PVPositionerSoftDone
+from apstools.devices import PVPositionerSoftDoneWithStop
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
@@ -26,21 +26,37 @@ class SlitDevice(Device):
                              labels=('motors', 'slits'))
 
     # Setting pseudo positioners
-    vcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                              readback_pv='Vt2.D', setpoint_pv='Vcenter.VAL',
-                              labels=('slits',))
+    vcen = FormattedComponent(
+        PVPositionerSoftDoneWithStop,
+        '{prefix}{_slit_prefix}',
+        readback_pv='Vt2.D',
+        setpoint_pv='Vcenter.VAL',
+        labels=('slits',)
+    )
 
-    vsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                               readback_pv='Vt2.C', setpoint_pv='Vsize.VAL',
-                               labels=('slits',))
+    vsize = FormattedComponent(
+        PVPositionerSoftDoneWithStop,
+        '{prefix}{_slit_prefix}',
+        readback_pv='Vt2.C',
+        setpoint_pv='Vsize.VAL',
+        labels=('slits',)
+    )
 
-    hcen = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                              readback_pv='Ht2.D', setpoint_pv='Hcenter.VAL',
-                              labels=('slits',))
+    hcen = FormattedComponent(
+        PVPositionerSoftDoneWithStop,
+        '{prefix}{_slit_prefix}',
+        readback_pv='Ht2.D',
+        setpoint_pv='Hcenter.VAL',
+        labels=('slits',)
+    )
 
-    hsize = FormattedComponent(PVPositionerSoftDone, '{prefix}{_slit_prefix}',
-                               readback_pv='Ht2.C', setpoint_pv='Hsize.VAL',
-                               labels=('slits',))
+    hsize = FormattedComponent(
+        PVPositionerSoftDoneWithStop,
+        '{prefix}{_slit_prefix}',
+        readback_pv='Ht2.C',
+        setpoint_pv='Hsize.VAL',
+        labels=('slits',)
+    )
 
     def __init__(self, PV, name, motorsDict, slitnum, **kwargs):
 

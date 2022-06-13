@@ -6,14 +6,16 @@ Diffractometer motors
 __all__ = ['fourc']
 
 from ophyd import (Component, FormattedComponent, PseudoSingle, Kind,
-                   EpicsSignal, EpicsSignalRO, EpicsMotor, Signal)
+                   EpicsSignal, EpicsMotor, Signal)
 from bluesky.suspenders import SuspendBoolLow
 from ..framework import RE
 from ..framework import sd
+from .energy import energy as bl_energy
 import gi
 gi.require_version('Hkl', '5.0')
 # MUST come before `import hkl`
 from hkl.geometries import E4CV
+from hkl.user import select_diffractometer
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -30,7 +32,8 @@ class FourCircleDiffractometer(E4CV):
     k = Component(PseudoSingle, '', labels=("hkl", "fourc"))
     l = Component(PseudoSingle, '', labels=("hkl", "fourc"))
 
-    theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    # theta = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
+    omega = Component(EpicsMotor, 'm65', labels=("motor", "fourc"))
     chi = Component(EpicsMotor, 'm67', labels=("motor", "fourc"))
     phi = Component(EpicsMotor, 'm68', labels=("motor", "fourc"))
     tth = Component(EpicsMotor, 'm66', labels=("motor", "fourc"))
@@ -43,7 +46,8 @@ class FourCircleDiffractometer(E4CV):
                               kind='config')
 
     # Explicitly selects the real motors
-    _real = ['theta', 'chi', 'phi', 'tth']
+    # _real = ['theta', 'chi', 'phi', 'tth']
+    _real = ['omega', 'chi', 'phi', 'tth']
 
     # Cryo carrier
     x = Component(EpicsMotor, 'm14', labels=('motor', 'fourc'))  # Cryo X
@@ -63,8 +67,9 @@ class FourCircleDiffractometer(E4CV):
     atth = Component(EpicsMotor, 'm78', labels=('motor', 'fourc'))
 
     # Energy
-    energy = FormattedComponent(EpicsSignalRO, "4idb:BraggERdbkAO",
-                                kind='omitted')
+    # energy = FormattedComponent(EpicsSignalRO, "4idb:BraggERdbkAO",
+    #                             kind='omitted')
+    energy = FormattedComponent(Signal, value=8)
     # energy_EGU = Component(EpicsSignal, "optics:energy.EGU")
     energy_update_calc_flag = Component(Signal, value=1)
     energy_offset = Component(Signal, value=0)
@@ -80,17 +85,25 @@ class FourCircleDiffractometer(E4CV):
         return {'fields': fields}
 
 
+def update_energy(value=None, **kwargs):
+    fourc.energy.put(value)
+
+
+bl_energy.wait_for_connection(timeout=10)
+bl_energy.subscribe(update_energy)
+
 fourc = FourCircleDiffractometer('4iddx:', name='fourc')
-fourc.calc.physical_axis_names = {'omega': 'theta',
-                                  'chi': 'chi',
-                                  'phi': 'phi',
-                                  'tth': 'tth'}
+fourc.energy.put(bl_energy.get())
+# fourc.calc.physical_axis_names = {'omega': 'theta',
+#                                   'chi': 'chi',
+#                                   'phi': 'phi',
+#                                   'tth': 'tth'}
 sus = SuspendBoolLow(fourc.th_tth_permit)
 RE.install_suspender(sus)
 
 # TODO: This is a rough workaround...
 for attr in "x y z baseth basetth ath achi atth tablex tabley".split():
     getattr(fourc, attr).kind = "normal"
-fourc.energy.kind = "omitted"
 
+select_diffractometer(fourc)
 sd.baseline.append(fourc)

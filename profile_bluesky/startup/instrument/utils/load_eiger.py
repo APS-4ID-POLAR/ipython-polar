@@ -3,7 +3,6 @@
 from ..devices.ad_eiger import (
     EigerDetectorTimeTrigger, EigerDetectorImageTrigger
 )
-from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
 
@@ -34,8 +33,6 @@ def load_eiger(
         read_image_path=read_image_path,
         name="eiger"
     )
-
-    sd.baseline.append(eiger)
 
     eiger.wait_for_connection(timeout=10)
     # This is needed otherwise .get may fail!!!

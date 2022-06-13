@@ -4,9 +4,10 @@ APS only: connect with facility information
 
 __all__ = ['aps', 'undulator']
 
-from apstools.devices import ApsMachineParametersDevice, ApsUndulator
+from apstools.devices import (
+    ApsMachineParametersDevice, ApsUndulator, TrackingSignal
+)
 from ..framework import sd
-from .util_components import TrackingSignal
 from ophyd import (Device, Component, Signal, EpicsSignal, EpicsSignalRO,
                    PVPositioner)
 from ophyd.status import Status, wait as status_wait
@@ -46,9 +47,6 @@ class UndulatorEnergy(PVPositioner):
     stop_signal = Component(EpicsSignal, "Stop.VAL", kind='omitted')
     stop_value = 1
 
-    # TODO: Does this work!?!?
-    # done = Component(DoneSignal, value=0, kind='omitted')
-    # done_value = 1
     done = Component(EpicsSignal, "Busy.VAL", kind="omitted")
     done_value = 0
 
@@ -67,11 +65,6 @@ class UndulatorEnergy(PVPositioner):
     def _change_tolerance(self, value=None, **kwargs):
         if value:
             self.tolerance = value
-
-    # TODO: This is unnecessary if use done EpicsSignal.
-    # @done.sub_value
-    # def _move_changed(self, **kwargs):
-    #     super()._move_changed(**kwargs)
 
     def move(self, position, wait=True, **kwargs):
         """

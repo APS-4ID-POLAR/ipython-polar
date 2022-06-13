@@ -11,7 +11,7 @@ from ophyd import EpicsSignal, EpicsSignalRO, Signal, DerivedSignal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi, sin
-from .util_components import TrackingSignal, PVPositionerSoftDone
+from apstools.devices import TrackingSignal, PVPositionerSoftDoneWithStop
 from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
@@ -49,7 +49,7 @@ class PRPzt(Device):
     remote_setpoint = Component(EpicsSignal, 'set_microns.VAL')
     remote_readback = Component(EpicsSignalRO, 'microns')
 
-    localdc = Component(PVPositionerSoftDone, "",
+    localdc = Component(PVPositionerSoftDoneWithStop, "",
                         readback_pv="DC_read_microns",
                         setpoint_pv="DC_set_microns", tolerance=0.01)
 

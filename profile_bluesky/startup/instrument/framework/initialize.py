@@ -28,7 +28,6 @@ from bluesky.utils import ProgressBarManager
 # from bluesky.utils import ts_msg_hook
 # from IPython import get_ipython
 from ophyd.signal import EpicsSignalBase
-import databroker
 import os
 import warnings
 
@@ -38,10 +37,8 @@ import bluesky.plan_stubs as bps
 import bluesky.preprocessors as bpp
 import numpy as np
 
-
-# TODO: Use from polartools when available!
-from .eiger_handler import MyEigerHandler
-from .lambda_handler import LambdaHDF5Handler
+# This already setup the handlers
+from polartools.load_data import load_catalog
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -57,11 +54,7 @@ callback_db = {}
 
 # Connect with mongodb database.
 # db = databroker.catalog["mongodb_config"]
-cat = databroker.catalog["4id_polar"]
-
-# Register the handler for EIGER and Lambda files
-cat.register_handler("AD_EIGER_APSPolar", MyEigerHandler, overwrite=True)
-cat.register_handler("AD_HDF5_lambda", LambdaHDF5Handler, overwrite=True)
+cat = load_catalog("4id_polar")
 
 # Subscribe metadatastore to documents.
 # If this is removed, data is not saved to metadatastore.
