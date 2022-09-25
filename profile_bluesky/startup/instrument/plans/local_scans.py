@@ -317,9 +317,14 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
 
     _md.update(md or {})
 
+    # Tricky part...
+    dets_names = []
+    for item in detectors:
+        dets_names.extend(item.hints['fields'])
+
     @configure_counts_decorator(detectors, time)
     @stage_ami_decorator(mag6t.field in args)
-    @stage_dichro_decorator(dichro, lockin)
+    @stage_dichro_decorator(dichro, lockin, args, dets_names)
     @extra_devices_decorator(extras)
     def _inner_ascan():
         yield from scan(

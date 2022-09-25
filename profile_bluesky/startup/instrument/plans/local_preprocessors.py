@@ -2,10 +2,14 @@
 
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
-from bluesky.plan_stubs import mv, sleep, abs_set, rd, null
+from bluesky.plan_stubs import (
+    mv, sleep, abs_set, rd, null, subscribe, unsubscribe
+)
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
+from ..utils import counters
+from ..callbacks.dichro_stream import DichroStream
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -227,7 +231,7 @@ def configure_counts_wrapper(plan, detectors, count_time):
         return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
-def stage_dichro_wrapper(plan, dichro, lockin):
+def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
     """
     Stage dichoic scans.
 
@@ -247,6 +251,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
         inserted and appended
     """
     _current_scaler_plot = []
+    _dichro_token = [None]
 
     def _stage():
 
@@ -277,6 +282,14 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
 
+            dichro_stream = DichroStream()
+            # TODO: This will only work for 1 motor and 1 detector!
+            dichro_stream.positioner = positioner[0]
+            dichro_stream.monitor = counters.monitor
+            dichro_stream.detector = detectors[0]
+
+            _dichro_token[0] = yield from subscribe("all", dichro_stream)
+
     def _unstage():
 
         if lockin:
@@ -289,6 +302,8 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get() +
                               pr_setup.offset.get())
+
+            yield from unsubscribe(_dichro_token[0])
 
     def _inner_plan():
         yield from _stage()
