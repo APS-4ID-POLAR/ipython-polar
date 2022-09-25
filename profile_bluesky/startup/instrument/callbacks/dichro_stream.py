@@ -14,16 +14,19 @@ class Settings():
     transmission = True
 
 
+dichro_settings = Settings()
+
+
 # TODO: Should this go in the pr_setup?
 class DichroStream(LiveDispatcher):
     """Stream that processes XMCD and XANES"""
-    def __init__(self, n=4):
+    def __init__(self, settings=dichro_settings, n=4):
         self.n = n
         self.in_node = None
         self.out_node = None
         self.processor = None
         self.data_keys = None
-        self.settings = Settings()
+        self.settings = settings
         super().__init__()
 
     def start(self, doc):

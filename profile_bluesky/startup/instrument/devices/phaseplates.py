@@ -5,6 +5,7 @@ Phase retarders.
 __all__ = ['pr1', 'pr2', 'pr3', 'pr_setup']
 
 from ..framework import sd
+from ..callbacks.dichro_stream import dichro_settings
 from ophyd import Device, EpicsMotor, PseudoPositioner, PseudoSingle
 from ophyd import Component, FormattedComponent
 from ophyd import EpicsSignal, EpicsSignalRO, Signal, DerivedSignal
@@ -201,6 +202,17 @@ class PRSetup():
         print('Note that you can only oscillate one phase retarder stack.')
 
         _positioner = None
+
+        while True:
+            trans = input("Are you measuring in transmission? (yes or no): ")
+            if trans.lower() == "yes":
+                dichro_settings.transmission = True
+                break
+            elif trans.lower() == "no":
+                dichro_settings.transmission = False
+                break
+            else:
+                print("Invalid answer, it must be yes or no.")
 
         for pr, label in zip([pr1, pr2, pr3], ["PR1", "PR2", "PR3"]):
 

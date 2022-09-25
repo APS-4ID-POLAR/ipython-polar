@@ -9,7 +9,7 @@ from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
 from ..utils import counters
-from ..callbacks.dichro_stream import DichroStream
+from ..callbacks.dichro_stream import DichroStream, dichro_settings
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -282,7 +282,7 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
 
-            dichro_stream = DichroStream()
+            dichro_stream = DichroStream(settings=dichro_settings)
             # TODO: This will only work for 1 motor and 1 detector!
             dichro_stream.positioner = positioner[0]
             dichro_stream.monitor = counters.monitor
