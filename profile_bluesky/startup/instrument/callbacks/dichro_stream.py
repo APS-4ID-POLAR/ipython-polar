@@ -14,6 +14,7 @@ class Settings():
     transmission = True
 
 
+# TODO: Should this go in the pr_setup?
 class DichroStream(LiveDispatcher):
     """Stream that processes XMCD and XANES"""
     def __init__(self, n=4):
