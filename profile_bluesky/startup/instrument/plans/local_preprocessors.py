@@ -285,6 +285,9 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
             dichro_stream = DichroStream(settings=dichro_settings)
             # TODO: This will only work for 1 motor and 1 detector!
             dichro_stream.positioner = positioner[0]
+            # TODO: This will not work well when we could over time. May be
+            # better to just change the positioner and have the detector and
+            # monitor pre-set in the dichro_settings.
             dichro_stream.monitor = counters.monitor
             dichro_stream.detector = detectors[0]
 
