@@ -42,17 +42,17 @@ class PolarShutter(ApsPssShutterWithStatus):
             raise ValueError(
                 f"Invalid hutch {hutch}. It must to be 'A', 'B' or 'D'"
             )
-        self._timeout=timeout
+        self._timeout = timeout
         super().__init__(prefix, state_pv, *args, **kwargs)
-    
+
     @property
     def timeout(self):
         return self._timeout
-    
+
     @timeout.setter
     def timeout(self, value):
         self._timeout = float(value)
-        
+
     def open(self):
         super().open(timeout=self.timeout)
 
