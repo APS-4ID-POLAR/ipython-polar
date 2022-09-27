@@ -28,6 +28,7 @@ def shopen(hutch="d"):
         raise ValueError("Input must be 'a', 'b', or 'd'.")
 
     for shutter, _ in partition(2, args):
+        # Checking if all permits are good.
         for permit in ["user_enable", "aps_enable", "bleps"]:
 
             good = (
@@ -38,7 +39,7 @@ def shopen(hutch="d"):
             if status != good:
                 raise ValueError(f"{getattr(shutter, permit).name} is not enabled!")
 
-        # Wait for shutter to open. Timeout is defined above.
+        # Wait for search to end. Timeout is defined above.
         function = _difference_check(1, tolerance=0.1)
         yield from abs_set(
             signal, getattr(shutter, "searched"), function, wait=True,
