@@ -9,7 +9,7 @@ __all__ = ['qxscan_params']
 import json
 from ophyd import Signal, Device
 from ophyd import Component
-from ..framework import sd
+from ..framework import sd, cat
 from numpy import sqrt, arange
 from ..session_logs import logger
 logger.info(__file__)
@@ -362,8 +362,27 @@ class QxscanParams(Device):
         input = json.load(open(fname, 'r'))
         self._read_params_dict(input)
 
+    def load_from_scan(self, scan, cat=cat):
+
+        baseline = cat[scan].baseline.read()
+
+        def _update_value(var):
+            attr = getattr(self, var)
+            attr.put(baseline[attr.name].values[0])
+
+        for component in ("energy_list", "factor_list"):
+            _update_value(component)
+
+        for component in self.edge.component_names:
+            _update_value("edge." + component)
+
+        for item in ("pre_edge", "post_edge"):
+            _update_value(item + ".num_regions")
+            num_regions = getattr(self, item).num_regions.get()
+            for i in range(1, num_regions + 1):
+                for component in getattr(self, item + f".region{i}"):
+                    _update_value(item + f".region{i}.{component}")
+
 
 qxscan_params = QxscanParams(name='qxscan_setup')
 sd.baseline.append(qxscan_params)
-
-# TODO: Could not make this work using DynamicDeviceComponent. Don't know why.
