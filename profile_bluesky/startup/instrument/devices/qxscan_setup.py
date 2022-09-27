@@ -117,31 +117,60 @@ class QxscanParams(Device):
         print('Defining the energy range and steps for qxscan')
         print('All energies are relative to the absorption edge!')
 
+        def _update_value(text, _current):
+            _new = input(text.format(_current))
+            return float(_new) if _new != "" else _current
+
         while True:
-            value = int(input('\n Number of pre-edge regions: '))
+            value = int(input(
+                '\n Number of pre-edge regions ('
+                f'{self.pre_edge.num_regions.get()}): '
+                ))
             if 1 <= value <= 5:
                 self.pre_edge.num_regions.put(value)
                 break
+            elif value == "":
+                break
             else:
-                print('WARNING: number of pre-edge regions need to be >=1 and \
-                    <= 5!')
+                print(
+                    'WARNING: number of pre-edge regions need to be >=1 and'
+                    '<= 5!'
+                )
 
         for i in range(self.pre_edge.num_regions.get()):
             print('\n Defining pre-edge #{}'.format(i+1))
-            relative_energy = float(input('Start energy (in eV): '))
-            energy_increment = float(input('Energy increment (in eV): '))
-            time_factor = float(input('Counting time factor: '))
 
-            region = getattr(self.pre_edge, 'region{}'.format(i+1))
+            region = getattr(self.pre_edge, f"region{i+1}")
+
+            relative_energy = _update_value(
+                "Start energy (in eV) ({}): ", region.Estart.get()
+            )
+
+            energy_increment = _update_value(
+                'Energy increment (in eV) ({}): ', region.Estep.get()
+            )
+
+            time_factor = _update_value(
+                'Counting time factor ({}): ', region.TimeFactor.get()
+            )
+
             region.Estart.put(relative_energy)
             region.Estep.put(energy_increment)
             region.TimeFactor.put(time_factor)
 
         print('\n Defining edge region')
-        relative_energy_start = float(input('Start energy (in eV): '))
-        relative_energy_end = float(input('Final energy (in eV): '))
-        energy_increment = float(input('Energy increment (in eV): '))
-        time_factor = float(input('Counting time factor: '))
+        relative_energy_start = _update_value(
+            'Start energy (in eV) ({}): ', self.edge.Estart.get()
+        )
+        relative_energy_end = _update_value(
+            'Final energy (in eV) ({}): ', self.edge.Eend.get()
+        )
+        energy_increment = _update_value(
+            'Energy increment (in eV) ({}): ', self.edge.Estep.get()
+        )
+        time_factor = _update_value(
+            'Counting time factor ({}): ', self.edge.TimeFactor.get()
+        )
 
         self.edge.Estart.put(relative_energy_start)
         self.edge.Eend.put(relative_energy_end)
@@ -152,9 +181,14 @@ class QxscanParams(Device):
         print('The edge region ends at k = {:0.3f} angstroms^-1'.format(kend))
 
         while True:
-            value = int(input('\n Number of post-edge regions: '))
+            value = int(input(
+                '\n Number of post-edge regions ('
+                f'{self.post_edge.num_regions.get()}): '
+                ))
             if 1 <= value <= 5:
                 self.post_edge.num_regions.put(value)
+                break
+            elif value == "":
                 break
             else:
                 print('WARNING: number of post-edge regions need to be >= 1 \
@@ -162,11 +196,18 @@ class QxscanParams(Device):
 
         for i in range(self.post_edge.num_regions.get()):
             print('\n Defining post-edge #{}'.format(i+1))
-            relative_k = float(input('k end (in angstroms^-1): '))
-            k_increment = float(input('k increment (in angstroms^-1): '))
-            time_factor = float(input('Counting time factor: '))
-
             region = getattr(self.post_edge, 'region{}'.format(i+1))
+
+            relative_k = _update_value(
+                'k end (in angstroms^-1) ({}): ', self.post_edge.Kend.get()
+            )
+            k_increment = _update_value(
+                'k increment (in angstroms^-1) ({}): ', self.edge.Kstep.get()
+            )
+            time_factor = _update_value(
+                'Counting time factor ({}): ', self.edge.TimeFactor.get()
+            )
+
             region.Kend.put(relative_k)
             region.Kstep.put(k_increment)
             region.TimeFactor.put(time_factor)
