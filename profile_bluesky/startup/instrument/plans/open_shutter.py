@@ -5,15 +5,15 @@ Plan to open shutters
 from ..devices import ashutter, bshutter, dshutter
 from .local_preprocessors import _difference_check, SetSignal
 from .local_scans import mv
-from bluesky.plan_stubs import abs_set
+from bluesky.plan_stubs import abs_set, rd
 from toolz import partition
 
 __all__ = [
     'shopen',
     'shclose'
 ]
-
-signal = SetSignal(name='tmp')
+# 30 sec timeout.
+signal = SetSignal(name='tmp', timeout=30)
 
 
 def shopen(hutch="d"):
@@ -28,15 +28,21 @@ def shopen(hutch="d"):
         raise ValueError("Input must be 'a', 'b', or 'd'.")
 
     for shutter, _ in partition(2, args):
-        for permit in ["user_enable", "aps_enable", "searched", "bleps"]:
+        for permit in ["user_enable", "aps_enable", "bleps"]:
 
-            target = (
+            good = (
                 0 if (shutter == ashutter) and (permit == "bleps") else 1
             )
-            function = _difference_check(target, tolerance=0.1)
-            yield from abs_set(
-                signal, getattr(shutter, permit), function, wait=True
-            )
+            status = yield from rd(getattr(shutter, permit))
+            
+            if status != good:
+                raise ValueError(f"{getattr(shutter, permit).name} is not enabled!")
+
+        # Wait for shutter to open. Timeout is defined above.
+        function = _difference_check(1, tolerance=0.1)
+        yield from abs_set(
+            signal, getattr(shutter, "searched"), function, wait=True,
+        )
 
     yield from mv(*args)
 
