@@ -23,20 +23,20 @@ constant = 2*electron_mass/hbar**2  # A^2/eV
 
 
 class EdgeDevice(Device):
-    Estart = Component(Signal, value=0)
-    Eend = Component(Signal, value=0)
-    Estep = Component(Signal, value=0)
+    Estart = Component(Signal, value=-10)
+    Eend = Component(Signal, value=10)
+    Estep = Component(Signal, value=0.5)
     TimeFactor = Component(Signal, value=1)
 
 
 class PreEdgeRegion(Device):
-    Estart = Component(Signal, value=0)
-    Estep = Component(Signal, value=0)
+    Estart = Component(Signal, value=-50)
+    Estep = Component(Signal, value=2)
     TimeFactor = Component(Signal, value=1)
 
 
 class PreEdgeDevice(Device):
-    num_regions = Component(Signal, value=0)
+    num_regions = Component(Signal, value=1)
     region1 = Component(PreEdgeRegion)
     region2 = Component(PreEdgeRegion)
     region3 = Component(PreEdgeRegion)
@@ -45,13 +45,13 @@ class PreEdgeDevice(Device):
 
 
 class PostEdgeRegion(Device):
-    Kend = Component(Signal, value=0)
-    Kstep = Component(Signal, value=0)
+    Kend = Component(Signal, value=4)
+    Kstep = Component(Signal, value=0.05)
     TimeFactor = Component(Signal, value=1)
 
 
 class PostEdgeDevice(Device):
-    num_regions = Component(Signal, value=0)
+    num_regions = Component(Signal, value=1)
     region1 = Component(PostEdgeRegion)
     region2 = Component(PostEdgeRegion)
     region3 = Component(PostEdgeRegion)
