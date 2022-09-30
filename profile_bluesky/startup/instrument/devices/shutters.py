@@ -70,7 +70,7 @@ class Status4ID(Device):
         EpicsSignalRO, "PA:04ID:ACIS_FES_PERMIT.VAL", string=True
     )
     feeps = Component(
-        EpicsSignalRO, "PC:04ID:FEEPS_FE_PERMIT.VAL", string=True
+        EpicsSignalRO, "PC:04ID:FEEPS_FES_PERMIT.VAL", string=True
     )
 
 
