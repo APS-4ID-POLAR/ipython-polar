@@ -122,14 +122,14 @@ class QxscanParams(Device):
             return float(_new) if _new != "" else _current
 
         while True:
-            value = int(input(
+            value = input(
                 '\n Number of pre-edge regions ('
                 f'{self.pre_edge.num_regions.get()}): '
-                ))
-            if 1 <= value <= 5:
-                self.pre_edge.num_regions.put(value)
+                )
+            if value == "":
                 break
-            elif value == "":
+            elif 1 <= int(value) <= 5:
+                self.pre_edge.num_regions.put(int(value))
                 break
             else:
                 print(
@@ -181,14 +181,14 @@ class QxscanParams(Device):
         print('The edge region ends at k = {:0.3f} angstroms^-1'.format(kend))
 
         while True:
-            value = int(input(
+            value = input(
                 '\n Number of post-edge regions ('
                 f'{self.post_edge.num_regions.get()}): '
-                ))
-            if 1 <= value <= 5:
-                self.post_edge.num_regions.put(value)
+                )
+            if value == "":
                 break
-            elif value == "":
+            elif 1 <= int(value) <= 5:
+                self.post_edge.num_regions.put(int(value))
                 break
             else:
                 print('WARNING: number of post-edge regions need to be >= 1 \
@@ -199,13 +199,13 @@ class QxscanParams(Device):
             region = getattr(self.post_edge, 'region{}'.format(i+1))
 
             relative_k = _update_value(
-                'k end (in angstroms^-1) ({}): ', self.post_edge.Kend.get()
+                'k end (in angstroms^-1) ({}): ', region.Kend.get()
             )
             k_increment = _update_value(
-                'k increment (in angstroms^-1) ({}): ', self.edge.Kstep.get()
+                'k increment (in angstroms^-1) ({}): ', region.Kstep.get()
             )
             time_factor = _update_value(
-                'Counting time factor ({}): ', self.edge.TimeFactor.get()
+                'Counting time factor ({}): ', region.TimeFactor.get()
             )
 
             region.Kend.put(relative_k)
