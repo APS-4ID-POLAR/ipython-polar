@@ -421,7 +421,9 @@ class QxscanParams(Device):
             _update_value(item + ".num_regions")
             num_regions = getattr(self, item).num_regions.get()
             for i in range(1, num_regions + 1):
-                for component in getattr(self, item + f".region{i}"):
+                for component in getattr(
+                    self, item + f".region{i}"
+                ).component_names:
                     _update_value(item + f".region{i}.{component}")
 
 
