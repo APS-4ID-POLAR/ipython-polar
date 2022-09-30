@@ -2,12 +2,14 @@
 """
 Shutters
 """
-__all__ = ["ashutter", "bshutter", "dshutter"]
+__all__ = ["status4id", "ashutter", "bshutter", "dshutter"]
 
 from ..framework import sd
 from apstools.devices import ApsPssShutterWithStatus
 from ..session_logs import logger
-from ophyd import Component, EpicsSignal, FormattedComponent, EpicsSignalRO
+from ophyd import (
+    Component, EpicsSignal, FormattedComponent, EpicsSignalRO, Device
+)
 logger.info(__file__)
 
 
@@ -60,6 +62,19 @@ class PolarShutter(ApsPssShutterWithStatus):
         super().close(timeout=self.timeout)
 
 
+class Status4ID(Device):
+    online = Component(
+        EpicsSignalRO, "PA:04ID:ACIS_GLOBAL_ONLINE.VAL", string=True
+    )
+    acis = Component(
+        EpicsSignalRO, "PA:04ID:ACIS_FES_PERMIT.VAL", string=True
+    )
+    feeps = Component(
+        EpicsSignalRO, "PC:04ID:FEEPS_FE_PERMIT.VAL", string=True
+    )
+
+
+status4id = Status4ID("", name="status4id")
 ashutter = PolarShutter(
     "PC:04ID:FES_", "PA:04ID:A_BEAM_PRESENT", hutch="A", name="ashutter"
 )
@@ -70,4 +85,4 @@ dshutter = PolarShutter(
     "PC:04ID:SDS_", "PA:04ID:D_BEAM_PRESENT", hutch="D", name="dshutter"
 )
 
-sd.baseline.extend((ashutter, bshutter, dshutter))
+sd.baseline.extend((status4id, ashutter, bshutter, dshutter))

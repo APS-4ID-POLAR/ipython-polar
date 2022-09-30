@@ -2,7 +2,7 @@
 Plan to open shutters
 """
 
-from ..devices import ashutter, bshutter, dshutter
+from ..devices import ashutter, bshutter, dshutter, status4id
 from .local_preprocessors import _difference_check, SetSignal
 from .local_scans import mv
 from bluesky.plan_stubs import abs_set, rd
@@ -17,6 +17,13 @@ signal = SetSignal(name='tmp', timeout=30)
 
 
 def shopen(hutch="d"):
+
+    for component in status4id.component_names:
+        value = yield from rd(getattr(status4id, component))
+        if value == "OFF":
+            raise ValueError(
+                f"Cannot open shutter, {component} is not enabled!"
+            )
 
     if hutch.lower() == "a":
         args = (ashutter, "open")
