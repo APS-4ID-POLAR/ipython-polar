@@ -5,6 +5,7 @@ from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import (
     mv, sleep, abs_set, rd, null, subscribe, unsubscribe
 )
+from bluesky.callbacks import LivePlot
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
@@ -284,12 +285,14 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
 
             dichro_stream = DichroStream(settings=dichro_settings)
             # TODO: This will only work for 1 motor and 1 detector!
-            dichro_stream.positioner = positioner[0]
+            dichro_stream.settings.positioner = positioner[0].name
+            
             # TODO: This will not work well when we could over time. May be
             # better to just change the positioner and have the detector and
             # monitor pre-set in the dichro_settings.
-            dichro_stream.monitor = counters.monitor
-            dichro_stream.detector = detectors[0]
+            dichro_stream.settings.monitor = counters.monitor
+            dichro_stream.settings.detector = detectors[0]
+            dichro_stream.subscribe(LivePlot("xmcd", x=dichro_stream.settings.positioner))
 
             _dichro_token[0] = yield from subscribe("all", dichro_stream)
 

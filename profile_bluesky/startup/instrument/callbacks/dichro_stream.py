@@ -6,7 +6,6 @@ from bluesky.callbacks.stream import LiveDispatcher
 from streamz import Source
 from numpy import mean, log, array
 
-
 class Settings():
     positioner = "energy"
     monitor = "Ion Ch 4"
@@ -27,6 +26,7 @@ class DichroStream(LiveDispatcher):
         self.processor = None
         self.data_keys = None
         self.settings = settings
+        self._trigger = False
         super().__init__()
 
     def start(self, doc):
@@ -61,8 +61,10 @@ class DichroStream(LiveDispatcher):
                     'The events in this bundle are from different'
                     'configurations!'
                 )
+                
             # Use the last descriptor to avoid strings and objects
-            if all(self.data_keys, self.raw_descriptors[desc_id]['data_keys']):
+                
+            if all([key in self.raw_descriptors[desc_id]['data_keys'] for key in self.data_keys]):
                 processed_evt[self.data_keys[0]] = mean(
                     [evt['data'][self.data_keys[0]] for evt in cache], axis=0
                 )
@@ -76,7 +78,7 @@ class DichroStream(LiveDispatcher):
                 )
 
                 _xas = (
-                    log(_mon/_det) if self.settings.transmission else _mon/_det
+                    log(_mon/_det) if self.settings.transmission else _det/_mon
                 )
 
                 processed_evt["xas"] = mean(_xas)
@@ -96,7 +98,9 @@ class DichroStream(LiveDispatcher):
 
     def event(self, doc):
         """Send an Event through the stream"""
-        self.in_node.emit(doc)
+        descriptor = self.raw_descriptors[doc["descriptor"]]
+        if descriptor.get("name") == "primary":
+            self.in_node.emit(doc)
 
     def stop(self, doc):
         """Delete the stream when run stops"""
@@ -104,4 +108,5 @@ class DichroStream(LiveDispatcher):
         self.out_node = None
         self.processor = None
         self.data_keys = None
+        self._trigger = False
         super().stop(doc)
