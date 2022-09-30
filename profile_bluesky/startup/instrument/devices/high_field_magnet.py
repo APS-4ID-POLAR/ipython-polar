@@ -83,7 +83,7 @@ class AMIController(PVPositioner):
 
     # Update rate
     update_rate = Component(
-        EpicsSignal,"StateIO.SCAN", put_complete=True,
+        EpicsSignal, "StateIO.SCAN", put_complete=True,
         kind="omitted"
     )
 
