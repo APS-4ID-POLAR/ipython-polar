@@ -6,6 +6,7 @@ from bluesky.callbacks.stream import LiveDispatcher
 from streamz import Source
 from numpy import mean, log, array
 
+
 class Settings():
     positioner = "energy"
     monitor = "Ion Ch 4"
@@ -55,16 +56,17 @@ class DichroStream(LiveDispatcher):
         def process_xmcd(cache):
             processed_evt = dict()
             desc_id = cache[0]['descriptor']
+
             # Check that all of our events came from the same configuration
             if not all([desc_id == evt['descriptor'] for evt in cache]):
                 raise Exception(
                     'The events in this bundle are from different'
                     'configurations!'
                 )
-                
+
             # Use the last descriptor to avoid strings and objects
-                
-            if all([key in self.raw_descriptors[desc_id]['data_keys'] for key in self.data_keys]):
+            if all([key in self.raw_descriptors[desc_id]['data_keys'] for key
+                    in self.data_keys]):
                 processed_evt[self.data_keys[0]] = mean(
                     [evt['data'][self.data_keys[0]] for evt in cache], axis=0
                 )
