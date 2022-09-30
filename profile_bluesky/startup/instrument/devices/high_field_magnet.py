@@ -81,6 +81,12 @@ class AMIController(PVPositioner):
     tolerance = Component(Signal, value=0.0005, kind="config",
                           labels=('ami_controller', 'magnets'))
 
+    # Update rate
+    update_rate = Component(
+        EpicsSignal,"StateIO.SCAN", put_complete=True,
+        kind="omitted"
+    )
+
     # Buttons
     ramp_button = Component(EpicsSignal, "Ramp.PROC", kind="omitted",
                             put_complete=True)

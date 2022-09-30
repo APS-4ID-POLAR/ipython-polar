@@ -115,6 +115,10 @@ def stage_ami_wrapper(plan, magnet):
     signal = SetSignal(name='tmp')
 
     def _stage():
+        
+        _update_rate = yield from rd(mag6t.field.update_rate)
+        if _update_rate <= 5:
+            yield from mv(mag6t.field.update_rate, 6)
 
         _heater_status = yield from rd(mag6t.field.switch_heater)
 
