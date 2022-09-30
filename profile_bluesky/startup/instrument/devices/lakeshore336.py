@@ -39,8 +39,9 @@ class LS336_LoopControl(LakeShore336_LoopControl):
     _auto_ranges = None
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
-        self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, **kwargs)
+        super().__init__(
+            *args, loop_number=loop_number, timeout=timeout, **kwargs
+        )
         self._settle_time = 0
         self.tolerance.put(0.1)
 
