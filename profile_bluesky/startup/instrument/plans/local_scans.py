@@ -312,8 +312,11 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
     for item in detectors:
         _md['hints']['detectors'].extend(item.hints['fields'])
 
+    _md["hints"]["scan_type"] = "ascan"
     if dichro:
-        _md['hints']['scan_type'] = 'dichro'
+        _md['hints']['scan_type'] += " dichro"
+    if lockin:
+        _md['hints']['scan_type'] += " lockin"
 
     _md.update(md or {})
 
@@ -498,8 +501,11 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
     for item in detectors:
         _md['hints']['detectors'].extend(item.hints['fields'])
 
+    _md["hints"]["scan_type"] = "gridscan"
     if dichro:
-        _md['hints']['scan_type'] = 'dichro'
+        _md['hints']['scan_type'] += " dichro"
+    if lockin:
+        _md['hints']['scan_type'] += " lockin"
 
     _md.update(md or {})
 
@@ -674,8 +680,11 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
     for item in detectors:
         _md['hints']['detectors'].extend(item.hints['fields'])
 
+    _md["hints"]["scan_type"] = "qxscan"
     if dichro:
-        _md['hints']['scan_type'] = 'dichro'
+        _md['hints']['scan_type'] += " dichro"
+    if lockin:
+        _md['hints']['scan_type'] += " lockin"
 
     _md.update(md or {})
 
