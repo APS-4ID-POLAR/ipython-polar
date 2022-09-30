@@ -22,7 +22,7 @@ def shopen(hutch="d"):
         value = yield from rd(getattr(status4id, component))
         if value == "OFF":
             raise ValueError(
-                f"Cannot open shutter, {component} is not enabled!"
+                f"Cannot open shutter, {component.upper()} is not enabled!"
             )
 
     if hutch.lower() == "a":
