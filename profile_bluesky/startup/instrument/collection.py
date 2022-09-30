@@ -104,3 +104,5 @@ def restore_orientation(orientation, diffractometer):
     diffractometer.UB.put(orientation["UB"])
     diffractometer.engine.mode = orientation["_mode"]
     diffractometer.energy.put(energy.get())
+
+qxscan_params.load_from_scan(-1)
