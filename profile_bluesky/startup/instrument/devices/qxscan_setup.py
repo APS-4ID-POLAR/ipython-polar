@@ -88,7 +88,8 @@ class QxscanParams(Device):
         output += f"    energy start = {params['edge']['Estart']} eV\n"
         output += f"    energy step = {params['edge']['Estep']} eV\n"
         output += f"    energy end = {params['edge']['Eend']} eV\n"
-        output += f"    k end = {sqrt(constant*params['edge']['Eend'])} A^-1\n"
+        output += f"    k end = {sqrt(constant*params['edge']['Eend']) :0.3f}"
+        output += "A^-1\n"
         output += f"    time factor = {params['edge']['TimeFactor']}\n\n"
 
         output += "-- Post-edge --\n"
