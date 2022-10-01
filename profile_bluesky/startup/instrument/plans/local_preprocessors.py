@@ -120,6 +120,10 @@ def stage_ami_wrapper(plan, magnet):
 
     def _stage():
 
+        _update_rate = yield from rd(mag6t.field.update_rate)
+        if _update_rate <= 5:
+            yield from mv(mag6t.field.update_rate, 6)
+
         _heater_status = yield from rd(mag6t.field.switch_heater)
 
         if _heater_status != 'On':
@@ -160,7 +164,13 @@ def stage_ami_wrapper(plan, magnet):
         yield from abs_set(signal, mag6t.field.magnet_status, function,
                            wait=True)
 
+        # Wait for the current to go to zero.
         yield from mv(mag6t.field.zero_button, 1)
+        function = _status_check(target=[8])
+        yield from abs_set(
+            signal, mag6t.field.magnet_status, function, wait=True
+        )
+        yield from sleep(1)
 
     def _inner_plan():
         yield from _stage()

@@ -4,8 +4,12 @@
 
 __all__ = ['mag6t']
 
-from ophyd import (Component, Device, EpicsMotor, PVPositioner, EpicsSignal,
-                   EpicsSignalRO, Signal)
+from ophyd import (
+    Component, Device, EpicsMotor, PVPositioner, EpicsSignal, EpicsSignalRO,
+    Signal
+)
+from ophyd.status import Status
+from numpy import allclose
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)
@@ -77,6 +81,12 @@ class AMIController(PVPositioner):
     tolerance = Component(Signal, value=0.0005, kind="config",
                           labels=('ami_controller', 'magnets'))
 
+    # Update rate
+    update_rate = Component(
+        EpicsSignal, "StateIO.SCAN", put_complete=True,
+        kind="omitted"
+    )
+
     # Buttons
     ramp_button = Component(EpicsSignal, "Ramp.PROC", kind="omitted",
                             put_complete=True)
@@ -96,6 +106,18 @@ class AMIController(PVPositioner):
     @property
     def egu(self):
         return self.units.get(as_string=True)
+
+    def move(self, position, wait=True, timeout=None, moved_cb=None):
+        # Magnet would get stuck if sent to the same position. The 0.01 is a
+        # bit arbritary.
+        if allclose(self.readback.get(), position, 0.01):
+            status = Status()
+            status.set_finished()
+            return status
+        else:
+            return super().move(
+                position, wait=wait, timeout=timeout, moved_cb=moved_cb
+            )
 
 
 # Magnet and sample motors
