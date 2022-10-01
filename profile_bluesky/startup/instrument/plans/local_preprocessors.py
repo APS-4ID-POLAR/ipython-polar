@@ -44,8 +44,12 @@ class SetSignal(Signal):
 
     """ Signal that only matters for the set function """
 
+    def __init__(self, *args, timeout=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._timeout = timeout
+
     def set(self, device, function):
-        return SubscriptionStatus(device, function)
+        return SubscriptionStatus(device, function, timeout=self._timeout)
 
 
 def _difference_check(target, tolerance):
