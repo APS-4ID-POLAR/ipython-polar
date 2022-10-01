@@ -2,9 +2,22 @@
 Create new stream with processed XMCD data
 """
 
+__all__ = ["dichro_device"]
+
+
 from bluesky.callbacks.stream import LiveDispatcher
 from streamz import Source
 from numpy import mean, log, array
+from ophyd import Signal, Device, Component
+
+
+class DichroDevice(Device):
+    positioner = Component(Signal, value=0)
+    xas = Component(Signal, value=0)
+    xmcd = Component(Signal, value=0)
+
+
+dichro_device = DichroDevice()
 
 
 class Settings():
@@ -91,6 +104,10 @@ class DichroStream(LiveDispatcher):
                 raise Exception(
                     'The input data keys do not match entries in the database.'
                 )
+
+            dichro_device.positioner.put(processed_evt[self.data_keys[0]])
+            dichro_device.xas.put(processed_evt["xas"])
+            dichro_device.xmcd.put(processed_evt["xmcd"])
 
             return {'data': processed_evt, 'descriptor': desc_id}
 
