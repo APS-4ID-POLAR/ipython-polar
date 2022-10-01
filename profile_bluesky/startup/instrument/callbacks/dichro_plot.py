@@ -99,8 +99,8 @@ class AutoDichroPlot(AutoPlotter):
             return
 
         # Look for the scan_type='dichro' hint
-        scan_type = run.metadata["start"]["hints"].get('scan_type', None)
-        if scan_type != 'dichro':
+        scan_type = run.metadata["start"]["hints"].get('scan_type', "")
+        if 'dichro' not in scan_type:
             return
 
         # Detect x variable from hints in metadata.

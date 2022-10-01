@@ -94,6 +94,7 @@ from IPython import get_ipython
 from .utils.local_magics import LocalMagics
 get_ipython().register_magics(LocalMagics)
 
+qxscan_params.load_from_scan(-1)
 
 # This is a workaround to ensure that we preserve the beamline energy and
 # the previously defined UB matrix.
