@@ -2,7 +2,7 @@
 APS only: connect with facility information
 """
 
-__all__ = ['aps', 'undulator']
+__all__ = ['undulator']
 
 from apstools.devices import (
     ApsMachineParametersDevice, ApsUndulator, TrackingSignal
@@ -16,8 +16,8 @@ from threading import Thread
 from ..session_logs import logger
 logger.info(__file__)
 
-aps = ApsMachineParametersDevice(name="aps")
-sd.baseline.append(aps)
+# aps = ApsMachineParametersDevice(name="aps")
+# sd.baseline.append(aps)
 
 
 class UndulatorEnergy(PVPositioner):

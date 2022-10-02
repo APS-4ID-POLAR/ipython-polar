@@ -2,10 +2,12 @@
 Create new stream with processed XMCD data
 """
 
-__all__ = ["dichro_device"]
+__all__ = ["dichro", "plot_dichro_settings"]
 
 
 from bluesky.callbacks.stream import LiveDispatcher
+from bluesky.callbacks.mpl_plotting import LivePlot
+from ..framework import sd
 from streamz import Source
 from numpy import mean, log, array
 from ophyd import Signal, Device, Component
@@ -15,9 +17,13 @@ class DichroDevice(Device):
     positioner = Component(Signal, value=0)
     xas = Component(Signal, value=0)
     xmcd = Component(Signal, value=0)
+    
+    def subscribe(self, callback, event_type=None, run=True):
+        super().subscribe(callback, event_type="acq_done", run=run)
 
-
-dichro_device = DichroDevice()
+    def put(self, dev_t, **kwargs):
+        super().put(dev_t, **kwargs)
+        self._run_subs(sub_type=self.SUB_ACQ_DONE, success=True)
 
 
 class Settings():
@@ -27,19 +33,16 @@ class Settings():
     transmission = True
 
 
-dichro_settings = Settings()
-
-
 # TODO: Should this go in the pr_setup?
 class DichroStream(LiveDispatcher):
     """Stream that processes XMCD and XANES"""
-    def __init__(self, settings=dichro_settings, n=4):
+    def __init__(self, n=4):
         self.n = n
         self.in_node = None
         self.out_node = None
         self.processor = None
         self.data_keys = None
-        self.settings = settings
+        self.settings = Settings()
         self._trigger = False
         super().__init__()
 
@@ -50,9 +53,6 @@ class DichroStream(LiveDispatcher):
         The callback looks for the 'average' key in the start document to
         configure itself.
         """
-        # Grab the average key
-        # We could have something like this, but likely will never use it.
-        # self.n = doc.get('average', self.n)
 
         # Define our nodes
         if not self.in_node:
@@ -104,10 +104,12 @@ class DichroStream(LiveDispatcher):
                 raise Exception(
                     'The input data keys do not match entries in the database.'
                 )
-
-            dichro_device.positioner.put(processed_evt[self.data_keys[0]])
-            dichro_device.xas.put(processed_evt["xas"])
-            dichro_device.xmcd.put(processed_evt["xmcd"])
+            
+            dichro.put((
+                processed_evt[self.data_keys[0]],
+                processed_evt["xas"],
+                processed_evt["xmcd"]
+            ))
 
             return {'data': processed_evt, 'descriptor': desc_id}
 
@@ -129,3 +131,19 @@ class DichroStream(LiveDispatcher):
         self.data_keys = None
         self._trigger = False
         super().stop(doc)
+
+
+class DichroLivePlot(LivePlot):
+    def __init__(self, y, stream, **kwargs):
+        self.stream = stream
+        super().__init__(y, x=stream.settings.positioner, **kwargs)
+        
+    def start(self, doc):
+        self.x = self.stream.settings.positioner
+        super().start(doc)
+
+
+dichro = DichroDevice("", name="dichro")
+sd.monitors.append(dichro)
+
+plot_dichro_settings = DichroStream()

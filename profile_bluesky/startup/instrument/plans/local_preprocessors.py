@@ -3,14 +3,12 @@
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import (
-    mv, sleep, abs_set, rd, null, subscribe, unsubscribe
+    mv, sleep, abs_set, rd, null, subscribe, unsubscribe, monitor, unmonitor
 )
-from bluesky.callbacks import LivePlot
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
-from ..utils import counters
-from ..callbacks.dichro_stream import DichroStream, dichro_settings
+from ..callbacks.dichro_stream import plot_dichro_settings, dichro as dichro_device, DichroLivePlot
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -252,7 +250,7 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
         inserted and appended
     """
     _current_scaler_plot = []
-    _dichro_token = [None]
+    _dichro_token = [None, None]
 
     def _stage():
 
@@ -283,20 +281,10 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
 
-            dichro_stream = DichroStream(settings=dichro_settings)
             # TODO: This will only work for 1 motor and 1 detector!
-            dichro_stream.settings.positioner = positioner[0].name
-
-            # TODO: This will not work well when we could over time. May be
-            # better to just change the positioner and have the detector and
-            # monitor pre-set in the dichro_settings.
-            dichro_stream.settings.monitor = counters.monitor
-            dichro_stream.settings.detector = detectors[0]
-            dichro_stream.subscribe(
-                LivePlot("xmcd", x=dichro_stream.settings.positioner)
-            )
-
-            _dichro_token[0] = yield from subscribe("all", dichro_stream)
+            plot_dichro_settings.settings.positioner = positioner[0].name
+            _dichro_token[0] = yield from subscribe("all", plot_dichro_settings)
+            _dichro_token[1] = plot_dichro_settings.subscribe(DichroLivePlot("xmcd", plot_dichro_settings))
 
     def _unstage():
 
@@ -312,6 +300,7 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
                               pr_setup.offset.get())
 
             yield from unsubscribe(_dichro_token[0])
+            plot_dichro_settings.unsubscribe(_dichro_token[1])
 
     def _inner_plan():
         yield from _stage()
