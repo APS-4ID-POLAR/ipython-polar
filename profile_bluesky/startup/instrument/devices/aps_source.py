@@ -2,7 +2,7 @@
 APS only: connect with facility information
 """
 
-__all__ = ['aps', 'undulator']
+__all__ = ['undulator']
 
 from apstools.devices import (
     ApsMachineParametersDevice, ApsUndulator, TrackingSignal

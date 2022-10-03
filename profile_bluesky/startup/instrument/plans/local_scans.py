@@ -322,7 +322,7 @@ def ascan(*args, time=None, detectors=None, lockin=False, dichro=False,
 
     @configure_counts_decorator(detectors, time)
     @stage_ami_decorator(mag6t.field in args)
-    @stage_dichro_decorator(dichro, lockin)
+    @stage_dichro_decorator(dichro, lockin, args)
     @extra_devices_decorator(extras)
     def _inner_ascan():
         yield from scan(
@@ -511,7 +511,7 @@ def grid_scan(*args, time=None, detectors=None, snake_axes=None, lockin=False,
 
     @configure_counts_decorator(detectors, time)
     @stage_ami_decorator(mag6t.field in args)
-    @stage_dichro_decorator(dichro, lockin)
+    @stage_dichro_decorator(dichro, lockin, args)
     @extra_devices_decorator(extras)
     def _inner_grid_scan():
         yield from bp_grid_scan(
@@ -702,7 +702,7 @@ def qxscan(edge_energy, time=None, detectors=None, lockin=False, dichro=False,
             args += (det.preset_monitor, _ct[det]*array(factor_list))
 
     @configure_counts_decorator(detectors, time)
-    @stage_dichro_decorator(dichro, lockin)
+    @stage_dichro_decorator(dichro, lockin, args)
     @extra_devices_decorator(extras)
     def _inner_qxscan():
         yield from list_scan(

@@ -2,10 +2,14 @@
 
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
-from bluesky.plan_stubs import mv, sleep, abs_set, rd, null
+from bluesky.plan_stubs import (
+    mv, sleep, abs_set, rd, null, subscribe, unsubscribe
+)
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
+from ..callbacks.dichro_stream import plot_dichro_settings, dichro_bec
+from ..framework import bec
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -241,7 +245,7 @@ def configure_counts_wrapper(plan, detectors, count_time):
         return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
-def stage_dichro_wrapper(plan, dichro, lockin):
+def stage_dichro_wrapper(plan, dichro, lockin, positioner):
     """
     Stage dichoic scans.
 
@@ -261,6 +265,7 @@ def stage_dichro_wrapper(plan, dichro, lockin):
         inserted and appended
     """
     _current_scaler_plot = []
+    _dichro_token = [None, None]
 
     def _stage():
 
@@ -286,6 +291,15 @@ def stage_dichro_wrapper(plan, dichro, lockin):
             yield from mv(pr_setup.positioner.parent.selectAC, 1)
 
         if dichro:
+
+            # TODO: This will only work for 1 motor and 1 detector!
+            plot_dichro_settings.settings.positioner = positioner[0].name
+            dichro_bec.enable_plots()
+            bec.disable_plots()
+
+            _dichro_token[0] = yield from subscribe(
+                "all", plot_dichro_settings
+            )
             # move PZT to center.
             if 'pzt' in pr_setup.positioner.name:
                 yield from mv(pr_setup.positioner,
@@ -303,6 +317,10 @@ def stage_dichro_wrapper(plan, dichro, lockin):
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get() +
                               pr_setup.offset.get())
+
+            yield from unsubscribe(_dichro_token[0])
+            dichro_bec.disable_plots()
+            bec.enable_plots()
 
     def _inner_plan():
         yield from _stage()

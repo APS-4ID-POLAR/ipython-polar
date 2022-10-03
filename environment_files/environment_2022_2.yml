@@ -59,6 +59,7 @@ dependencies:
   - spec2nexus
   - stdlogpj
   - xrayutilities
+  - streamz
   # --- packaging and publishing
   # - conda-build
   # - coverage
