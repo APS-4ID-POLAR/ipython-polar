@@ -8,11 +8,7 @@ from bluesky.plan_stubs import (
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
-from ..callbacks.dichro_stream import (
-    plot_dichro_settings,
-    dichro as dichro_device,
-    dichro_bec
-)
+from ..callbacks.dichro_stream import plot_dichro_settings, dichro_bec
 from ..framework import bec
 
 from ..session_logs import logger
@@ -284,8 +280,6 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner):
 
             # TODO: This will only work for 1 motor and 1 detector!
             plot_dichro_settings.settings.positioner = positioner[0].name
-            dichro_device.xmcd.kind = "hinted"
-            dichro_device.xas.kind = "hinted"
             dichro_bec.enable_plots()
             bec.disable_plots()
 

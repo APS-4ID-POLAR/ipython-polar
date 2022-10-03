@@ -149,6 +149,8 @@ class DichroLivePlot(LivePlot):
 
 dichro = DichroDevice("", name="dichro")
 sd.monitors.append(dichro)
+dichro.xmcd.kind = "hinted"
+dichro.xas.kind = "hinted"
 
 plot_dichro_settings = DichroStream()
 dichro_bec = BestEffortCallback()
