@@ -18,7 +18,7 @@ class DichroDevice(Device):
     positioner = Component(Signal, value=0)
     xas = Component(Signal, value=0)
     xmcd = Component(Signal, value=0)
-    
+
     def subscribe(self, callback, event_type=None, run=True):
         super().subscribe(callback, event_type="acq_done", run=run)
 
@@ -105,7 +105,7 @@ class DichroStream(LiveDispatcher):
                 raise Exception(
                     'The input data keys do not match entries in the database.'
                 )
-            
+
             dichro.put((
                 processed_evt[self.data_keys[0]],
                 processed_evt["xas"],
@@ -141,7 +141,7 @@ class DichroLivePlot(LivePlot):
     def __init__(self, y, stream, **kwargs):
         self.stream = stream
         super().__init__(y, x=stream.settings.positioner, **kwargs)
-        
+
     def start(self, doc):
         self.x = self.stream.settings.positioner
         super().start(doc)
@@ -155,4 +155,3 @@ dichro_bec = BestEffortCallback()
 dichro_bec.disable_heading()
 dichro_bec.disable_table()
 plot_dichro_settings.subscribe(dichro_bec)
-

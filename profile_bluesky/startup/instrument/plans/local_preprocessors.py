@@ -235,7 +235,7 @@ def configure_counts_wrapper(plan, detectors, count_time):
         return (yield from finalize_wrapper(_inner_plan(), reset()))
 
 
-def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
+def stage_dichro_wrapper(plan, dichro, lockin, positioner):
     """
     Stage dichoic scans.
 
@@ -288,8 +288,10 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
             dichro_device.xas.kind = "hinted"
             dichro_bec.enable_plots()
             bec.disable_plots()
-            
-            _dichro_token[0] = yield from subscribe("all", plot_dichro_settings)
+
+            _dichro_token[0] = yield from subscribe(
+                "all", plot_dichro_settings
+            )
             # move PZT to center.
             if 'pzt' in pr_setup.positioner.name:
                 yield from mv(pr_setup.positioner,
