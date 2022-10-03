@@ -4,14 +4,14 @@ Modifed bluesky scans
 
 __all__ = [
     'lup', 'ascan', 'mv', 'mvr', 'grid_scan', 'rel_grid_scan', 'qxscan',
-    'count'
+    'count', 'abs_set'
 ]
 
 from bluesky.plans import (
     scan, list_scan, grid_scan as bp_grid_scan, count as bp_count
 )
 from bluesky.plan_stubs import (
-    trigger_and_read, move_per_step, mv as bps_mv, rd
+    trigger_and_read, move_per_step, mv as bps_mv, rd, abs_set as bps_abs_set
 )
 from bluesky.preprocessors import (
     reset_positions_decorator, relative_set_decorator
@@ -775,3 +775,40 @@ def mvr(*args, **kwargs):
         return (yield from mv(*args, **kwargs))
 
     return (yield from _inner_mvr())
+
+
+def abs_set(*args, **kwargs):
+    """
+    Set a value. Optionally, wait for it to complete before continuing.
+    This is a local version of `bluesky.plan_stubs.abs_set`. If more than one
+    device is specifed, the movements are done in parallel.
+
+    Parameters
+    ----------
+    obj : Device
+    group : string (or any hashable object), optional
+        identifier used by 'wait'
+    wait : boolean, optional
+        If True, wait for completion before processing any more messages.
+        False by default.
+    args :
+        passed to obj.set()
+    kwargs :
+        passed to obj.set()
+
+    Yields
+    ------
+    msg : Msg
+
+    See Also
+    --------
+    :func:`bluesky.plan_stubs.rel_set`
+    :func:`bluesky.plan_stubs.wait`
+    :func:`bluesky.plan_stubs.mv`
+    """
+
+    @stage_ami_decorator(mag6t.field in args, turn_off=False)
+    def _inner_abs_set():
+        yield from bps_abs_set(*args, **kwargs)
+
+    return (yield from _inner_abs_set())
