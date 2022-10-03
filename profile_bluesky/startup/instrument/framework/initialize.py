@@ -76,6 +76,7 @@ bec = BestEffortCallback()
 callback_db["bec"] = RE.subscribe(bec)
 peaks = bec.peaks  # just an alias, for less typing
 bec.disable_baseline()
+bec.noplot_streams.append("dichro_monitor")
 
 # At the end of every run, verify that files were saved and
 # print a confirmation message.

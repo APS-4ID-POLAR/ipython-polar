@@ -3,12 +3,17 @@
 from bluesky.utils import make_decorator
 from bluesky.preprocessors import finalize_wrapper
 from bluesky.plan_stubs import (
-    mv, sleep, abs_set, rd, null, subscribe, unsubscribe, monitor, unmonitor
+    mv, sleep, abs_set, rd, null, subscribe, unsubscribe
 )
 from ophyd import Signal, Kind
 from ophyd.status import SubscriptionStatus
 from ..devices import scalerd, pr_setup, mag6t
-from ..callbacks.dichro_stream import plot_dichro_settings, dichro as dichro_device, DichroLivePlot
+from ..callbacks.dichro_stream import (
+    plot_dichro_settings,
+    dichro as dichro_device,
+    dichro_bec
+)
+from ..framework import bec
 
 from ..session_logs import logger
 logger.info(__file__)
@@ -276,15 +281,19 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
             yield from mv(pr_setup.positioner.parent.selectAC, 1)
 
         if dichro:
+
+            # TODO: This will only work for 1 motor and 1 detector!
+            plot_dichro_settings.settings.positioner = positioner[0].name
+            dichro_device.xmcd.kind = "hinted"
+            dichro_device.xas.kind = "hinted"
+            dichro_bec.enable_plots()
+            bec.disable_plots()
+            
+            _dichro_token[0] = yield from subscribe("all", plot_dichro_settings)
             # move PZT to center.
             if 'pzt' in pr_setup.positioner.name:
                 yield from mv(pr_setup.positioner,
                               pr_setup.positioner.parent.center.get())
-
-            # TODO: This will only work for 1 motor and 1 detector!
-            plot_dichro_settings.settings.positioner = positioner[0].name
-            _dichro_token[0] = yield from subscribe("all", plot_dichro_settings)
-            _dichro_token[1] = plot_dichro_settings.subscribe(DichroLivePlot("xmcd", plot_dichro_settings))
 
     def _unstage():
 
@@ -300,7 +309,8 @@ def stage_dichro_wrapper(plan, dichro, lockin, positioner, detectors):
                               pr_setup.offset.get())
 
             yield from unsubscribe(_dichro_token[0])
-            plot_dichro_settings.unsubscribe(_dichro_token[1])
+            dichro_bec.disable_plots()
+            bec.enable_plots()
 
     def _inner_plan():
         yield from _stage()

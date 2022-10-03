@@ -2,11 +2,12 @@
 Create new stream with processed XMCD data
 """
 
-__all__ = ["dichro", "plot_dichro_settings"]
+__all__ = ["dichro", "plot_dichro_settings", "dichro_bec"]
 
 
 from bluesky.callbacks.stream import LiveDispatcher
 from bluesky.callbacks.mpl_plotting import LivePlot
+from bluesky.callbacks.best_effort import BestEffortCallback
 from ..framework import sd
 from streamz import Source
 from numpy import mean, log, array
@@ -115,7 +116,10 @@ class DichroStream(LiveDispatcher):
 
         self.out_node = self.processor.map(process_xmcd)
         self.out_node.sink(self.process_event)
-        super().start(doc)
+
+        _start_doc = doc
+        _start_doc["motors"] = [self.settings.positioner]
+        super().start(_start_doc)
 
     def event(self, doc):
         """Send an Event through the stream"""
@@ -147,3 +151,8 @@ dichro = DichroDevice("", name="dichro")
 sd.monitors.append(dichro)
 
 plot_dichro_settings = DichroStream()
+dichro_bec = BestEffortCallback()
+dichro_bec.disable_heading()
+dichro_bec.disable_table()
+plot_dichro_settings.subscribe(dichro_bec)
+
