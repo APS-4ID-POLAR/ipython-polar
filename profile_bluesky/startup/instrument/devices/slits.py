@@ -4,7 +4,8 @@ Slits
 __all__ = ['wbslt', 'enslt', 'inslt', 'grdslt', 'detslt', 'magslt']
 
 from ophyd import Device, FormattedComponent, EpicsMotor
-from apstools.devices import PVPositionerSoftDoneWithStop
+# from apstools.devices import PVPositionerSoftDoneWithStop
+from ._pvpositionersoftdone import PVPositionerSoftDoneWithStop
 from ..framework import sd
 from ..session_logs import logger
 logger.info(__file__)

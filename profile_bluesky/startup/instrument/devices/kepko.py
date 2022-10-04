@@ -7,7 +7,8 @@ __all__ = ['kepko']
 from ophyd import Component, FormattedComponent, Device, Kind
 from ophyd import EpicsSignal, EpicsSignalRO
 from ..framework import sd
-from apstools.devices import PVPositionerSoftDoneWithStop
+# from apstools.devices import PVPositionerSoftDoneWithStop
+from ._pvpositionersoftdone import PVPositionerSoftDoneWithStop
 
 from ..session_logs import logger
 logger.info(__file__)

@@ -8,7 +8,8 @@ from ophyd import (
     Component, Device, EpicsMotor, EpicsSignal, FormattedComponent
 )
 from ..framework import sd
-from apstools.devices import PVPositionerSoftDoneWithStop
+# from apstools.devices import PVPositionerSoftDoneWithStop
+from ._pvpositionersoftdone import PVPositionerSoftDoneWithStop
 from ..session_logs import logger
 logger.info(__file__)
 

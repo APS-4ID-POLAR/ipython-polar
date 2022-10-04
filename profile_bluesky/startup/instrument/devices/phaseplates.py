@@ -12,7 +12,9 @@ from ophyd import EpicsSignal, EpicsSignalRO, Signal, DerivedSignal
 from ophyd.pseudopos import pseudo_position_argument, real_position_argument
 from scipy.constants import speed_of_light, Planck
 from numpy import arcsin, pi, sin
-from apstools.devices import TrackingSignal, PVPositionerSoftDoneWithStop
+from apstools.devices import TrackingSignal
+# from apstools.devices import PVPositionerSoftDoneWithStop
+from ._pvpositionersoftdone import PVPositionerSoftDoneWithStop
 from ..session_logs import logger
 
 # This is here because PRDevice.select_pr has a micron symbol that utf-8
