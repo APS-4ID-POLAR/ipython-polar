@@ -63,9 +63,9 @@ class LS336_LoopControl(LakeShore336_LoopControl):
     @auto_heater.sub_value
     def _subscribe_auto_heater(self, value=None, **kwargs):
         if value:
-            self.setpointRO.subscribe(self._switch_heater, event_type='value')
+            self.setpoint.subscribe(self._switch_heater, event_type='value')
         else:
-            self.setpointRO.clear_subs(self._switch_heater)
+            self.setpoint.clear_subs(self._switch_heater)
 
     def _switch_heater(self, value=None, **kwargs):
         # TODO: Find a better way to do this, perhaps with an array?
