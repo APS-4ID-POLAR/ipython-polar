@@ -81,6 +81,12 @@ class LS336_LoopControl(LakeShore336_LoopControl):
 
             self._auto_ranges = value
 
+    # TODO: This is a workaround from a potential problem in the apstools
+    # PVPositionerSoftDone
+    def _setup_move(self, position):
+        self.cb_setpoint()
+        super()._setup_move(position)
+
 
 class LoopSample(LS336_LoopControl):
     """ Sample will move the vaporizer temperature if track_vaporizer=True """
