@@ -6,24 +6,9 @@ from ophyd import Component, FormattedComponent
 from ophyd.status import wait as status_wait
 from apstools.devices import TrackingSignal, LakeShore336Device
 from apstools.devices.lakeshore_controllers import LakeShore336_LoopControl
+from numpy import argsort, array
 from ..session_logs import logger
 logger.info(__file__)
-
-
-def _get_vaporizer_position(sample_position):
-    """ Returns vaporizer setpoint based on the sample setpoint. """
-
-    # TODO: I would like to have this stored in some variable that we can
-    # change.
-    if sample_position < 6:
-        vaporizer_position = sample_position - 1
-    elif sample_position < 20:
-        vaporizer_position = sample_position - 2
-    elif sample_position < 100:
-        vaporizer_position = sample_position - 5
-    else:
-        vaporizer_position = 100
-    return vaporizer_position
 
 
 class LS336_LoopControl(LakeShore336_LoopControl):
@@ -100,6 +85,14 @@ class LS336_LoopControl(LakeShore336_LoopControl):
 class LoopSample(LS336_LoopControl):
     """ Sample will move the vaporizer temperature if track_vaporizer=True """
 
+    def __init__(self, *args, **kwargs):
+        self.vaporizer_ranges = dict(
+            limits=[6, 20, 100, 200, 300],
+            offsets=[1, 2, 5, 10, 20]
+        )
+
+        super().__init__(*args, **kwargs)
+
     def move(self, position, **kwargs):
         # Just changes the sample temperature if not tracking vaporizer.
         if self.parent.track_vaporizer.get() is False:
@@ -108,7 +101,7 @@ class LoopSample(LS336_LoopControl):
         wait = kwargs.pop('wait', True)
         sample_status = super().move(position, wait=False, **kwargs)
 
-        vaporizer_position = _get_vaporizer_position(position)
+        vaporizer_position = self._get_vaporizer_position(position)
         # Will not wait for vaporizer.
         _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
 
@@ -116,6 +109,21 @@ class LoopSample(LS336_LoopControl):
             status_wait(sample_status)
 
         return sample_status
+
+    def _get_vaporizer_position(self, sample_position):
+        """ Returns vaporizer setpoint based on the sample setpoint. """
+
+        limits = array(self.vaporizer_rangs["limits"])
+        offsets = array(self.vaporizer_rangs["offsets"])
+        sort = argsort(limits)
+
+        # If nothing works, it will just go to 80% of sample position
+        vaporizer_position = sample_position*0.8
+        for limit, offset in zip(limits[sort], offsets[sort]):
+            if sample_position < limit:
+                vaporizer_position = offset
+
+        return vaporizer_position
 
 
 class LS336Device(LakeShore336Device):
