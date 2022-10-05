@@ -99,7 +99,7 @@ class DichroStream(LiveDispatcher):
 
                 processed_evt["xas"] = mean(_xas)
                 processed_evt["xmcd"] = (
-                    ((_xas[0] + _xas[3]) - (_xas[1] + _xas[2]))/4
+                    (_xas[0] + _xas[3])/2 - (_xas[1] + _xas[2])/2
                 )
             else:
                 raise Exception(
