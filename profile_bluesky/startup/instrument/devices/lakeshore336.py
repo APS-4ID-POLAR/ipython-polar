@@ -3,7 +3,6 @@ Lakeshore 336 temperature controller EPICS version 1.0
 """
 
 from ophyd import Component, FormattedComponent
-from ophyd.status import wait as status_wait
 from apstools.devices import TrackingSignal, LakeShore336Device
 from apstools.devices.lakeshore_controllers import LakeShore336_LoopControl
 from numpy import argsort, array
@@ -100,21 +99,16 @@ class LoopSample(LS336_LoopControl):
         super().__init__(*args, **kwargs)
 
     def move(self, position, **kwargs):
+        wait = kwargs.pop("wait", False)
+
         # Just changes the sample temperature if not tracking vaporizer.
-        if self.parent.track_vaporizer.get() is False:
-            return super().move(position, **kwargs)
+        if self.parent.track_vaporizer.get() is True:
+            vaporizer_position = self._get_vaporizer_position(position)
+            # Will not wait for vaporizer.
+            _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
 
-        wait = kwargs.pop('wait', True)
-        sample_status = super().move(position, wait=False, **kwargs)
-
-        vaporizer_position = self._get_vaporizer_position(position)
-        # Will not wait for vaporizer.
-        _ = self.root.loop1.move(vaporizer_position, wait=False, **kwargs)
-
-        if wait:
-            status_wait(sample_status)
-
-        return sample_status
+        self.cb_setpoint()
+        return super().move(position, wait=wait, **kwargs)
 
     def _get_vaporizer_position(self, sample_position):
         """ Returns vaporizer setpoint based on the sample setpoint. """
