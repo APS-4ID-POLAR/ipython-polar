@@ -5,9 +5,9 @@
 __all__ = ['mag6t']
 
 from ophyd import (
-    Component, Device, EpicsMotor, PVPositioner, EpicsSignal, EpicsSignalRO,
-    Signal
+    Component, Device, EpicsMotor, EpicsSignal, EpicsSignalRO, Signal
 )
+from apstools.devices import PVPositionerSoftDoneWithStop
 from ophyd.status import Status
 from numpy import allclose
 from ..framework import sd
@@ -22,16 +22,14 @@ class AMIZones(Device):
                           kind="config")
 
 
-class AMIController(PVPositioner):
+class AMIController(PVPositionerSoftDoneWithStop):
     """ Magnetic field controler """
 
-    # position
-    readback = Component(EpicsSignalRO, "Field", auto_monitor=True,
-                         kind="hinted", labels=('ami_controller', 'magnets'))
-
-    setpoint = Component(EpicsSignal, "PField", write_pv="PField:Wrt.A",
-                         auto_monitor=True, kind="normal",
-                         labels=('ami_controller', 'magnets'))
+    # positions
+    setpoint = Component(
+        EpicsSignal, "PField", write_pv="PField:Wrt.A", auto_monitor=True,
+        put_complete=True, kind="normal", labels=('ami_controller', 'magnets')
+    )
 
     current = Component(EpicsSignalRO, "Current", auto_monitor=True,
                         kind="normal", labels=('ami_controller', 'magnets'))
@@ -49,9 +47,6 @@ class AMIController(PVPositioner):
         EpicsSignalRO, "StateInt.A", auto_monitor=True, kind="config",
         labels=('ami_controller', 'magnets')
     )
-
-    done = magnet_status
-    done_value = 2
 
     # configuration
     units = Component(EpicsSignalRO, "FieldUnits.SVAL", kind="config",
@@ -95,14 +90,6 @@ class AMIController(PVPositioner):
     zero_button = Component(EpicsSignal, "Zero.PROC", kind="omitted",
                             put_complete=True)
 
-    stop_signal = pause_button
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Make the default alias for the readback the name of the
-        # positioner itself as in EpicsMotor.
-        self.readback.name = self.name
-
     @property
     def egu(self):
         return self.units.get(as_string=True)
@@ -137,7 +124,9 @@ class Magnet6T(Device):
     sampth = Component(EpicsMotor, 'm58', labels=('motors', 'magnets'))
 
     # Magnetic field controller
-    field = Component(AMIController, '4idd:AMI430:', add_prefix='')
+    field = Component(
+        AMIController, '4idd:AMI430:', readback_pv="Field", add_prefix=''
+    )
 
 
 mag6t = Magnet6T('4iddx:', name='mag6t')
