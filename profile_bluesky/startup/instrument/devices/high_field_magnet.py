@@ -124,8 +124,10 @@ class Magnet6T(Device):
     sampth = Component(EpicsMotor, 'm58', labels=('motors', 'magnets'))
 
     # Magnetic field controller
-    field = Component(AMIController, '4idd:AMI430:', add_prefix='')
+    field = Component(
+        AMIController, '4idd:AMI430:', readback_pv="Field", add_prefix=''
+    )
 
 
-mag6t = Magnet6T('4iddx:', readback_pv="Field", name='mag6t')
+mag6t = Magnet6T('4iddx:', name='mag6t')
 sd.baseline.append(mag6t)
