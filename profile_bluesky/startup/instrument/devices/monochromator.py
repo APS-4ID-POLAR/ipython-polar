@@ -9,7 +9,6 @@ from ophyd import (
     Component, Device, FormattedComponent, EpicsMotor, EpicsSignal,
     EpicsSignalRO, PVPositioner
 )
-from ophyd.utils import set_and_wait
 from ophyd.status import Status
 from ..framework import sd
 from ..session_logs import logger
@@ -74,7 +73,12 @@ class KohzuPositioner(PVPositioner):
     def _setup_move(self, position):
         '''Move and do not wait until motion is complete (asynchronous)'''
         self.log.debug('%s.setpoint = %s', self.name, position)
-        set_and_wait(self.setpoint, position)
+
+        # If wait is needed...
+        # self.setpoint.set(position).wait(timeout=10)
+        
+        #If not...
+        self.setpoint.put(position, wait=False)
 
         if self.actuate is not None:
             self.log.debug('%s.actuate = %s', self.name, self.actuate_value)
