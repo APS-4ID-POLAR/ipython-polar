@@ -137,7 +137,7 @@ class Monochromator(KohzuSeqCtl_Monochromator):
             New energy for the current monochromator position.
         """
         self.use_set.put('Set', use_complete=True)
-        self.energy.put(value)
+        self.energy.setpoint.put(value)
         self.use_set.put('Use', use_complete=True)
 
 
