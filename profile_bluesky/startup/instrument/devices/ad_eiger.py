@@ -12,7 +12,6 @@ from ophyd.status import wait as status_wait, SubscriptionStatus
 from ophyd.areadetector.plugins import ROIPlugin_V34, StatsPlugin_V34
 from ophyd.areadetector.trigger_mixins import TriggerBase, ADTriggerStatus
 from ophyd.areadetector.filestore_mixins import FileStoreBase
-from ophyd.utils.epics_pvs import set_and_wait
 from apstools.utils import run_in_thread
 from time import sleep
 from os.path import join, isdir
@@ -57,17 +56,17 @@ class TriggerNewImage(TriggerBase):
 
     def stage(self):
         # Make sure that detector is not armed.
-        set_and_wait(self.cam.acquire, 0)
+        self.cam.acquire.set(0).wait(timeout=10)
         super().stage()
         # The trigger button does not track that the detector is done, so
         # the image_count is used. Not clear it's the best choice.
         self._image_count.subscribe(self._acquire_changed)
-        set_and_wait(self.cam.acquire, 1)
+        self.cam.acquire.set(1).wait(timeout=10)
 
     def unstage(self):
         super().unstage()
         self._image_count.clear_sub(self._acquire_changed)
-        set_and_wait(self.cam.acquire, 0)
+        self.cam.acquire.set(0).wait(timeout=10)
 
         def check_value(*, old_value, value, **kwargs):
             "Return True when detector is done"
@@ -139,13 +138,13 @@ class TriggerTime(TriggerBase):
 
     def stage(self):
         # Make sure that detector is not armed.
-        set_and_wait(self.cam.acquire, 0)
+        self.cam.acquire.set(0).wait(timeout=10)
         super().stage()
-        set_and_wait(self.cam.acquire, 1)
+        self.cam.acquire.set(1).wait(timeout=10)
 
     def unstage(self):
         super().unstage()
-        set_and_wait(self.cam.acquire, 0)
+        self.cam.acquire.set(0).wait(timeout=10)
 
         def check_value(*, old_value, value, **kwargs):
             "Return True when detector is done"
@@ -299,15 +298,15 @@ class LocalEigerDetectorBase(DetectorBase):
     def align_on(self, time=0.1):
         """Start detector in alignment mode"""
         self.save_images_off()
-        set_and_wait(self.cam.manual_trigger, "Disable")
-        set_and_wait(self.cam.num_triggers, int(1e6))
-        set_and_wait(self.cam.trigger_mode, "Internal Enable")
-        set_and_wait(self.cam.trigger_exposure, time)
-        set_and_wait(self.cam.acquire, 1)
+        self.cam.manual_trigger.set("Disable").wait(timeout=10)
+        self.cam.num_triggers.set(int(1e6)).wait(timeout=10)
+        self.cam.trigger_mode.set("Internal Enable").wait(timeout=10)
+        self.cam.trigger_exposure.set(time).wait(timeout=10)
+        self.cam.acquire.set(1).wait(timeout=10)
 
     def align_off(self):
         """Stop detector"""
-        set_and_wait(self.cam.acquire, 0)
+        self.cam.acquire.set(0).wait(timeout=10)
 
     def default_kinds(self):
 
