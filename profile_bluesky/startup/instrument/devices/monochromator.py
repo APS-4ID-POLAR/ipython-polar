@@ -76,8 +76,8 @@ class KohzuPositioner(PVPositioner):
 
         # If wait is needed...
         # self.setpoint.set(position).wait(timeout=10)
-        
-        #If not...
+
+        # If not...
         self.setpoint.put(position, wait=False)
 
         if self.actuate is not None:
