@@ -113,15 +113,16 @@ class LoopSample(LS336_LoopControl):
     def _get_vaporizer_position(self, sample_position):
         """ Returns vaporizer setpoint based on the sample setpoint. """
 
-        limits = array(self.vaporizer_rangs["limits"])
-        offsets = array(self.vaporizer_rangs["offsets"])
+        limits = array(self.vaporizer_ranges["limits"])
+        offsets = array(self.vaporizer_ranges["offsets"])
         sort = argsort(limits)
 
         # If nothing works, it will just go to 80% of sample position
         vaporizer_position = sample_position*0.8
         for limit, offset in zip(limits[sort], offsets[sort]):
-            if sample_position < limit:
-                vaporizer_position = offset
+            if sample_position <= limit:
+                vaporizer_position = sample_position - offset
+                break
 
         return vaporizer_position
 
