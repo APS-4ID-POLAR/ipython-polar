@@ -5,8 +5,9 @@ Lakeshore 340 temperature controller EPICS version 1.1
 from apstools.synApps.asyn import AsynRecord
 from ophyd import (Component, Device, Signal, EpicsSignal, EpicsSignalRO,
                    FormattedComponent)
-from .util_components_old import PVPositionerSoftDone, TrackingSignal
+from .util_components_old import TrackingSignal
 from time import sleep
+from apstools.devices import PVPositionerSoftDone
 
 from ..session_logs import logger
 logger.info(__file__)

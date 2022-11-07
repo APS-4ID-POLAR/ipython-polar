@@ -5,7 +5,7 @@ Lakeshore temperature controllers
 __all__ = ['lakeshore336', 'lakeshore340', 'lakeshore340ht']
 
 from .lakeshore336 import LS336Device
-from .lakeshore340 import LS340Device
+from .lakeshore340_old import LS340Device
 from ..framework import sd
 
 from ..session_logs import logger
