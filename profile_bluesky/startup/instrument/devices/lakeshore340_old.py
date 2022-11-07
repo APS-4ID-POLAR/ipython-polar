@@ -55,10 +55,6 @@ class LS340_LoopBase(PVPositionerSoftDone):
                                   write_pv="{prefix}wr_SP{loop_number}",
                                   kind="normal", put_complete=True)
 
-    # This is here only because of ramping, because then setpoint will change
-    # slowly.
-    target = Component(Signal, value=0, kind="omitted")
-
     # configuration
     units = Component(Signal, value='K', kind="config")
 
@@ -82,8 +78,10 @@ class LS340_LoopBase(PVPositionerSoftDone):
 
     def __init__(self, *args, loop_number=None, timeout=60*60*10, **kwargs):
         self.loop_number = loop_number
-        super().__init__(*args, timeout=timeout, tolerance=0.1,
-                         target_attr="target", **kwargs)
+        super().__init__(
+            *args, timeout=timeout, tolerance=0.1, readback_pv="a",
+            update_target=True, **kwargs
+        )
         self._settle_time = 0
 
     @property
@@ -101,10 +99,10 @@ class LS340_LoopBase(PVPositionerSoftDone):
     def egu(self):
         return self.units.get(as_string=True)
 
-    def stop(self, *, success=False):
-        if success is False:
-            self.setpoint.put(self._position)
-        super().stop(success=success)
+    # def stop(self, *, success=False):
+        # if success is False:
+        #     self.setpoint.put(self._position)
+        # super().stop(success=success)
 
     def pause(self):
         self.setpoint.put(self._position, wait=True)
